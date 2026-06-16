@@ -2,7 +2,6 @@
 
 <img src=".github/assets/banner.svg" alt="Mozza — describe what you want, Mozza writes the Kubernetes" width="100%"/>
 
-[![Build](https://img.shields.io/github/actions/workflow/status/gshepptech/mozza/ci.yml?branch=main&style=flat-square&label=build)](https://github.com/gshepptech/mozza/actions)
 [![Go](https://img.shields.io/badge/go-1.24%2B-00ADD8?style=flat-square&logo=go&logoColor=white)](https://go.dev)
 [![Release](https://img.shields.io/github/v/release/gshepptech/mozza?style=flat-square&label=release&sort=semver)](https://github.com/gshepptech/mozza/releases)
 [![Platform](https://img.shields.io/badge/platform-linux%20%7C%20macOS-555?style=flat-square)](https://github.com/gshepptech/mozza/releases)
