@@ -1,0 +1,5 @@
+CREATE TABLE IF NOT EXISTS cluster_snapshots (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    data TEXT NOT NULL,
+    created_at TEXT NOT NULL
+);

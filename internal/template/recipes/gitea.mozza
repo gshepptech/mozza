@@ -1,0 +1,22 @@
+# Gitea — Self-hosted Git service
+
+App: gitea
+
+Gitea:
+  from image gitea/gitea:latest
+  open to the public on port 3000
+  on port 22 as ssh using tcp
+  health check /api/healthz
+  run 1 copy
+  needs db
+  set GITEA__database__DB_TYPE to "postgres"
+  set GITEA__database__HOST to "db:5432"
+  set GITEA__database__NAME to "gitea"
+  set GITEA__database__USER to "gitea"
+  set GITEA__database__PASSWD to "{{DB_PASSWORD}}"
+
+Db:
+  postgres 16, 20Gi, daily backups
+  set POSTGRES_USER to "gitea"
+  set POSTGRES_PASSWORD to "{{DB_PASSWORD}}"
+  set POSTGRES_DB to "gitea"

@@ -1,0 +1,23 @@
+# Kafka Cluster — StatefulSet with peer discovery and ordered startup
+
+App: kafka-cluster
+
+Kafka:
+  from image bitnami/kafka:3.6
+  on port 9092 as kafka
+  on port 9093 as controller
+  each copy needs its own storage of 100Gi
+  start copies in order
+  allow copies to find each other
+  run 3 copies
+  spread copies across nodes
+  keep at least 2 copies running during updates
+  graceful shutdown 60s
+
+Zookeeper:
+  from image bitnami/zookeeper:3.9
+  on port 2181
+  each copy needs its own storage of 10Gi
+  start copies in order
+  allow copies to find each other
+  run 3 copies

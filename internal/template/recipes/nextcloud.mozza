@@ -1,0 +1,25 @@
+# Nextcloud — Self-hosted file sync and share
+
+App: nextcloud
+
+Nextcloud:
+  from image nextcloud:29-apache
+  open to the public on port 80
+  health check /status.php
+  run 1 copy
+  needs db
+  set MYSQL_HOST to "db"
+  set MYSQL_DATABASE to "nextcloud"
+  set MYSQL_USER to "nextcloud"
+  set MYSQL_PASSWORD to "{{DB_PASSWORD}}"
+  set NEXTCLOUD_ADMIN_USER to "{{ADMIN_USER}}"
+  set NEXTCLOUD_ADMIN_PASSWORD to "{{ADMIN_PASSWORD}}"
+  limit cpu to "1"
+  limit memory to "1Gi"
+
+Db:
+  mysql 8, {{STORAGE_SIZE}}
+  set MYSQL_ROOT_PASSWORD to "{{DB_PASSWORD}}"
+  set MYSQL_DATABASE to "nextcloud"
+  set MYSQL_USER to "nextcloud"
+  set MYSQL_PASSWORD to "{{DB_PASSWORD}}"

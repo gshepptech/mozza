@@ -1,0 +1,14 @@
+# RabbitMQ — Message broker with management UI
+
+App: rabbitmq
+
+Rabbitmq:
+  from image rabbitmq:3-management-alpine
+  open to the public on port 15672
+  on port 5672 as amqp using tcp
+  health check /api/healthchecks/node
+  run 1 copy
+  set RABBITMQ_DEFAULT_USER to "{{RABBITMQ_USER}}"
+  set RABBITMQ_DEFAULT_PASS to "{{RABBITMQ_PASSWORD}}"
+  limit cpu to "500m"
+  limit memory to "512Mi"

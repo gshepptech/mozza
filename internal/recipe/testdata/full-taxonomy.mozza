@@ -1,0 +1,226 @@
+# Full workload taxonomy test file — exercises all new directives
+
+App: taxonomy-test
+
+Namespace: production
+
+# Multi-port gRPC + HTTP service
+ApiGateway:
+  from image myorg/gateway:2.0
+  on port 8080 as http
+  on port 9090 as grpc using grpc
+  run 3 copies
+  health check /healthz
+  needs backend
+
+# Scheduled batch job
+BatchProcessor:
+  from image myorg/batch:1.0
+  run every day at 2am
+  run once
+  needs db
+
+# Periodic cleanup
+Cleanup:
+  from image myorg/cleanup:1.0
+  run every hour
+
+# Frequent metrics
+MetricsCollector:
+  from image myorg/metrics:1.0
+  run every 5 minutes
+
+# Monday reports
+WeeklyReport:
+  from image myorg/reports:1.0
+  run every monday at 9am
+
+# Raw cron
+CustomSchedule:
+  from image myorg/custom:1.0
+  schedule "15 3 * * 1-5"
+
+# One-shot migration
+Migration:
+  from image myorg/migrate:1.0
+  run to completion
+
+# Parallel job with retries
+DataImport:
+  from image myorg/import:1.0
+  run once with 4 parallel
+  run once, retry up to 3 times
+
+# Daemon set — log collector
+LogCollector:
+  from image myorg/logs:1.0
+  run on every node
+
+# Daemon with node selector
+Monitoring:
+  from image myorg/monitor:1.0
+  run on every node labeled "tier=edge"
+
+# Stateful service
+SessionStore:
+  from image myorg/sessions:1.0
+  each copy needs its own storage of 10Gi
+  start copies in order
+  allow copies to find each other
+  on port 6379
+
+# Init containers
+AppServer:
+  from image myorg/app:3.0
+  on port 8080
+  before starting:
+    run image myorg/db-migrate:1.0 with "migrate up"
+    run image myorg/config-loader:1.0
+
+# Sidecar
+WebApp:
+  from image myorg/web:2.0
+  on port 8080
+  with sidecar envoy from myorg/envoy:1.26 on port 9901
+
+# Volume mounts
+ConfiguredService:
+  from image myorg/svc:1.0
+  mount file "config/app.yaml" at /etc/app/config.yaml
+  mount secret "db-creds" at /etc/secrets/db
+  mount config "configs/" at /etc/app/configs
+
+# RBAC permissions
+Controller:
+  from image myorg/controller:1.0
+  needs permission to read pods
+  needs permission to read and write deployments
+  needs cluster-wide permission to manage secrets
+  use account "controller-sa"
+
+# Probe types
+ProbeService:
+  from image myorg/probe-svc:1.0
+  readiness check /ready
+  liveness check /alive
+  startup check /started
+  on port 8080
+
+# Exec probe
+WorkerProbe:
+  from image myorg/worker:1.0
+  readiness check by running "cat /tmp/healthy"
+  liveness check on tcp port 3306
+
+# Lifecycle hooks
+GracefulService:
+  from image myorg/graceful:1.0
+  before stopping, wait 30s
+  before stopping, run "kill -SIGTERM 1"
+  after starting, run "/hooks/warmup.sh"
+  on port 8080
+
+# Scheduling preferences
+ScheduledPods:
+  from image myorg/scheduled:1.0
+  prefer nodes labeled "zone=us-west-2a"
+  require nodes labeled "disk=ssd"
+  spread copies across zones
+  never run two copies on the same node
+  on port 8080
+
+# Network policy
+SecureService:
+  from image myorg/secure:1.0
+  only accept traffic from frontend and backend
+  on port 8080
+
+# Network policy block
+IsolatedService:
+  from image myorg/isolated:1.0
+  block all traffic except from namespace "production"
+  on port 8080
+
+# Auto-scaling
+ScaledService:
+  from image myorg/scaled:1.0
+  scale between 2 and 10 copies based on cpu 80%
+  on port 8080
+
+# Memory-based auto-scaling
+MemScaled:
+  from image myorg/memscaled:1.0
+  scale between 1 and 5 copies based on memory 70%
+  on port 8080
+
+# Disruption budget
+ResilientService:
+  from image myorg/resilient:1.0
+  keep at least 2 copies running during updates
+  run 4 copies
+  on port 8080
+
+# Disruption budget max unavailable
+AnotherService:
+  from image myorg/another:1.0
+  allow at most 1 copies down during updates
+  run 3 copies
+  on port 8080
+
+# Security context
+SecureContainer:
+  from image myorg/secure-ctr:1.0
+  run as user 1000
+  run as group 1000
+  drop all capabilities
+  add capability NET_BIND_SERVICE
+  read-only filesystem
+  on port 8080
+
+# Update strategy
+RollingService:
+  from image myorg/rolling:1.0
+  update one at a time
+  run 5 copies
+  on port 8080
+
+# Percentage update
+PercentageUpdate:
+  from image myorg/pctupdate:1.0
+  update 25% at a time
+  run 8 copies
+  on port 8080
+
+# Graceful shutdown
+ShutdownService:
+  from image myorg/shutdown:1.0
+  graceful shutdown 60s
+  on port 8080
+
+# Minutes shutdown
+LongShutdown:
+  from image myorg/longshutdown:1.0
+  graceful shutdown 2m
+  on port 8080
+
+# Kind override
+CustomKind:
+  from image myorg/custom:1.0
+  kind StatefulSet
+  on port 8080
+
+# DNS name
+DnsService:
+  from image myorg/dns:1.0
+  reachable as "my-service.local"
+  on port 8080
+
+# Health check with timing
+TimedHealth:
+  from image myorg/timed:1.0
+  health check /healthz every 10s, timeout 5s, wait 30s before starting
+  on port 8080
+
+# Primary data store
+Db:
+  postgres 16, 50Gi

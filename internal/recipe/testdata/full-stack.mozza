@@ -1,0 +1,43 @@
+# Full-stack application with all features exercised
+
+App: full-stack
+
+Namespace: production
+
+# Public-facing frontend
+Frontend:
+  from image myorg/frontend:2.4.1
+  open to the public on port 3000
+  health check /ready
+  run 3 copies
+  set CDN_URL to "https://cdn.example.com"
+  domain "shop.example.com"
+  restart always
+  needs backend
+
+# Internal API backend
+Backend:
+  from image myorg/backend:1.8.0
+  on port 8080
+  health check /healthz
+  run 4 copies
+  set DATABASE_URL to "postgres://db:5432/app"
+  limit cpu to "500m"
+  limit memory to "512Mi"
+  restart always
+  needs db and cache
+
+# Background job processor
+Worker:
+  from image myorg/worker:1.8.0
+  run 2 copies
+  restart unless-stopped
+  needs db and cache
+
+# Primary data store
+Db:
+  postgres 16, 50Gi
+
+# Session and query cache
+Cache:
+  redis 7, 1Gi

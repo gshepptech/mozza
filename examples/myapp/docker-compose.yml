@@ -1,0 +1,15 @@
+services:
+    myapp:
+        image: nginx:latest
+        expose:
+            - "8080"
+        networks:
+            - myapp-net
+        deploy:
+            resources:
+                limits:
+                    cpus: 500m
+                    memory: 256Mi
+networks:
+    myapp-net:
+        driver: bridge

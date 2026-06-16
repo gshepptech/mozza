@@ -1,0 +1,22 @@
+# n8n — Workflow automation
+
+App: n8n
+
+N8n:
+  from image n8nio/n8n:latest
+  open to the public on port 5678
+  health check /healthz
+  run 1 copy
+  needs db
+  set DB_TYPE to "postgresdb"
+  set DB_POSTGRESDB_HOST to "db"
+  set DB_POSTGRESDB_PORT to "5432"
+  set DB_POSTGRESDB_DATABASE to "n8n"
+  set DB_POSTGRESDB_USER to "n8n"
+  set DB_POSTGRESDB_PASSWORD to "{{DB_PASSWORD}}"
+
+Db:
+  postgres 16, 10Gi
+  set POSTGRES_USER to "n8n"
+  set POSTGRES_PASSWORD to "{{DB_PASSWORD}}"
+  set POSTGRES_DB to "n8n"

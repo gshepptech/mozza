@@ -1,0 +1,37 @@
+# Microservices Demo — multi-service gRPC architecture with auto-scaling
+
+App: microservices-demo
+
+Api-Gateway:
+  from image myorg/gateway:latest
+  open to the public on port 8080
+  health check /healthz
+  run 2 copies
+  needs auth-service and product-service
+  scale between 2 and 8 copies based on cpu 75%
+
+Auth-Service:
+  from image myorg/auth:latest
+  on port 8080 as http
+  on port 9090 as grpc
+  readiness check /ready
+  liveness check /healthz
+  run 2 copies
+  needs db
+  needs permission to read secrets
+  graceful shutdown 30s
+  run as user 1000
+
+Product-Service:
+  from image myorg/products:latest
+  on port 8080 as http
+  on port 9090 as grpc
+  readiness check /ready
+  run 2 copies
+  needs db and cache
+
+Db:
+  postgres 16, 20Gi, daily backups
+
+Cache:
+  redis 7

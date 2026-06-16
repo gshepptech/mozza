@@ -1,0 +1,8 @@
+# This file tests a section with no content (valid in new format)
+# Kept for backward compatibility of test name
+App: incomplete
+
+Api:
+  from image myorg/api:1.0.0
+  on port 8080
+  health check /healthz

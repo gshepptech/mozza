@@ -1,0 +1,7 @@
+App: mozza
+
+Api:
+  from image nginx:alpine
+  open to the public on port 8080
+  health check /healthz
+  run 1 copy

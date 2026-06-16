@@ -1,0 +1,35 @@
+# Data Pipeline — jobs, cron jobs, and batch processing
+
+App: data-pipeline
+
+Etl-Runner:
+  from image myorg/etl:latest
+  run once with 3 parallel
+  needs db
+  set BATCH_SIZE to "1000"
+
+Retry-Runner:
+  from image myorg/etl:latest
+  run once, retry up to 5 times
+  needs db
+
+Db-Migrate:
+  from image myorg/migrate:latest
+  run once
+  needs db
+
+Nightly-Cleanup:
+  from image myorg/cleanup:latest
+  run every day at 2am
+  needs db
+
+Hourly-Sync:
+  from image myorg/sync:latest
+  run every hour
+  needs db and cache
+
+Db:
+  postgres 16, 50Gi
+
+Cache:
+  redis 7
