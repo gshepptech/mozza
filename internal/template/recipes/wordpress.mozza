@@ -1,0 +1,23 @@
+# WordPress — Classic blog/CMS
+
+App: wordpress
+
+Wordpress:
+  from image wordpress:6-apache
+  open to the public on port 80
+  health check /
+  run 1 copy
+  needs db
+  set WORDPRESS_DB_HOST to "db:3306"
+  set WORDPRESS_DB_USER to "wordpress"
+  set WORDPRESS_DB_PASSWORD to "{{DB_PASSWORD}}"
+  set WORDPRESS_DB_NAME to "wordpress"
+  limit cpu to "500m"
+  limit memory to "512Mi"
+
+Db:
+  mysql 8, {{STORAGE_SIZE}}
+  set MYSQL_ROOT_PASSWORD to "{{DB_PASSWORD}}"
+  set MYSQL_DATABASE to "wordpress"
+  set MYSQL_USER to "wordpress"
+  set MYSQL_PASSWORD to "{{DB_PASSWORD}}"

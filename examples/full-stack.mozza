@@ -1,0 +1,27 @@
+# Full Stack — web frontend, API backend, database, and cache
+
+App: full-stack
+
+Images:
+  frontend: myorg/frontend:latest
+  backend: myorg/backend:latest
+
+Frontend:
+  from frontend
+  open to the public on port 3000
+  health check /health
+  run 2 copies
+  needs backend
+
+Backend:
+  from backend
+  on port 8080
+  health check /healthz
+  run 2 copies
+  needs db and cache
+
+Db:
+  postgres 16, 10Gi
+
+Cache:
+  redis 7

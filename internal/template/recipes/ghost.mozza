@@ -1,0 +1,23 @@
+# Ghost — Modern publishing platform
+
+App: ghost
+
+Ghost:
+  from image ghost:5-alpine
+  open to the public on port 2368
+  health check /ghost/api/v4/admin/site/
+  run 1 copy
+  needs db
+  set url to "http://{{DOMAIN}}:2368"
+  set database__client to "mysql"
+  set database__connection__host to "db"
+  set database__connection__user to "ghost"
+  set database__connection__password to "{{DB_PASSWORD}}"
+  set database__connection__database to "ghost"
+
+Db:
+  mysql 8, 10Gi
+  set MYSQL_ROOT_PASSWORD to "{{DB_PASSWORD}}"
+  set MYSQL_DATABASE to "ghost"
+  set MYSQL_USER to "ghost"
+  set MYSQL_PASSWORD to "{{DB_PASSWORD}}"

@@ -1,0 +1,86 @@
+{
+  "feature": "pizza-simplicity",
+  "master_spec": "docs/specs/pizza-simplicity.md",
+  "output_dir": "docs/specs/pizza-simplicity-decomposed",
+  "created_at": "2026-03-17T20:00:00Z",
+  "domains": [
+    {
+      "name": "foundation",
+      "path": "foundation/",
+      "files": [
+        {
+          "name": "types-and-engine",
+          "path": "foundation/types-and-engine.md",
+          "depends_on": [],
+          "domain_type": "predefined",
+          "complexity": "medium",
+          "status": "pending",
+          "scrutiny": { "status": "pending", "iterations": 0, "last_run": null, "failures": [] }
+        },
+        {
+          "name": "deprecate-old-paths",
+          "path": "foundation/deprecate-old-paths.md",
+          "depends_on": [],
+          "domain_type": "predefined",
+          "complexity": "low",
+          "status": "pending",
+          "scrutiny": { "status": "pending", "iterations": 0, "last_run": null, "failures": [] }
+        }
+      ]
+    },
+    {
+      "name": "frontend",
+      "path": "frontend/",
+      "files": [
+        {
+          "name": "step1-pick",
+          "path": "frontend/step1-pick.md",
+          "depends_on": ["foundation/types-and-engine", "foundation/deprecate-old-paths"],
+          "domain_type": "predefined",
+          "complexity": "high",
+          "status": "pending",
+          "scrutiny": { "status": "pending", "iterations": 0, "last_run": null, "failures": [] }
+        },
+        {
+          "name": "step2-customize",
+          "path": "frontend/step2-customize.md",
+          "depends_on": ["foundation/types-and-engine", "frontend/step1-pick"],
+          "domain_type": "predefined",
+          "complexity": "high",
+          "status": "pending",
+          "scrutiny": { "status": "pending", "iterations": 0, "last_run": null, "failures": [] }
+        },
+        {
+          "name": "step3-review",
+          "path": "frontend/step3-review.md",
+          "depends_on": ["foundation/types-and-engine", "frontend/step2-customize"],
+          "domain_type": "predefined",
+          "complexity": "medium",
+          "status": "pending",
+          "scrutiny": { "status": "pending", "iterations": 0, "last_run": null, "failures": [] }
+        },
+        {
+          "name": "order-tracker",
+          "path": "frontend/order-tracker.md",
+          "depends_on": ["frontend/step3-review"],
+          "domain_type": "predefined",
+          "complexity": "medium",
+          "status": "pending",
+          "scrutiny": { "status": "pending", "iterations": 0, "last_run": null, "failures": [] }
+        }
+      ]
+    }
+  ],
+  "waves": [
+    ["foundation/types-and-engine", "foundation/deprecate-old-paths"],
+    ["frontend/step1-pick"],
+    ["frontend/step2-customize"],
+    ["frontend/step3-review"],
+    ["frontend/order-tracker"]
+  ],
+  "stats": {
+    "total_files": 6,
+    "total_domains": 2,
+    "total_waves": 5
+  }
+}

@@ -1,0 +1,202 @@
+{
+  "feature": "release",
+  "master_spec": "docs/specs/release.md",
+  "output_dir": "docs/specs/release-decomposed",
+  "created_at": "2026-03-18T20:00:00Z",
+  "domains": [
+    {
+      "name": "foundation",
+      "path": "foundation/",
+      "files": [
+        {
+          "name": "data-model",
+          "path": "foundation/data-model.md",
+          "depends_on": [],
+          "domain_type": "predefined",
+          "complexity": "medium",
+          "status": "pending",
+          "scrutiny": {"status": "pending", "iterations": 0, "last_run": null, "failures": []}
+        }
+      ]
+    },
+    {
+      "name": "backend",
+      "path": "backend/",
+      "files": [
+        {
+          "name": "compose-importer",
+          "path": "backend/compose-importer.md",
+          "depends_on": [],
+          "domain_type": "predefined",
+          "complexity": "high",
+          "status": "pending",
+          "scrutiny": {"status": "pending", "iterations": 0, "last_run": null, "failures": []}
+        },
+        {
+          "name": "framework-detector",
+          "path": "backend/framework-detector.md",
+          "depends_on": [],
+          "domain_type": "predefined",
+          "complexity": "high",
+          "status": "pending",
+          "scrutiny": {"status": "pending", "iterations": 0, "last_run": null, "failures": []}
+        },
+        {
+          "name": "git-deploy",
+          "path": "backend/git-deploy.md",
+          "depends_on": ["foundation/data-model", "backend/framework-detector"],
+          "domain_type": "predefined",
+          "complexity": "high",
+          "status": "pending",
+          "scrutiny": {"status": "pending", "iterations": 0, "last_run": null, "failures": []}
+        },
+        {
+          "name": "preview-deploys",
+          "path": "backend/preview-deploys.md",
+          "depends_on": ["foundation/data-model", "backend/git-deploy", "infra/reverse-proxy-ssl"],
+          "domain_type": "predefined",
+          "complexity": "medium",
+          "status": "pending",
+          "scrutiny": {"status": "pending", "iterations": 0, "last_run": null, "failures": []}
+        },
+        {
+          "name": "marketplace",
+          "path": "backend/marketplace.md",
+          "depends_on": ["foundation/data-model"],
+          "domain_type": "predefined",
+          "complexity": "medium",
+          "status": "pending",
+          "scrutiny": {"status": "pending", "iterations": 0, "last_run": null, "failures": []}
+        },
+        {
+          "name": "monitoring",
+          "path": "backend/monitoring.md",
+          "depends_on": ["foundation/data-model"],
+          "domain_type": "predefined",
+          "complexity": "medium",
+          "status": "pending",
+          "scrutiny": {"status": "pending", "iterations": 0, "last_run": null, "failures": []}
+        },
+        {
+          "name": "doctor",
+          "path": "backend/doctor.md",
+          "depends_on": [],
+          "domain_type": "predefined",
+          "complexity": "low",
+          "status": "pending",
+          "scrutiny": {"status": "pending", "iterations": 0, "last_run": null, "failures": []}
+        }
+      ]
+    },
+    {
+      "name": "infra",
+      "path": "infra/",
+      "files": [
+        {
+          "name": "reverse-proxy-ssl",
+          "path": "infra/reverse-proxy-ssl.md",
+          "depends_on": ["foundation/data-model"],
+          "domain_type": "predefined",
+          "complexity": "high",
+          "status": "pending",
+          "scrutiny": {"status": "pending", "iterations": 0, "last_run": null, "failures": []}
+        },
+        {
+          "name": "install-releases",
+          "path": "infra/install-releases.md",
+          "depends_on": [],
+          "domain_type": "predefined",
+          "complexity": "medium",
+          "status": "pending",
+          "scrutiny": {"status": "pending", "iterations": 0, "last_run": null, "failures": []}
+        }
+      ]
+    },
+    {
+      "name": "frontend",
+      "path": "frontend/",
+      "files": [
+        {
+          "name": "compose-wizard",
+          "path": "frontend/compose-wizard.md",
+          "depends_on": ["backend/compose-importer"],
+          "domain_type": "predefined",
+          "complexity": "medium",
+          "status": "pending",
+          "scrutiny": {"status": "pending", "iterations": 0, "last_run": null, "failures": []}
+        },
+        {
+          "name": "framework-wizard",
+          "path": "frontend/framework-wizard.md",
+          "depends_on": ["backend/framework-detector"],
+          "domain_type": "predefined",
+          "complexity": "medium",
+          "status": "pending",
+          "scrutiny": {"status": "pending", "iterations": 0, "last_run": null, "failures": []}
+        },
+        {
+          "name": "deploy-terminal",
+          "path": "frontend/deploy-terminal.md",
+          "depends_on": ["backend/git-deploy"],
+          "domain_type": "predefined",
+          "complexity": "medium",
+          "status": "pending",
+          "scrutiny": {"status": "pending", "iterations": 0, "last_run": null, "failures": []}
+        },
+        {
+          "name": "marketplace-ui",
+          "path": "frontend/marketplace-ui.md",
+          "depends_on": ["backend/marketplace"],
+          "domain_type": "predefined",
+          "complexity": "medium",
+          "status": "pending",
+          "scrutiny": {"status": "pending", "iterations": 0, "last_run": null, "failures": []}
+        },
+        {
+          "name": "monitoring-ui",
+          "path": "frontend/monitoring-ui.md",
+          "depends_on": ["backend/monitoring"],
+          "domain_type": "predefined",
+          "complexity": "medium",
+          "status": "pending",
+          "scrutiny": {"status": "pending", "iterations": 0, "last_run": null, "failures": []}
+        },
+        {
+          "name": "landing-page",
+          "path": "frontend/landing-page.md",
+          "depends_on": [],
+          "domain_type": "predefined",
+          "complexity": "high",
+          "status": "pending",
+          "scrutiny": {"status": "pending", "iterations": 0, "last_run": null, "failures": []}
+        }
+      ]
+    },
+    {
+      "name": "docs",
+      "path": "docs/",
+      "files": [
+        {
+          "name": "readme-community",
+          "path": "docs/readme-community.md",
+          "depends_on": [],
+          "domain_type": "predefined",
+          "complexity": "medium",
+          "status": "pending",
+          "scrutiny": {"status": "pending", "iterations": 0, "last_run": null, "failures": []}
+        }
+      ]
+    }
+  ],
+  "waves": [
+    ["foundation/data-model", "backend/compose-importer", "backend/framework-detector", "backend/doctor", "infra/install-releases", "frontend/landing-page", "docs/readme-community"],
+    ["backend/git-deploy", "backend/marketplace", "backend/monitoring", "infra/reverse-proxy-ssl", "frontend/compose-wizard", "frontend/framework-wizard"],
+    ["backend/preview-deploys", "frontend/deploy-terminal", "frontend/marketplace-ui", "frontend/monitoring-ui"],
+    []
+  ],
+  "stats": {
+    "total_files": 17,
+    "total_domains": 5,
+    "total_waves": 3
+  }
+}

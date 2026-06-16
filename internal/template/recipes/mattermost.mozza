@@ -1,0 +1,20 @@
+# Mattermost — Team messaging and collaboration
+
+App: mattermost
+
+Mattermost:
+  from image mattermost/mattermost-team-edition:9
+  open to the public on port 8065
+  health check /api/v4/system/ping
+  run 1 copy
+  needs db
+  set MM_SQLSETTINGS_DRIVERNAME to "postgres"
+  set MM_SQLSETTINGS_DATASOURCE to "postgres://mattermost:{{DB_PASSWORD}}@db:5432/mattermost?sslmode=disable"
+  limit cpu to "1"
+  limit memory to "1Gi"
+
+Db:
+  postgres 16, {{STORAGE_SIZE}}
+  set POSTGRES_USER to "mattermost"
+  set POSTGRES_PASSWORD to "{{DB_PASSWORD}}"
+  set POSTGRES_DB to "mattermost"

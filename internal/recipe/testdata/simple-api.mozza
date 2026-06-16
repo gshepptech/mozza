@@ -1,0 +1,12 @@
+# A minimal API with a database backend
+App: simple-api
+
+Api:
+  from image myorg/api:1.0.0
+  open to the public on port 8080
+  health check /healthz
+  run 2 copies
+  needs db
+
+Db:
+  postgres 16, 10Gi

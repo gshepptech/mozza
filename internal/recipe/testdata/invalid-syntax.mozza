@@ -1,0 +1,8 @@
+# Invalid syntax: error-path testing
+
+App: broken
+
+# Unknown directive inside a section
+Bad:
+  unknown directive here
+  from image myorg/api:latest

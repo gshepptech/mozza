@@ -1,0 +1,187 @@
+{
+  "feature": "Get Mozza Ready for Production",
+  "slug": "i-want-to-get-my-app-ready-for-production",
+  "created": "2026-03-10",
+  "status": "APPROVED",
+  "user_stories": [
+    {
+      "id": "US-1",
+      "title": "Postgres Store Migration",
+      "description": "Replace SQLite with Postgres using pgx and goose migrations",
+      "phase": 1,
+      "acceptance_criteria": [
+        "mozza serve --db-url postgres://... connects to Postgres",
+        "mozza operator --db-url postgres://... connects to Postgres",
+        "MOZZA_DATABASE_URL env var is supported",
+        "Goose migrations create all tables",
+        "All existing store operations work against Postgres",
+        "SQLite code is removed",
+        "Store tests pass with testcontainers-go"
+      ]
+    },
+    {
+      "id": "US-2",
+      "title": "API Security Hardening",
+      "description": "Lock all API endpoints behind auth, secure cookies, rate limiting",
+      "phase": 2,
+      "acceptance_criteria": [
+        "Only /health, /version, and auth endpoints are public",
+        "Plan/doctor/status endpoints require session cookie",
+        "Session cookie sets Secure: true over HTTPS",
+        "Auth endpoints rate-limited at 10 req/min per IP",
+        "Unauthenticated requests return 401",
+        "Server tests cover auth middleware"
+      ]
+    },
+    {
+      "id": "US-3",
+      "title": "Cluster Management API",
+      "description": "CRUD API for K8s clusters with AES-GCM encrypted credentials",
+      "phase": 2,
+      "acceptance_criteria": [
+        "POST /api/v1/clusters creates cluster with encrypted kubeconfig",
+        "GET /api/v1/clusters lists clusters without kubeconfig",
+        "GET /api/v1/clusters/{id} returns details without kubeconfig",
+        "DELETE /api/v1/clusters/{id} removes cluster",
+        "Kubeconfig encrypted with AES-GCM using MOZZA_ENCRYPTION_KEY",
+        "Store and crypto tests pass"
+      ]
+    },
+    {
+      "id": "US-4",
+      "title": "Operator Process",
+      "description": "mozza operator command with PG LISTEN/NOTIFY deployment pickup",
+      "phase": 3,
+      "acceptance_criteria": [
+        "mozza operator is a Cobra subcommand",
+        "Connects to Postgres via MOZZA_DATABASE_URL",
+        "Uses PG LISTEN on deployments channel",
+        "Queries for pending deployments on NOTIFY",
+        "Updates status to running/succeeded/failed",
+        "Handles graceful shutdown",
+        "Uses SELECT FOR UPDATE SKIP LOCKED for concurrency"
+      ]
+    },
+    {
+      "id": "US-5",
+      "title": "Docker Compose Execution",
+      "description": "Operator executes Docker Compose deployments",
+      "phase": 3,
+      "acceptance_criteria": [
+        "Operator runs docker compose up -d for local/docker-compose targets",
+        "Writes docker-compose.yml from recipe before executing",
+        "Captures stdout/stderr in deployment log",
+        "Failed execution sets status to failed"
+      ]
+    },
+    {
+      "id": "US-6",
+      "title": "Kubernetes Execution via client-go",
+      "description": "Operator applies K8s manifests using client-go",
+      "phase": 3,
+      "acceptance_criteria": [
+        "Uses client-go for kubernetes target deployments",
+        "Decrypts cluster kubeconfig from database",
+        "Creates K8s client from decrypted kubeconfig",
+        "Generates manifests using existing K8s compiler",
+        "Applies via server-side apply",
+        "Creates namespace if needed",
+        "Captures apply results in deployment log",
+        "Tests cover execution flow with mocked client"
+      ]
+    },
+    {
+      "id": "US-7",
+      "title": "Deployment Trigger + PG NOTIFY",
+      "description": "API creates deployments and notifies operator via PG NOTIFY",
+      "phase": 2,
+      "acceptance_criteria": [
+        "POST /api/v1/deployments creates pending deployment",
+        "API sends NOTIFY after INSERT",
+        "Request validates team membership, recipe, cluster",
+        "Returns 202 Accepted",
+        "GET /deployments/{id}/logs streams via SSE"
+      ]
+    },
+    {
+      "id": "US-8",
+      "title": "Cluster Management UI Page",
+      "description": "React page for managing K8s clusters",
+      "phase": 4,
+      "acceptance_criteria": [
+        "Route /clusters in React app",
+        "Lists clusters with name and status",
+        "Add Cluster form with name and kubeconfig",
+        "Delete button with confirmation",
+        "API errors displayed inline",
+        "Auth-protected page"
+      ]
+    },
+    {
+      "id": "US-9",
+      "title": "Deploy Trigger UI",
+      "description": "UI for triggering and monitoring deployments",
+      "phase": 4,
+      "acceptance_criteria": [
+        "Deploy button on recipe detail page",
+        "Form selects target, cluster, environment",
+        "Calls POST /api/v1/deployments on submit",
+        "Deployment detail page shows status and logs",
+        "Real-time log updates via SSE"
+      ]
+    },
+    {
+      "id": "US-10",
+      "title": "Comprehensive Test Suite",
+      "description": "Full test coverage with testcontainers-go",
+      "phase": 4,
+      "acceptance_criteria": [
+        "Store tests use testcontainers-go Postgres",
+        "Crypto tests verify round-trip and error cases",
+        "Operator tests verify PG LISTEN/NOTIFY flow",
+        "API tests cover auth on all protected endpoints",
+        "Rate limiting tests verify throttling",
+        "go test -race ./... passes",
+        "Coverage > 70% on new packages"
+      ]
+    }
+  ],
+  "phases": [
+    {
+      "number": 1,
+      "name": "Foundation (Postgres + Store + Crypto)",
+      "stories": ["US-1"],
+      "verification": "go test ./internal/store/... ./internal/crypto/..."
+    },
+    {
+      "number": 2,
+      "name": "API Hardening + Cluster CRUD",
+      "stories": ["US-2", "US-3", "US-7"],
+      "verification": "go test ./internal/server/..."
+    },
+    {
+      "number": 3,
+      "name": "Operator",
+      "stories": ["US-4", "US-5", "US-6"],
+      "verification": "go test ./internal/operator/..."
+    },
+    {
+      "number": 4,
+      "name": "UI + Integration",
+      "stories": ["US-8", "US-9", "US-10"],
+      "verification": "npm run build && go test -race ./..."
+    }
+  ],
+  "decisions": {
+    "database": "Postgres only (drop SQLite)",
+    "migrations": "goose",
+    "auth": "Local auth with session cookies (MVP)",
+    "encryption": "AES-256-GCM with MOZZA_ENCRYPTION_KEY env var",
+    "operator_communication": "PG LISTEN/NOTIFY",
+    "k8s_client": "client-go (programmatic)",
+    "cluster_credentials": "Stored in DB, encrypted at rest, configurable via API/UI",
+    "config": "MOZZA_DATABASE_URL env var shared by serve and operator",
+    "deployment_concurrency": "SELECT FOR UPDATE SKIP LOCKED",
+    "rate_limiting": "In-memory token bucket per IP"
+  }
+}

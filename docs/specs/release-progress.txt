@@ -1,0 +1,35 @@
+Feature: release (Mozza v1 Launch)
+Spec: docs/specs/release.md
+JSON: docs/specs/release.json
+Created: 2026-03-18
+
+Phase 1: Foundation — Import + Detect + Install
+  [PENDING] US-1: Docker Compose Import (CLI)
+  [PENDING] US-3: Framework Auto-Detect Engine
+  [PENDING] US-12: One-Line Install + Binary Releases
+
+Phase 2: Git Deploy + Build
+  [PENDING] US-5: Git Push Deploy — Webhook Receiver
+  [PENDING] US-6: Git Push Deploy — Auto-Build
+  [PENDING] US-7: Branch Preview Deploys
+
+Phase 3: Reverse Proxy + Auto-SSL
+  [PENDING] US-8: Auto-SSL via Certmagic
+  [PENDING] US-9: Built-in Reverse Proxy
+
+Phase 4: Marketplace + Monitoring
+  [PENDING] US-10: Recipe Marketplace — Backend
+  [PENDING] US-11: Recipe Marketplace — Dashboard UI
+  [PENDING] US-15: Built-in Monitoring Dashboard
+  [PENDING] US-17: Doctor Enhancement
+
+Phase 5: UI Polish + Deploy Terminal
+  [PENDING] US-2: Docker Compose Import (Wizard)
+  [PENDING] US-4: Per-Framework Wizard Flow
+  [PENDING] US-14: Real-Time Deploy Terminal in Web UI
+
+Phase 6: Landing Page + Launch Prep
+  [PENDING] US-13: README Rewrite
+  [PENDING] US-16: Landing Page Redesign
+  [PENDING] US-18: GitHub Repo Setup
+  [PENDING] US-19: Discord Community

@@ -1,0 +1,13 @@
+# Redis Commander — Redis GUI
+
+App: redis-tools
+
+Redis-Commander:
+  from image rediscommander/redis-commander:latest
+  open to the public on port 8081
+  run 1 copy
+  needs cache
+  set REDIS_HOSTS to "local:cache:6379"
+
+Cache:
+  redis 7

@@ -1,0 +1,42 @@
+# HobbyFarm — Kubernetes-based interactive learning platform
+
+App: hobbyfarm
+
+Images:
+  gargantua: hobbyfarm/gargantua:{{GARGANTUA_VERSION}}
+  ui: hobbyfarm/ui:{{UI_VERSION}}
+  admin: hobbyfarm/admin-ui:{{ADMIN_VERSION}}
+
+Ui:
+  from ui
+  open to the public on port 8080
+  health check /
+  run 2 copies
+  needs gargantua
+
+Admin:
+  from admin
+  on port 8080
+  health check /
+  run 1 copy
+  needs gargantua
+
+Gargantua:
+  from gargantua
+  on port 8080 as http
+  readiness check /healthz
+  liveness check /healthz
+  run 2 copies
+  needs db
+  needs cluster-wide permission to manage customresourcedefinitions
+  needs cluster-wide permission to manage *
+
+Db:
+  postgres 16, 10Gi
+
+Db-Migrate:
+  from gargantua
+  run once
+  set HF_MODE to "migrate"
+  needs db
+  needs cluster-wide permission to manage customresourcedefinitions

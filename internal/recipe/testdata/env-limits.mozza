@@ -1,0 +1,21 @@
+# Environment variables, resource limits, and restart policies
+
+App: env-limits
+
+Namespace: staging
+
+Api:
+  from image myorg/api:2.0
+  open to the public on port 8080
+  health check /healthz
+  run 2 copies
+  set DATABASE_URL to "postgres://db:5432/app"
+  set LOG_LEVEL to "info"
+  limit cpu to "500m"
+  limit memory to "256Mi"
+  restart always
+  domain "api.example.com"
+  needs db
+
+Db:
+  postgres 16, 10Gi

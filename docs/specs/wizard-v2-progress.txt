@@ -1,0 +1,23 @@
+wizard-v2 Implementation Progress
+===================================
+
+Phase 1: Foundation — Interview Engine + Single Service
+  [PENDING] US-1: Place an Order (Step 1)
+  [PENDING] US-2: Traits Interview (Step 2)
+  [PENDING] US-3: Workload Inference + Confirm (Step 3)
+  [PENDING] US-4: Networking (Step 4)
+
+Phase 2: Dependencies + Config + Defaults
+  [PENDING] US-5: Dependencies (Step 5)
+  [PENDING] US-6: Configuration (Step 6)
+  [PENDING] US-7: Anything Else? (Step 7)
+
+Phase 3: Multi-Service Cart
+  [PENDING] US-8: Service Cart (Sidebar)
+
+Phase 4: Review + Edit + Deploy
+  [PENDING] US-9: Review Your Order (Step 8)
+  [PENDING] US-10: Place Order + Tracking (Step 9)
+
+Phase 5: Polish + Alias UX
+  [PENDING] US-11: Image Alias Management

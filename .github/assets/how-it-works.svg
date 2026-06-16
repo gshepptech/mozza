@@ -1,0 +1,95 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="440" viewBox="0 0 1200 440" role="img" aria-label="How Mozza works: a plain-English recipe is parsed and compiled into Kubernetes resources">
+  <defs>
+    <linearGradient id="hiw-bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1b1410"/>
+      <stop offset="1" stop-color="#241712"/>
+    </linearGradient>
+    <linearGradient id="hiw-accent" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#E94F37"/>
+      <stop offset="1" stop-color="#F6A623"/>
+    </linearGradient>
+    <linearGradient id="hiw-core" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#E94F37"/>
+      <stop offset="1" stop-color="#F2792B"/>
+    </linearGradient>
+    <marker id="hiw-arrow" markerWidth="10" markerHeight="10" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L7,3 L0,6 Z" fill="#F6A623"/>
+    </marker>
+  </defs>
+
+  <rect width="1200" height="440" rx="20" fill="url(#hiw-bg)"/>
+
+  <!-- title -->
+  <text x="40" y="52" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="26" font-weight="800" fill="#ffffff">How it works</text>
+  <text x="40" y="80" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="15" fill="#c9bdb4">One recipe in. Production-grade Kubernetes out.</text>
+
+  <!-- ===================== PANEL 1: RECIPE ===================== -->
+  <rect x="40" y="108" width="330" height="288" rx="16" fill="#0f0b08" stroke="#3a2a20" stroke-width="1.5"/>
+  <rect x="40" y="108" width="330" height="40" rx="16" fill="#2a1c15"/>
+  <rect x="40" y="130" width="330" height="18" fill="#2a1c15"/>
+  <circle cx="62" cy="128" r="5" fill="#E94F37"/>
+  <circle cx="80" cy="128" r="5" fill="#F2792B"/>
+  <circle cx="98" cy="128" r="5" fill="#F6A623"/>
+  <text x="120" y="133" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13" fill="#c9bdb4">app.mozza</text>
+
+  <text x="62" y="184" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="14" fill="#F6A623" font-weight="700">App:</text>
+  <text x="108" y="184" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="14" fill="#e8ded6">my-app</text>
+
+  <text x="62" y="220" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="14" fill="#E94F37" font-weight="700">Web:</text>
+  <text x="78" y="246" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13" fill="#9fb8d8">from image</text>
+  <text x="166" y="246" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13" fill="#e8ded6">web:1.0</text>
+  <text x="78" y="270" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13" fill="#9fb8d8">open to the public</text>
+  <text x="78" y="294" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13" fill="#9fb8d8">health check</text>
+  <text x="186" y="294" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13" fill="#e8ded6">/ready</text>
+  <text x="78" y="318" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13" fill="#9fb8d8">run 2 copies</text>
+  <text x="78" y="342" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13" fill="#9fb8d8">needs db</text>
+
+  <text x="62" y="372" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="14" fill="#E94F37" font-weight="700">Db:</text>
+  <text x="100" y="372" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13" fill="#e8ded6">postgres 16, 10Gi</text>
+
+  <!-- ===================== ARROW 1 ===================== -->
+  <line x1="378" y1="252" x2="438" y2="252" stroke="#F6A623" stroke-width="3" marker-end="url(#hiw-arrow)"/>
+
+  <!-- ===================== PANEL 2: COMPILER ===================== -->
+  <rect x="450" y="150" width="300" height="204" rx="16" fill="url(#hiw-core)"/>
+  <text x="476" y="196" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="20" font-weight="800" fill="#ffffff">mozza</text>
+  <text x="476" y="222" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="14" fill="#ffe9d8">parse · validate · compile</text>
+
+  <rect x="476" y="244" width="248" height="30" rx="8" fill="#ffffff" opacity="0.16"/>
+  <text x="490" y="264" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="12.5" fill="#ffffff">1 · resolve dependency order</text>
+  <rect x="476" y="280" width="248" height="30" rx="8" fill="#ffffff" opacity="0.16"/>
+  <text x="490" y="300" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="12.5" fill="#ffffff">2 · expand to manifests</text>
+
+  <!-- ===================== ARROW 2 ===================== -->
+  <line x1="758" y1="252" x2="818" y2="252" stroke="#F6A623" stroke-width="3" marker-end="url(#hiw-arrow)"/>
+
+  <!-- ===================== PANEL 3: K8S RESOURCES ===================== -->
+  <rect x="830" y="108" width="330" height="288" rx="16" fill="#0f0b08" stroke="#3a2a20" stroke-width="1.5"/>
+  <text x="852" y="140" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="15" font-weight="700" fill="#ffffff">Kubernetes resources</text>
+
+  <!-- resource pills -->
+  <rect x="852" y="158" width="286" height="34" rx="8" fill="#13233a" stroke="#2c6fb0" stroke-width="1.2"/>
+  <rect x="864" y="167" width="16" height="16" rx="3" fill="#F6A623"/>
+  <text x="892" y="180" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13" fill="#cfe1f5">Deployment · web (2 replicas)</text>
+
+  <rect x="852" y="200" width="286" height="34" rx="8" fill="#13233a" stroke="#2c6fb0" stroke-width="1.2"/>
+  <rect x="864" y="209" width="16" height="16" rx="3" fill="#F6A623"/>
+  <text x="892" y="222" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13" fill="#cfe1f5">Service · web</text>
+
+  <rect x="852" y="242" width="286" height="34" rx="8" fill="#13233a" stroke="#2c6fb0" stroke-width="1.2"/>
+  <rect x="864" y="251" width="16" height="16" rx="3" fill="#F6A623"/>
+  <text x="892" y="264" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13" fill="#cfe1f5">Ingress · public route</text>
+
+  <rect x="852" y="284" width="286" height="34" rx="8" fill="#13233a" stroke="#2c6fb0" stroke-width="1.2"/>
+  <rect x="864" y="293" width="16" height="16" rx="3" fill="#F6A623"/>
+  <text x="892" y="306" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13" fill="#cfe1f5">StatefulSet + PVC · db</text>
+
+  <rect x="852" y="326" width="286" height="34" rx="8" fill="#13233a" stroke="#2c6fb0" stroke-width="1.2"/>
+  <rect x="864" y="335" width="16" height="16" rx="3" fill="#F6A623"/>
+  <text x="892" y="348" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13" fill="#cfe1f5">Readiness probe · /ready</text>
+
+  <!-- footer labels under panels -->
+  <text x="40" y="424" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="13" font-weight="700" fill="#F6A623">~10 lines you write</text>
+  <text x="476" y="424" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="13" font-weight="700" fill="#F6A623">the compiler</text>
+  <text x="830" y="424" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="13" font-weight="700" fill="#F6A623">~200 lines you don't</text>
+</svg>

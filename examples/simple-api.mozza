@@ -1,0 +1,16 @@
+# Simple API — single web service with a database
+
+App: simple-api
+
+Images:
+  api: myorg/api:latest
+
+Api:
+  from api
+  open to the public on port 8080
+  health check /healthz
+  run 2 copies
+  needs db
+
+Db:
+  postgres 16, 10Gi

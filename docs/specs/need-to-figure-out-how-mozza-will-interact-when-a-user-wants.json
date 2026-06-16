@@ -1,0 +1,167 @@
+{
+  "feature": "Mozza Deployment Pipeline",
+  "slug": "need-to-figure-out-how-mozza-will-interact-when-a-user-wants",
+  "finalized": "2026-03-10",
+  "status": "finalized",
+  "user_stories": [
+    {
+      "id": "US-1",
+      "title": "Deploy a Simple App to Kubernetes",
+      "phase": 2,
+      "acceptance_criteria": [
+        "mozza deploy creates all K8s resources with valid recipe and kubeconfig",
+        "Resources created in order: Namespace → PVC → Deployment → Service → Ingress",
+        "Command blocks until all pods are ready",
+        "Progress bar shows resource apply and readiness status",
+        "Deploy recorded in SQLite with full audit trail"
+      ]
+    },
+    {
+      "id": "US-2",
+      "title": "Rollback a Failed Deploy",
+      "phase": 2,
+      "acceptance_criteria": [
+        "Failed resource apply triggers rollback of all previously applied resources",
+        "Readiness timeout triggers rollback",
+        "Human-friendly rollback status message",
+        "Deploy recorded as rolled_back in state store"
+      ]
+    },
+    {
+      "id": "US-3",
+      "title": "Intentional Rollback to Previous Version",
+      "phase": 3,
+      "acceptance_criteria": [
+        "mozza rollback retrieves previous deploy recipe from SQLite",
+        "Full pipeline re-runs with previous recipe",
+        "New deploy recorded with rollback_of reference"
+      ]
+    },
+    {
+      "id": "US-4",
+      "title": "Secret References in Recipes",
+      "phase": 1,
+      "acceptance_criteria": [
+        "secret DB_PASS from db-creds compiles to SecretKeyRef",
+        "Optional key override: secret DB_PASS from db-creds key password",
+        "Deploy fails with clear error if Secret doesn't exist"
+      ]
+    },
+    {
+      "id": "US-5",
+      "title": "Image Pre-Validation",
+      "phase": 2,
+      "acceptance_criteria": [
+        "Registry queried for each image before deploy",
+        "Uses ~/.docker/config.json for auth",
+        "Human-friendly error if image not found"
+      ]
+    },
+    {
+      "id": "US-6",
+      "title": "App Status and Logs",
+      "phase": 3,
+      "acceptance_criteria": [
+        "mozza status shows compact health table",
+        "mozza status --detail shows deep dive",
+        "mozza logs streams all pods multiplexed",
+        "mozza logs <slice> filters to one slice"
+      ]
+    },
+    {
+      "id": "US-7",
+      "title": "Teardown with PVC Protection",
+      "phase": 3,
+      "acceptance_criteria": [
+        "mozza down deletes non-storage resources",
+        "Prompts before PVC deletion",
+        "PVCs only deleted on confirmation"
+      ]
+    },
+    {
+      "id": "US-8",
+      "title": "Deploy via API",
+      "phase": 4,
+      "acceptance_criteria": [
+        "POST /api/deploy accepts recipe text, returns 202 + deploy_id",
+        "GET /api/deploys/{id} returns progress",
+        "Status transitions: in_progress → success | failed | rolled_back"
+      ]
+    },
+    {
+      "id": "US-9",
+      "title": "Store Redesign with Migrations",
+      "phase": 1,
+      "acceptance_criteria": [
+        "goose migrations embedded and auto-run on startup",
+        "deploys, deploy_resources, deploy_images tables created",
+        "Existing state data preserved"
+      ]
+    },
+    {
+      "id": "US-10",
+      "title": "K8s Compiler Refactor to Typed Objects",
+      "phase": 1,
+      "acceptance_criteria": [
+        "Build*() functions return typed K8s objects",
+        "Compiler returns []runtime.Object",
+        "Existing compile tests pass with updated assertions"
+      ]
+    }
+  ],
+  "phases": [
+    {
+      "number": 1,
+      "name": "Foundation",
+      "stories": ["US-4", "US-9", "US-10"],
+      "verification": "go test ./internal/store/... ./internal/k8s/... ./internal/recipe/... ./internal/plan/..."
+    },
+    {
+      "number": 2,
+      "name": "Core Deploy Pipeline",
+      "stories": ["US-1", "US-2", "US-5"],
+      "verification": "go test ./internal/deploy/..."
+    },
+    {
+      "number": 3,
+      "name": "Operational Commands",
+      "stories": ["US-3", "US-6", "US-7"],
+      "verification": "go test ./internal/deploy/... ./internal/cli/..."
+    },
+    {
+      "number": 4,
+      "name": "API + Integration",
+      "stories": ["US-8"],
+      "verification": "go test ./internal/server/... && go build ./..."
+    }
+  ],
+  "key_decisions": {
+    "deployment_mechanism": "client-go API with server-side apply",
+    "credentials": "mozza.yaml with kubeconfig fallback",
+    "apply_strategy": "server-side apply, field manager 'mozza'",
+    "compiler_output": "typed Go structs ([]runtime.Object)",
+    "resource_ordering": "Namespace → PVC → Deployment → Service → Ingress",
+    "readiness": "wait by default, configurable timeout (default 5m)",
+    "failure_handling": "atomic rollback, in-memory tracking",
+    "rollback_model": "recipe-based, raw .mozza stored in SQLite",
+    "environment_model": "target only (k8s or docker), no staging/production",
+    "secrets": "secret KEY from SECRET [key KEYNAME] directive",
+    "image_validation": "pre-validate via Docker registry API",
+    "namespace": "auto-create with user confirmation",
+    "error_messages": "human-friendly, no K8s jargon",
+    "state_store": "SQLite with goose migrations, full audit trail",
+    "deploy_api": "async POST returns 202, client polls status",
+    "api_auth": "none for MVP",
+    "teardown": "delete resources, confirm before PVC deletion",
+    "pvc_resize": "attempt resize, warn on failure"
+  },
+  "out_of_scope": [
+    "Multi-cluster federation",
+    "Custom K8s resources (CRDs, StatefulSets, DaemonSets, Jobs)",
+    "CI/CD integration",
+    "Staging/production environments",
+    "Promote command",
+    "Dry-run mode",
+    "API authentication"
+  ]
+}

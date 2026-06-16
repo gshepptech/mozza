@@ -1,0 +1,30 @@
+{
+  "feature": "wizard-v2",
+  "title": "Deploy Wizard v2 — Pizza-Ordering Flow",
+  "date": "2026-03-17",
+  "status": "APPROVED",
+  "user_stories": [
+    {"id": "US-1", "title": "Place an Order (Step 1)", "phase": 1},
+    {"id": "US-2", "title": "Traits Interview (Step 2)", "phase": 1},
+    {"id": "US-3", "title": "Workload Inference + Confirm (Step 3)", "phase": 1},
+    {"id": "US-4", "title": "Networking (Step 4)", "phase": 1},
+    {"id": "US-5", "title": "Dependencies (Step 5)", "phase": 2},
+    {"id": "US-6", "title": "Configuration (Step 6)", "phase": 2},
+    {"id": "US-7", "title": "Anything Else? (Step 7)", "phase": 2},
+    {"id": "US-8", "title": "Service Cart (Sidebar)", "phase": 3},
+    {"id": "US-9", "title": "Review Your Order (Step 8)", "phase": 4},
+    {"id": "US-10", "title": "Place Order + Tracking (Step 9)", "phase": 4},
+    {"id": "US-11", "title": "Image Alias Management", "phase": 5}
+  ],
+  "phases": [
+    {"id": 1, "title": "Foundation — Interview Engine + Single Service", "stories": ["US-1", "US-2", "US-3", "US-4"]},
+    {"id": 2, "title": "Dependencies + Config + Defaults", "stories": ["US-5", "US-6", "US-7"]},
+    {"id": 3, "title": "Multi-Service Cart", "stories": ["US-8"]},
+    {"id": 4, "title": "Review + Edit + Deploy", "stories": ["US-9", "US-10"]},
+    {"id": 5, "title": "Polish + Alias UX", "stories": ["US-11"]}
+  ],
+  "scope": "full_vision",
+  "target": "both_local_and_kubernetes",
+  "replaces": "GuidedWizard.tsx",
+  "metaphor": "pizza_ordering_full"
+}

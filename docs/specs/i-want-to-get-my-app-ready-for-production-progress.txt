@@ -1,0 +1,19 @@
+# Progress: Get Mozza Ready for Production
+
+## Phase 1: Foundation (Postgres + Store + Crypto)
+- [PENDING] US-1: Postgres Store Migration
+
+## Phase 2: API Hardening + Cluster CRUD
+- [PENDING] US-2: API Security Hardening
+- [PENDING] US-3: Cluster Management API
+- [PENDING] US-7: Deployment Trigger + PG NOTIFY
+
+## Phase 3: Operator
+- [PENDING] US-4: Operator Process
+- [PENDING] US-5: Docker Compose Execution
+- [PENDING] US-6: Kubernetes Execution via client-go
+
+## Phase 4: UI + Integration
+- [PENDING] US-8: Cluster Management UI Page
+- [PENDING] US-9: Deploy Trigger UI
+- [PENDING] US-10: Comprehensive Test Suite

@@ -1,0 +1,14 @@
+# Grafana — Observability dashboards
+
+App: grafana
+
+Grafana:
+  from image grafana/grafana:11-alpine
+  open to the public on port 3000
+  health check /api/health
+  run 1 copy
+  set GF_SECURITY_ADMIN_USER to "{{ADMIN_USER}}"
+  set GF_SECURITY_ADMIN_PASSWORD to "{{ADMIN_PASSWORD}}"
+  set GF_DATABASE_TYPE to "sqlite3"
+  limit cpu to "500m"
+  limit memory to "512Mi"

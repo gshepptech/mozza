@@ -1,0 +1,13 @@
+# MinIO — S3-compatible object storage
+
+App: minio
+
+Minio:
+  from image minio/minio:latest
+  open to the public on port 9000
+  on port 9001 as console
+  health check /minio/health/live
+  run 1 copy
+  set MINIO_ROOT_USER to "{{ACCESS_KEY}}"
+  set MINIO_ROOT_PASSWORD to "{{SECRET_KEY}}"
+  mount file "data" at /data

@@ -1,0 +1,17 @@
+# Postgres + pgAdmin — Database with admin UI
+
+App: postgres-admin
+
+Db:
+  postgres 16, {{STORAGE_SIZE}}, daily backups
+  set POSTGRES_USER to "{{DB_USER}}"
+  set POSTGRES_PASSWORD to "{{DB_PASSWORD}}"
+  set POSTGRES_DB to "{{DB_NAME}}"
+
+Pgadmin:
+  from image dpage/pgadmin4:latest
+  open to the public on port 80
+  run 1 copy
+  needs db
+  set PGADMIN_DEFAULT_EMAIL to "{{ADMIN_EMAIL}}"
+  set PGADMIN_DEFAULT_PASSWORD to "{{DB_PASSWORD}}"

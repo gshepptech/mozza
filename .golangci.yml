@@ -1,0 +1,157 @@
+version: "2"
+
+run:
+  timeout: 5m
+  modules-download-mode: readonly
+
+linters:
+  enable:
+    # Bug detection
+    - asasalint       # Variadic func called with []any instead of ...any
+    - bodyclose       # HTTP response body not closed
+    - durationcheck   # Bad time.Duration multiplication
+    - errcheck        # Unchecked errors
+    - govet           # Go vet checks + shadow
+    - ineffassign     # Unused assignments
+    - nilerr          # Return nil when err != nil
+    - rowserrcheck    # sql.Rows.Err() unchecked
+    - sqlclosecheck   # sql.Rows/Stmt not closed
+    - staticcheck     # Extensive static analysis
+
+    # Style
+    - asciicheck      # Non-ASCII identifiers
+    - errname         # Error type naming (ErrFoo, FooError)
+    - godot           # Comments end with period
+    - nakedret        # Named returns used naked
+    - nonamedreturns  # No named returns
+    - revive          # Configurable linter
+    - whitespace      # Leading/trailing whitespace
+
+    # Complexity
+    - cyclop          # Cyclomatic complexity
+    - funlen          # Function length
+    - gocognit        # Cognitive complexity
+    - nestif          # Deeply nested ifs
+
+    # Performance
+    - perfsprint      # fmt.Sprintf optimizable
+    - makezero        # Slice append to non-zero init
+
+    # Modernization
+    - modernize       # Use modern Go idioms
+
+    # Correctness
+    - copyloopvar     # Loop variable captured
+    - exhaustive      # Enum switch exhaustiveness
+    - unconvert       # Unnecessary type conversions
+    - unparam         # Unused function parameters
+    - unused          # Unused code
+
+    # Constants
+    - goconst         # Repeated strings → constants
+    - mnd             # Magic number detector
+
+    # Globals
+    - gochecknoglobals  # No mutable global vars
+    - gochecknoinits    # No init() functions
+
+    # Testing
+    - testifylint     # testify best practices
+    - tparallel       # t.Parallel() usage
+
+    # Logging
+    - sloglint        # slog best practices
+
+    # Security
+    - gosec           # Security issues
+
+    # Errors
+    - errorlint       # Error wrapping rules
+    - wrapcheck       # Errors from external pkgs wrapped
+
+    # Misc
+    - bodyclose       # HTTP body close
+    - misspell        # Spelling in comments
+    - wastedassign    # Wasted assignments
+
+  settings:
+    cyclop:
+      max-complexity: 15
+      package-average: 10.0
+    gocognit:
+      min-complexity: 15
+    funlen:
+      lines: 60
+      statements: 40
+    nestif:
+      min-complexity: 3
+    govet:
+      enable-all: true
+    errcheck:
+      check-type-assertions: true
+    nakedret:
+      max-func-lines: 0
+    goconst:
+      min-len: 3
+      min-occurrences: 3
+    mnd:
+      checks:
+        - argument
+        - case
+        - condition
+        - return
+      ignored-numbers:
+        - "0"
+        - "1"
+        - "2"
+        - "10"
+        - "100"
+    sloglint:
+      no-global: "all"
+      context: "scope"
+    revive:
+      rules:
+        - name: blank-imports
+        - name: context-as-argument
+        - name: dot-imports
+        - name: error-naming
+        - name: error-return
+        - name: error-strings
+        - name: exported
+        - name: increment-decrement
+        - name: indent-error-flow
+        - name: range
+        - name: receiver-naming
+        - name: time-naming
+        - name: unexported-return
+        - name: var-declaration
+        - name: var-naming
+
+  exclusions:
+    presets:
+      - comments
+      - std-error-handling
+    rules:
+      # Relax in tests
+      - path: "_test\\.go$"
+        linters:
+          - bodyclose
+          - errcheck
+          - funlen
+          - goconst
+          - gosec
+          - mnd
+          - wrapcheck
+          - gochecknoglobals
+      # cmd/ can have init() and globals
+      - path: "cmd/"
+        linters:
+          - gochecknoinits
+          - gochecknoglobals
+
+formatters:
+  enable:
+    - goimports
+  settings:
+    goimports:
+      local-prefixes: github.com/gshepptech/mozza

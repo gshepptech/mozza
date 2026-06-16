@@ -1,0 +1,48 @@
+{
+  "feature": "release",
+  "title": "Mozza v1 Launch",
+  "description": "Full public Show HN launch — premium, fully-featured self-hosted deployment platform",
+  "spec_file": "docs/specs/release.md",
+  "created": "2026-03-18",
+  "status": "specified",
+  "user_stories": [
+    {"id": "US-1", "title": "Docker Compose Import (CLI)", "phase": 1, "size": "large"},
+    {"id": "US-2", "title": "Docker Compose Import (Wizard)", "phase": 5, "size": "medium"},
+    {"id": "US-3", "title": "Framework Auto-Detect Engine", "phase": 1, "size": "large"},
+    {"id": "US-4", "title": "Per-Framework Wizard Flow", "phase": 5, "size": "medium"},
+    {"id": "US-5", "title": "Git Push Deploy — Webhook Receiver", "phase": 2, "size": "large"},
+    {"id": "US-6", "title": "Git Push Deploy — Auto-Build", "phase": 2, "size": "large"},
+    {"id": "US-7", "title": "Branch Preview Deploys", "phase": 2, "size": "large"},
+    {"id": "US-8", "title": "Auto-SSL via Certmagic", "phase": 3, "size": "large"},
+    {"id": "US-9", "title": "Built-in Reverse Proxy", "phase": 3, "size": "large"},
+    {"id": "US-10", "title": "Recipe Marketplace — Backend", "phase": 4, "size": "medium"},
+    {"id": "US-11", "title": "Recipe Marketplace — Dashboard UI", "phase": 4, "size": "medium"},
+    {"id": "US-12", "title": "One-Line Install + Binary Releases", "phase": 1, "size": "medium"},
+    {"id": "US-13", "title": "README Rewrite", "phase": 6, "size": "medium"},
+    {"id": "US-14", "title": "Real-Time Deploy Terminal in Web UI", "phase": 5, "size": "medium"},
+    {"id": "US-15", "title": "Built-in Monitoring Dashboard", "phase": 4, "size": "large"},
+    {"id": "US-16", "title": "Landing Page Redesign", "phase": 6, "size": "large"},
+    {"id": "US-17", "title": "Doctor Enhancement", "phase": 4, "size": "small"},
+    {"id": "US-18", "title": "GitHub Repo Setup", "phase": 6, "size": "small"},
+    {"id": "US-19", "title": "Discord Community", "phase": 6, "size": "small"}
+  ],
+  "phases": [
+    {"id": 1, "name": "Foundation — Import + Detect + Install", "stories": ["US-1", "US-3", "US-12"]},
+    {"id": 2, "name": "Git Deploy + Build", "stories": ["US-5", "US-6", "US-7"]},
+    {"id": 3, "name": "Reverse Proxy + Auto-SSL", "stories": ["US-8", "US-9"]},
+    {"id": 4, "name": "Marketplace + Monitoring", "stories": ["US-10", "US-11", "US-15", "US-17"]},
+    {"id": 5, "name": "UI Polish + Deploy Terminal", "stories": ["US-2", "US-4", "US-14"]},
+    {"id": 6, "name": "Landing Page + Launch Prep", "stories": ["US-13", "US-16", "US-18", "US-19"]}
+  ],
+  "technical_decisions": {
+    "build_strategy": "Auto-detect framework, generate Dockerfile from curated templates with smart customization. Build on Mozza server using local Docker.",
+    "ssl": "Embedded certmagic (Caddy's Go library) — single binary, automatic Let's Encrypt, zero config",
+    "reverse_proxy": "Built into mozza serve — single process handles dashboard + proxy + TLS",
+    "marketplace_format": "Mozza recipes (.mozza) with source links to original Helm/Compose",
+    "install": "GoReleaser cross-platform binaries + curl|sh install script + Docker image + go install",
+    "community": "Discord + GitHub Discussions",
+    "license": "TBD (BSL/SSPL direction — business model deferred)",
+    "repo": "Move to GitHub from GitLab",
+    "brand": "Premium pizza identity — playful but professional, custom SVGs, no pre-existing assets, Stripe-level quality"
+  }
+}

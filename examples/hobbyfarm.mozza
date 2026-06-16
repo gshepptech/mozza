@@ -1,0 +1,94 @@
+# HobbyFarm — Kubernetes-based interactive learning platform
+
+App: hobbyfarm
+Namespace: hobbyfarm-system
+
+Images:
+  gargantua: hobbyfarm/gargantua:v3.0.0
+  ui: hobbyfarm/ui:v3.0.0
+  shell: hobbyfarm/shell:v3.0.0
+
+# ─── Public-facing ───────────────────────────
+
+Ui:
+  from ui
+  open to the public on port 8080
+  health check /healthz
+  run 2 copies
+  needs gargantua
+
+# ─── API Server ──────────────────────────────
+
+Gargantua:
+  from gargantua
+  on port 8080 as http
+  on port 9090 as grpc
+  readiness check /ready
+  liveness check /healthz
+  run 3 copies
+  scale between 3 and 10 copies based on cpu 75%
+  keep at least 2 copies running during updates
+  needs db
+  needs shell-service
+  needs permission to manage custom-resources
+  needs permission to read and write pods
+  needs permission to read and write namespaces
+  spread copies across nodes
+  graceful shutdown 30s
+  run as user 1000
+
+# ─── Shell Service ───────────────────────────
+
+Shell-Service:
+  from shell
+  on port 8080 as http
+  on port 2222 as ssh using tcp
+  run 2 copies
+  needs permission to manage pods
+  needs permission to read namespaces
+
+# ─── Controllers ─────────────────────────────
+
+Scenario-Controller:
+  from gargantua
+  run 1 copy
+  needs permission to manage custom-resources
+  needs permission to read pods
+  set CONTROLLER_MODE to "scenario"
+
+Environment-Controller:
+  from gargantua
+  run 1 copy
+  needs permission to manage namespaces
+  needs permission to manage custom-resources
+  needs permission to read and write pods
+  set CONTROLLER_MODE to "environment"
+
+Session-Controller:
+  from gargantua
+  run 1 copy
+  needs permission to manage custom-resources
+  needs permission to manage pods
+  set CONTROLLER_MODE to "session"
+
+# ─── Database ────────────────────────────────
+
+Db:
+  postgres 16, 50Gi, daily backups
+
+# ─── Scheduled Maintenance ───────────────────
+
+Session-Cleanup:
+  from gargantua
+  run every day at 2am
+  set CONTROLLER_MODE to "cleanup"
+  needs db
+  needs permission to manage custom-resources
+
+# ─── Database Migration ──────────────────────
+
+Db-Migrate:
+  from gargantua
+  run once
+  set CONTROLLER_MODE to "migrate"
+  needs db

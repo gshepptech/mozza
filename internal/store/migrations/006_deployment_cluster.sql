@@ -1,0 +1,1 @@
+ALTER TABLE deployments ADD COLUMN cluster_id TEXT NOT NULL DEFAULT '';

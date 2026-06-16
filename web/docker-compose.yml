@@ -1,0 +1,23 @@
+services:
+    database:
+        image: postgres:16-alpine
+        networks:
+            - web-net
+    web:
+        image: nginx:alpine
+        ports:
+            - 8080:8080
+        networks:
+            - web-net
+        healthcheck:
+            test:
+                - CMD
+                - curl
+                - -f
+                - http://localhost:8080/healthz
+            interval: 10s
+            timeout: 5s
+            retries: 3
+networks:
+    web-net:
+        driver: bridge

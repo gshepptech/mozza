@@ -1,0 +1,28 @@
+# Acme Shop — full e-commerce stack with cache and worker
+
+App: acme-shop
+
+Storefront:
+  from image acme/storefront:latest
+  open to the public on port 3000
+  health check /health
+  run 3 copies
+  needs api
+
+Api:
+  from image acme/api:latest
+  on port 8080
+  health check /healthz
+  run 3 copies
+  needs db and cache
+
+Worker:
+  from image acme/worker:latest
+  run 2 copies
+  needs db and cache
+
+Db:
+  postgres 16, 20Gi, daily backups
+
+Cache:
+  redis 7

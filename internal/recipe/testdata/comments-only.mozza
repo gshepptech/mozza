@@ -1,0 +1,6 @@
+# This file contains only comments.
+# No app declaration.
+# No slices.
+#
+# It is used to verify the parser handles
+# comment-only inputs gracefully.

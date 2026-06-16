@@ -1,0 +1,32 @@
+# Implementation Progress: Mozza Deployment Pipeline
+
+## Phase 1: Foundation
+- [PENDING] Redesign internal/store with goose migrations and deploy schema (US-9)
+- [PENDING] Refactor K8s compiler to resource builder pattern with typed objects (US-10)
+- [PENDING] Add secret and pull secret directives to lexer/parser/AST (US-4)
+- [PENDING] Add SecretRef and PullSecret fields to plan builder (US-4)
+
+## Phase 2: Core Deploy Pipeline
+- [PENDING] Create internal/deploy interface and internal/deploy/k8s implementation (US-1)
+- [PENDING] Implement kubeconfig resolution with fallback (US-1)
+- [PENDING] Implement server-side apply with explicit resource ordering (US-1)
+- [PENDING] Implement readiness wait with timeout (US-1)
+- [PENDING] Implement atomic rollback (US-2)
+- [PENDING] Implement image pre-validation (US-5)
+- [PENDING] Implement secret pre-validation (US-4)
+- [PENDING] Implement namespace auto-creation with confirmation (US-1)
+- [PENDING] Wire into mozza deploy CLI command (US-1)
+
+## Phase 3: Operational Commands
+- [PENDING] Implement mozza status (compact + detail) (US-6)
+- [PENDING] Implement mozza logs (multiplexed streaming) (US-6)
+- [PENDING] Implement mozza rollback (recipe-based) (US-3)
+- [PENDING] Implement mozza down (with PVC confirmation) (US-7)
+- [PENDING] Implement resource cleanup on redeploy (US-1)
+- [PENDING] Add RBAC checks to mozza doctor (US-1)
+
+## Phase 4: API + Integration
+- [PENDING] Implement POST /api/deploy (async) (US-8)
+- [PENDING] Implement GET /api/deploys/{id} (status polling) (US-8)
+- [PENDING] Implement progress bar CLI output (US-1)
+- [PENDING] Human-friendly error message mapping (US-1)

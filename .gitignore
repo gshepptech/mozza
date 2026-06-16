@@ -1,0 +1,53 @@
+# Env files (never commit secrets)
+.env
+.env.*
+
+# Air live reload
+.air.toml
+tmp/
+
+# Build artifacts
+bin/
+coverage.out
+
+# Database files (never commit app data — these leaked user data before)
+*.db
+*.db-shm
+*.db-wal
+
+# Compiled binary
+/mozza
+
+# Dev/QA screenshots at repo root (keep real UI assets under ui/)
+/*.png
+/*.jpg
+/*.jpeg
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+
+# Foreman run artifacts
+foreman_reports/
+
+# Mozza state
+.mozza-state.json
+
+# Tool/plugin artifacts
+.claude/
+quality_reports/
+.tmp/
+.playwright-mcp/
+.serena/
+.mcp.json
+.claude-plugin/
+waypoint-snapshot.md
+
+# UI dependencies
+node_modules/
+ui/node_modules/

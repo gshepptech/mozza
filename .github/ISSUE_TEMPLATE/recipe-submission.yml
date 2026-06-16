@@ -1,0 +1,45 @@
+name: Recipe Submission
+description: Submit a new recipe for the marketplace
+labels: ["recipe"]
+body:
+  - type: input
+    id: name
+    attributes:
+      label: Recipe Name
+      placeholder: "My App"
+    validations:
+      required: true
+  - type: dropdown
+    id: category
+    attributes:
+      label: Category
+      options:
+        - Web Frameworks
+        - Databases
+        - Monitoring
+        - CMS
+        - DevTools
+        - Communication
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: What does this recipe deploy?
+    validations:
+      required: true
+  - type: textarea
+    id: recipe
+    attributes:
+      label: Recipe Content
+      description: The .mozza recipe file content
+      render: text
+    validations:
+      required: true
+  - type: input
+    id: source
+    attributes:
+      label: Source
+      description: Link to the original project
+      placeholder: "https://github.com/..."

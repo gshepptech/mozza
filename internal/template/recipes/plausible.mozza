@@ -1,0 +1,26 @@
+# Plausible — Privacy-first analytics
+
+App: plausible
+
+Plausible:
+  from image ghcr.io/plausible/community-edition:v2
+  open to the public on port 8000
+  health check /api/health
+  run 1 copy
+  needs db and events-db
+  set BASE_URL to "http://{{DOMAIN}}"
+  set SECRET_KEY_BASE to "{{SECRET_KEY}}"
+  set DATABASE_URL to "postgres://plausible:{{DB_PASSWORD}}@db:5432/plausible"
+  set CLICKHOUSE_DATABASE_URL to "http://events-db:8123/plausible_events"
+
+Db:
+  postgres 16, 10Gi
+  set POSTGRES_USER to "plausible"
+  set POSTGRES_PASSWORD to "{{DB_PASSWORD}}"
+  set POSTGRES_DB to "plausible"
+
+Events-Db:
+  from image clickhouse/clickhouse-server:24-alpine
+  on port 8123
+  each copy needs its own storage of 20Gi
+  set CLICKHOUSE_DB to "plausible_events"

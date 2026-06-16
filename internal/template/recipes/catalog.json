@@ -1,0 +1,505 @@
+[
+  {
+    "id": "wordpress",
+    "name": "WordPress",
+    "description": "Classic blog and content management system",
+    "icon": "📝",
+    "category": "cms",
+    "tags": [
+      "blog",
+      "cms",
+      "php",
+      "mysql"
+    ],
+    "variables": [
+      {
+        "key": "DB_PASSWORD",
+        "label": "Database Password",
+        "description": "Password for the WordPress database",
+        "type": "password",
+        "default": "",
+        "required": true
+      },
+      {
+        "key": "STORAGE_SIZE",
+        "label": "Storage Size",
+        "description": "Database storage allocation",
+        "type": "string",
+        "default": "10Gi",
+        "required": false
+      }
+    ],
+    "repo": "https://github.com/WordPress/WordPress",
+    "official": true,
+    "est_resources": "1 CPU, 1GB RAM"
+  },
+  {
+    "id": "ghost",
+    "name": "Ghost",
+    "description": "Modern publishing and blog platform",
+    "icon": "👻",
+    "category": "cms",
+    "tags": [
+      "blog",
+      "publishing",
+      "cms",
+      "node"
+    ],
+    "variables": [
+      {
+        "key": "DB_PASSWORD",
+        "label": "Database Password",
+        "description": "Password for the Ghost database",
+        "type": "password",
+        "default": "",
+        "required": true
+      },
+      {
+        "key": "DOMAIN",
+        "label": "Domain",
+        "description": "Public domain for the Ghost site",
+        "type": "string",
+        "default": "localhost",
+        "required": false
+      }
+    ],
+    "repo": "https://github.com/TryGhost/Ghost",
+    "official": true,
+    "est_resources": "1 CPU, 1GB RAM"
+  },
+  {
+    "id": "gitea",
+    "name": "Gitea",
+    "description": "Self-hosted Git service with web UI",
+    "icon": "🔧",
+    "category": "devtools",
+    "tags": [
+      "git",
+      "scm",
+      "devtools",
+      "go"
+    ],
+    "variables": [
+      {
+        "key": "DB_PASSWORD",
+        "label": "Database Password",
+        "description": "Password for the Gitea database",
+        "type": "password",
+        "default": "",
+        "required": true
+      }
+    ],
+    "repo": "https://github.com/go-gitea/gitea",
+    "official": true,
+    "est_resources": "1 CPU, 1GB RAM"
+  },
+  {
+    "id": "uptime-kuma",
+    "name": "Uptime Kuma",
+    "description": "Self-hosted status and uptime monitoring",
+    "icon": "📊",
+    "category": "monitoring",
+    "tags": [
+      "monitoring",
+      "uptime",
+      "status"
+    ],
+    "variables": [],
+    "repo": "https://github.com/louislam/uptime-kuma",
+    "official": true,
+    "est_resources": "0.25 CPU, 256MB RAM"
+  },
+  {
+    "id": "plausible",
+    "name": "Plausible Analytics",
+    "description": "Privacy-first web analytics",
+    "icon": "📈",
+    "category": "analytics",
+    "tags": [
+      "analytics",
+      "privacy",
+      "web"
+    ],
+    "variables": [
+      {
+        "key": "DB_PASSWORD",
+        "label": "Database Password",
+        "description": "Password for the Plausible database",
+        "type": "password",
+        "default": "",
+        "required": true
+      },
+      {
+        "key": "SECRET_KEY",
+        "label": "Secret Key",
+        "description": "Secret key for session encryption",
+        "type": "password",
+        "default": "",
+        "required": true
+      },
+      {
+        "key": "DOMAIN",
+        "label": "Domain",
+        "description": "Public domain for Plausible",
+        "type": "string",
+        "default": "localhost",
+        "required": false
+      }
+    ],
+    "repo": "https://github.com/plausible/analytics",
+    "official": true,
+    "est_resources": "2 CPU, 2GB RAM"
+  },
+  {
+    "id": "minio",
+    "name": "MinIO",
+    "description": "S3-compatible object storage",
+    "icon": "🗄️",
+    "category": "storage",
+    "tags": [
+      "storage",
+      "s3",
+      "object-storage"
+    ],
+    "variables": [
+      {
+        "key": "ACCESS_KEY",
+        "label": "Access Key",
+        "description": "MinIO root access key",
+        "type": "string",
+        "default": "minioadmin",
+        "required": false
+      },
+      {
+        "key": "SECRET_KEY",
+        "label": "Secret Key",
+        "description": "MinIO root secret key",
+        "type": "password",
+        "default": "",
+        "required": true
+      }
+    ],
+    "repo": "https://github.com/minio/minio",
+    "official": true,
+    "est_resources": "1 CPU, 1GB RAM"
+  },
+  {
+    "id": "postgres-admin",
+    "name": "Postgres + pgAdmin",
+    "description": "PostgreSQL database with pgAdmin web UI",
+    "icon": "🗃️",
+    "category": "databases",
+    "tags": [
+      "database",
+      "postgres",
+      "admin"
+    ],
+    "variables": [
+      {
+        "key": "DB_USER",
+        "label": "Database User",
+        "description": "PostgreSQL admin username",
+        "type": "string",
+        "default": "postgres",
+        "required": false
+      },
+      {
+        "key": "DB_PASSWORD",
+        "label": "Database Password",
+        "description": "Password for the database user",
+        "type": "password",
+        "default": "",
+        "required": true
+      },
+      {
+        "key": "DB_NAME",
+        "label": "Database Name",
+        "description": "Name of the default database",
+        "type": "string",
+        "default": "appdb",
+        "required": false
+      },
+      {
+        "key": "ADMIN_EMAIL",
+        "label": "pgAdmin Email",
+        "description": "Login email for pgAdmin",
+        "type": "string",
+        "default": "admin@example.com",
+        "required": false
+      },
+      {
+        "key": "STORAGE_SIZE",
+        "label": "Storage Size",
+        "description": "Database storage allocation",
+        "type": "string",
+        "default": "10Gi",
+        "required": false
+      }
+    ],
+    "repo": "https://github.com/postgres/postgres",
+    "official": true,
+    "est_resources": "1 CPU, 1GB RAM"
+  },
+  {
+    "id": "n8n",
+    "name": "n8n",
+    "description": "Workflow automation platform",
+    "icon": "⚙️",
+    "category": "automation",
+    "tags": [
+      "automation",
+      "workflow",
+      "integration"
+    ],
+    "variables": [
+      {
+        "key": "DB_PASSWORD",
+        "label": "Database Password",
+        "description": "Password for the n8n database",
+        "type": "password",
+        "default": "",
+        "required": true
+      }
+    ],
+    "repo": "https://github.com/n8n-io/n8n",
+    "official": true,
+    "est_resources": "1 CPU, 1GB RAM"
+  },
+  {
+    "id": "redis-commander",
+    "name": "Redis Commander",
+    "description": "Redis management GUI with data browser",
+    "icon": "🔴",
+    "category": "devtools",
+    "tags": [
+      "redis",
+      "gui",
+      "devtools",
+      "cache"
+    ],
+    "variables": [],
+    "repo": "https://github.com/joeferner/redis-commander",
+    "official": true,
+    "est_resources": "0.5 CPU, 256MB RAM"
+  },
+  {
+    "id": "hobbyfarm",
+    "name": "HobbyFarm",
+    "description": "Kubernetes-based interactive learning platform",
+    "icon": "🎓",
+    "category": "learning",
+    "tags": [
+      "learning",
+      "kubernetes",
+      "training",
+      "lab"
+    ],
+    "variables": [
+      {
+        "key": "GARGANTUA_VERSION",
+        "label": "Gargantua Version",
+        "description": "Version tag for the API server image",
+        "type": "string",
+        "default": "v3.3.5",
+        "required": false
+      },
+      {
+        "key": "UI_VERSION",
+        "label": "UI Version",
+        "description": "Version tag for the UI image",
+        "type": "string",
+        "default": "v3.3.6",
+        "required": false
+      },
+      {
+        "key": "ADMIN_VERSION",
+        "label": "Admin UI Version",
+        "description": "Version tag for the admin UI image",
+        "type": "string",
+        "default": "v3.3.6",
+        "required": false
+      }
+    ],
+    "repo": "https://github.com/hobbyfarm/hobbyfarm",
+    "official": true,
+    "est_resources": "2 CPU, 2GB RAM"
+  },
+  {
+    "id": "grafana",
+    "name": "Grafana",
+    "description": "Observability dashboards and visualization platform",
+    "icon": "📊",
+    "category": "monitoring",
+    "tags": [
+      "monitoring",
+      "dashboards",
+      "observability",
+      "metrics"
+    ],
+    "variables": [
+      {
+        "key": "ADMIN_USER",
+        "label": "Admin Username",
+        "description": "Grafana admin username",
+        "type": "string",
+        "default": "admin",
+        "required": false
+      },
+      {
+        "key": "ADMIN_PASSWORD",
+        "label": "Admin Password",
+        "description": "Grafana admin password",
+        "type": "password",
+        "default": "",
+        "required": true
+      }
+    ],
+    "repo": "https://github.com/grafana/grafana",
+    "official": true,
+    "est_resources": "0.5 CPU, 512MB RAM"
+  },
+  {
+    "id": "rabbitmq",
+    "name": "RabbitMQ",
+    "description": "Message broker with management UI",
+    "icon": "🐇",
+    "category": "communication",
+    "tags": [
+      "messaging",
+      "queue",
+      "amqp",
+      "broker"
+    ],
+    "variables": [
+      {
+        "key": "RABBITMQ_USER",
+        "label": "RabbitMQ User",
+        "description": "Default RabbitMQ username",
+        "type": "string",
+        "default": "guest",
+        "required": false
+      },
+      {
+        "key": "RABBITMQ_PASSWORD",
+        "label": "RabbitMQ Password",
+        "description": "Default RabbitMQ password",
+        "type": "password",
+        "default": "",
+        "required": true
+      }
+    ],
+    "repo": "https://github.com/rabbitmq/rabbitmq-server",
+    "official": true,
+    "est_resources": "0.5 CPU, 512MB RAM"
+  },
+  {
+    "id": "nextcloud",
+    "name": "Nextcloud",
+    "description": "Self-hosted file sync and share platform",
+    "icon": "☁️",
+    "category": "cms",
+    "tags": [
+      "files",
+      "sync",
+      "share",
+      "collaboration"
+    ],
+    "variables": [
+      {
+        "key": "DB_PASSWORD",
+        "label": "Database Password",
+        "description": "Password for the Nextcloud database",
+        "type": "password",
+        "default": "",
+        "required": true
+      },
+      {
+        "key": "ADMIN_USER",
+        "label": "Admin Username",
+        "description": "Nextcloud admin username",
+        "type": "string",
+        "default": "admin",
+        "required": false
+      },
+      {
+        "key": "ADMIN_PASSWORD",
+        "label": "Admin Password",
+        "description": "Nextcloud admin password",
+        "type": "password",
+        "default": "",
+        "required": true
+      },
+      {
+        "key": "STORAGE_SIZE",
+        "label": "Storage Size",
+        "description": "Database storage allocation",
+        "type": "string",
+        "default": "20Gi",
+        "required": false
+      }
+    ],
+    "repo": "https://github.com/nextcloud/server",
+    "official": true,
+    "est_resources": "1 CPU, 1GB RAM"
+  },
+  {
+    "id": "prometheus",
+    "name": "Prometheus",
+    "description": "Metrics collection and alerting toolkit",
+    "icon": "🔥",
+    "category": "monitoring",
+    "tags": [
+      "monitoring",
+      "metrics",
+      "alerting",
+      "tsdb"
+    ],
+    "variables": [
+      {
+        "key": "RETENTION",
+        "label": "Data Retention",
+        "description": "How long to keep metrics data",
+        "type": "string",
+        "default": "15d",
+        "required": false
+      }
+    ],
+    "repo": "https://github.com/prometheus/prometheus",
+    "official": true,
+    "est_resources": "1 CPU, 2GB RAM"
+  },
+  {
+    "id": "mattermost",
+    "name": "Mattermost",
+    "description": "Team messaging and collaboration platform",
+    "icon": "💬",
+    "category": "communication",
+    "tags": [
+      "chat",
+      "messaging",
+      "team",
+      "collaboration"
+    ],
+    "variables": [
+      {
+        "key": "DB_PASSWORD",
+        "label": "Database Password",
+        "description": "Password for the Mattermost database",
+        "type": "password",
+        "default": "",
+        "required": true
+      },
+      {
+        "key": "STORAGE_SIZE",
+        "label": "Storage Size",
+        "description": "Database storage allocation",
+        "type": "string",
+        "default": "10Gi",
+        "required": false
+      }
+    ],
+    "repo": "https://github.com/mattermost/mattermost",
+    "official": true,
+    "est_resources": "1 CPU, 1GB RAM"
+  }
+]

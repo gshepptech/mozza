@@ -1,0 +1,12 @@
+# Uptime Kuma — Status monitoring
+
+App: uptime-kuma
+
+Kuma:
+  from image louislam/uptime-kuma:1
+  open to the public on port 3001
+  health check /
+  run 1 copy
+  mount file "data" at /app/data
+  limit cpu to "250m"
+  limit memory to "256Mi"

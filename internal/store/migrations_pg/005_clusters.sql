@@ -1,0 +1,7 @@
+CREATE TABLE IF NOT EXISTS clusters (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL UNIQUE,
+    kubeconfig TEXT NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);

@@ -1,0 +1,12 @@
+# Prometheus — Metrics collection and alerting
+
+App: prometheus
+
+Prometheus:
+  from image prom/prometheus:v2.53.0
+  open to the public on port 9090
+  health check /-/healthy
+  run 1 copy
+  set storage.tsdb.retention.time to "{{RETENTION}}"
+  limit cpu to "1"
+  limit memory to "2Gi"
