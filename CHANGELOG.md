@@ -5,6 +5,58 @@ All notable changes to Mozza will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+Mozza is a deployment compiler with two paths: **pick it up** (`mozza compile` hands you the file)
+and **get it delivered** (Mozza deploys it for you). The compiler and its two backends already
+existed — this release names them and makes the compile-only path a first-class, documented
+surface. See [docs/VISION.md](docs/VISION.md).
+
+### Added
+
+- `mozza compile [--target <name>] [-o <dir>]` — compile a recipe to deployment artifacts on disk
+  without deploying. Contacts no cluster, reads no kubeconfig, records no deployment state, and
+  needs no config file. Default target `kubernetes`, default output directory `.`. An unknown
+  target fails before parsing and lists the valid ones
+- `mozza targets` — list the registered compile targets with descriptions, marking the default
+- `GET /api/v1/targets` — the registered targets as JSON, plus the default target name
+- `POST /api/v1/compile` — compile recipe `source` to an optional `target` and return every
+  generated file, the summary, and any capability warnings. Applies nothing, so it requires a
+  session but not the `deployer` or `admin` role
+- `internal/targets` — one place where every built-in target is registered, shared by the CLI and
+  the HTTP API, so the two can never disagree about what targets exist
+- `docs/VISION.md` — the product vision and design principles
+- `docs/specs/multi-target-compiler.md` — the multi-target compiler milestone plan
+
+### Changed
+
+- README reframed around the deployment-compiler model, documenting both paths
+- `docs/getting-started.md` covers the compile-only workflow as a first-class path, followed
+  start to finish with no cluster and no Docker
+- Capability warnings from a compile are now printed by every command that compiles, rather than
+  each command deciding for itself whether to surface them
+
+### Deprecated
+
+- `mozza deploy --export` — use `mozza compile --target kubernetes` instead. It still works and
+  still writes to `./k8s/`, but prints a deprecation notice to stderr. It will be removed in a
+  future minor version
+
+### Fixed
+
+- **The CLI now writes to stdout.** Every command's output went to stderr and stdout was always
+  empty, so `mozza targets | grep local` matched nothing and `mozza deploy --export > list.txt`
+  wrote an empty file. Cobra's `Print*` helpers resolve through `OutOrStderr`, which walks the
+  command tree for a writer and falls back to stderr when it finds none — and nothing ever set one.
+  Streams are now split by intent: payload on stdout (the `targets` and `status` tables, `logs`
+  output), progress and diagnostics on stderr (`compile`'s `wrote …` lines and summary, capability
+  warnings, the `--export` notice). `mozza compile > files.txt` stays empty by design — for a
+  command whose artifacts are files on disk, the chatter is not the output
+- Banner and how-it-works graphics no longer describe Mozza as Kubernetes-only, matching the
+  compiler reframe in the README
+- Corrected stale README claims: the template catalog holds 15 recipes (documented as 10), and the
+  minimum Go version is 1.25 (documented as 1.24, while `go.mod` requires 1.25.0)
+
 ## [1.0.0] — 2026-03-19
 
 ### Added

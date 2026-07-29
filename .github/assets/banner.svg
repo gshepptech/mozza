@@ -27,9 +27,9 @@
   <text x="132" y="98" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="58" font-weight="800" fill="#ffffff" letter-spacing="-1">Mozza</text>
 
   <!-- tagline -->
-  <text x="135" y="138" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="20" font-weight="500" fill="#ffffff" opacity="0.97">Describe your app in plain English. Mozza writes the Kubernetes manifests.</text>
+  <text x="135" y="138" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="20" font-weight="500" fill="#ffffff" opacity="0.97">Describe your app in plain English. Mozza writes the deployment files.</text>
 
   <!-- recipe → resources chip -->
   <rect x="135" y="156" width="548" height="28" rx="14" fill="#ffffff" opacity="0.15"/>
-  <text x="151" y="175" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="12.5" fill="#ffffff" opacity="0.95">open to the public on port 3000 &#8594; Deployment · Service · Ingress</text>
+  <text x="151" y="175" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="12.5" fill="#ffffff" opacity="0.95">open to the public on port 3000 &#8594; Kubernetes manifests · Docker Compose</text>
 </svg>
