@@ -454,16 +454,7 @@
       "alerting",
       "tsdb"
     ],
-    "variables": [
-      {
-        "key": "RETENTION",
-        "label": "Data Retention",
-        "description": "How long to keep metrics data",
-        "type": "string",
-        "default": "15d",
-        "required": false
-      }
-    ],
+    "variables": [],
     "repo": "https://github.com/prometheus/prometheus",
     "official": true,
     "est_resources": "1 CPU, 2GB RAM"

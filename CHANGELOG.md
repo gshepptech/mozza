@@ -35,6 +35,10 @@ surface. See [docs/VISION.md](docs/VISION.md).
   start to finish with no cluster and no Docker
 - Capability warnings from a compile are now printed by every command that compiles, rather than
   each command deciding for itself whether to surface them
+- Environment variable keys now follow the Kubernetes environment variable name rule — letters,
+  digits, `_`, `-` and `.`, not starting with a digit — instead of uppercase and underscores only.
+  The rule is taken from `k8s.io/apimachinery` rather than restated, so it cannot drift from what a
+  cluster will accept, and a rejected key is now explained in words instead of as a regex
 
 ### Deprecated
 
@@ -42,8 +46,20 @@ surface. See [docs/VISION.md](docs/VISION.md).
   still writes to `./k8s/`, but prints a deprecation notice to stderr. It will be removed in a
   future minor version
 
+### Removed
+
+- The Prometheus recipe's `RETENTION` variable, which never took effect. Retention is set by the
+  `--storage.tsdb.retention.time` command-line flag, which a recipe cannot yet express, so the
+  control was inert. Retention stays at the Prometheus default of 15 days — the same value the
+  catalog advertised — so behaviour is unchanged
+
 ### Fixed
 
+- **Three bundled recipes could not be deployed at all.** `ghost`, `gitea` and `prometheus`
+  installed cleanly and then failed to compile, because env-key validation was narrower than
+  Kubernetes' own rule and rejected keys as ordinary as Ghost's `database__connection__user`. Every
+  recipe in the catalog is now walked through parse, build and validate by `go test`, so a bundled
+  recipe that cannot be compiled fails the build rather than the user's first deploy
 - **The CLI now writes to stdout.** Every command's output went to stderr and stdout was always
   empty, so `mozza targets | grep local` matched nothing and `mozza deploy --export > list.txt`
   wrote an empty file. Cobra's `Print*` helpers resolve through `OutOrStderr`, which walks the

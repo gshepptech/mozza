@@ -7,6 +7,8 @@ Prometheus:
   open to the public on port 9090
   health check /-/healthy
   run 1 copy
-  set storage.tsdb.retention.time to "{{RETENTION}}"
+  # Retention stays at the Prometheus default of 15 days. It is set by the
+  # --storage.tsdb.retention.time command-line flag, and a recipe can only set
+  # environment variables on a slice, not container arguments.
   limit cpu to "1"
   limit memory to "2Gi"

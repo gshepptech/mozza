@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+
+	"k8s.io/apimachinery/pkg/util/validation"
 )
 
 // validSliceName matches DNS-compatible names: lowercase alphanumeric with
@@ -14,10 +16,6 @@ var validSliceName = regexp.MustCompile(`^[a-z]([a-z0-9-]*[a-z0-9])?$`)
 // validHealthPath matches safe URL paths: must start with / and contain only
 // alphanumeric, hyphens, underscores, dots, and slashes.
 var validHealthPath = regexp.MustCompile(`^/[a-zA-Z0-9/_.-]*$`)
-
-// validEnvKey matches environment variable names: uppercase letters, digits,
-// and underscores, starting with a letter.
-var validEnvKey = regexp.MustCompile(`^[A-Z][A-Z0-9_]*$`)
 
 // validDomain matches simple domain names.
 var validDomain = regexp.MustCompile(`^[a-zA-Z0-9]([a-zA-Z0-9.-]*[a-zA-Z0-9])?$`)
@@ -129,8 +127,8 @@ func validateOneSlice(idx int, s Slice, seen, allNames map[string]bool) []error 
 	}
 
 	for key := range s.Env {
-		if !validEnvKey.MatchString(key) {
-			errs = append(errs, fmt.Errorf("slice[%d] %q: env key %q must match ^[A-Z][A-Z0-9_]*$", idx, s.Name, key))
+		if problem := envKeyProblem(key); problem != "" {
+			errs = append(errs, fmt.Errorf("slice[%d] %q: env key %q %s", idx, s.Name, key, problem))
 		}
 	}
 
@@ -155,6 +153,35 @@ func validateOneSlice(idx int, s Slice, seen, allNames map[string]bool) []error 
 	errs = append(errs, validateKindConstraints(idx, s, allNames)...)
 
 	return errs
+}
+
+// envKeyProblem describes why key is not a usable environment variable name,
+// or returns "" when it is fine. The rule is delegated to apimachinery so it
+// cannot drift from the Kubernetes semantics Mozza compiles against, but the
+// wording is Mozza's own: apimachinery builds its message with RegexError,
+// which quotes the raw pattern at the reader.
+//
+// IsEnvVarName is the deliberate choice over the wider IsRelaxedEnvVarName.
+// The extra names the relaxed rule allows are only accepted by clusters running
+// with the RelaxedEnvironmentVariableValidation feature gate enabled, and a
+// recipe has to compile the same way everywhere.
+func envKeyProblem(key string) string {
+	if key == "" {
+		return "must not be empty"
+	}
+
+	if len(validation.IsEnvVarName(key)) == 0 {
+		return ""
+	}
+
+	// IsEnvVarName rejects for two unrelated reasons, so report only the one the
+	// key actually broke rather than reciting both at every reader.
+	if key == "." || strings.HasPrefix(key, "..") {
+		return `must not be "." or ".." or start with ".."`
+	}
+
+	return `must contain only letters, digits, underscores, hyphens, and dots, ` +
+		`and must not start with a digit (for example DATABASE_URL)`
 }
 
 // validateKindConstraints checks kind-specific semantic rules and new field

@@ -13,7 +13,7 @@ interface StepConfigurationProps {
   onUpdate: (envVars: EnvVarEntry[]) => void;
 }
 
-const ENV_VAR_REGEX = /^[A-Z][A-Z0-9_]*$/;
+const ENV_VAR_REGEX = /^[-._a-zA-Z][-._a-zA-Z0-9]*$/;
 
 const QUICK_ADD_OPTIONS = [
   { key: "LOG_LEVEL", value: "info", label: "+ Logging level" },
@@ -173,7 +173,8 @@ export default function StepConfiguration({
       {/* Validation hints */}
       {envVars.some((e) => e.key !== "" && !isValidKey(e.key)) && (
         <p style={{ color: "#ef4444", fontSize: 12, margin: 0 }}>
-          Keys must be uppercase letters, digits, and underscores (e.g. MY_VAR_1).
+          Keys may contain letters, digits, underscores, hyphens, and dots, and must not start with a
+          digit (e.g. MY_VAR_1).
         </p>
       )}
 

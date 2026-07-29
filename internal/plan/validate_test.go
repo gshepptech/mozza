@@ -180,9 +180,9 @@ func TestValidate_SliceRules(t *testing.T) {
 			wantErr: "must start with /",
 		},
 		{
-			name: "invalid env key lowercase",
+			name: "invalid env key leading digit",
 			modify: func(p *plan.AppPlan) {
-				p.Slices[0].Env = map[string]string{"database_url": "postgres://localhost/db"}
+				p.Slices[0].Env = map[string]string{"1BAD": "postgres://localhost/db"}
 			},
 			wantErr: "env key",
 		},
@@ -408,14 +408,22 @@ func TestValidate_EnvKeyFormat(t *testing.T) {
 		{name: "uppercase with digits", key: "API_V2", wantErr: false},
 		{name: "uppercase with underscores", key: "DATABASE_URL", wantErr: false},
 		{name: "single letter", key: "X", wantErr: false},
+		{name: "all lowercase", key: "port", wantErr: false},
+		{name: "mixed case", key: "Database_Url", wantErr: false},
+		{name: "contains hyphen", key: "API-KEY", wantErr: false},
+		{name: "starts with underscore", key: "_SECRET", wantErr: false},
+		{name: "contains dot", key: "MY_ENV.NAME", wantErr: false},
+		{name: "lowercase with dot and hyphen", key: "my.env-name", wantErr: false},
+		{name: "ghost nested key", key: "database__connection__user", wantErr: false},
+		{name: "gitea nested key", key: "GITEA__database__HOST", wantErr: false},
 		{name: "starts with digit", key: "3PO", wantErr: true},
-		{name: "all lowercase", key: "port", wantErr: true},
-		{name: "mixed case", key: "Database_Url", wantErr: true},
-		{name: "contains hyphen", key: "API-KEY", wantErr: true},
 		{name: "contains space", key: "MY VAR", wantErr: true},
-		{name: "starts with underscore", key: "_SECRET", wantErr: true},
 		{name: "empty key", key: "", wantErr: true},
 		{name: "leading digit with uppercase", key: "1PASSWORD", wantErr: true},
+		{name: "leading digit with letters", key: "1BAD", wantErr: true},
+		{name: "current directory", key: ".", wantErr: true},
+		{name: "parent directory", key: "..", wantErr: true},
+		{name: "parent directory prefix", key: "..foo", wantErr: true},
 	}
 
 	for _, tt := range tests {
@@ -440,6 +448,7 @@ func TestValidate_EnvKeyFormat(t *testing.T) {
 			if tt.wantErr {
 				require.Error(t, err)
 				assert.Contains(t, err.Error(), "env key")
+				assert.NotContains(t, err.Error(), "^", "the rule must be stated in words, not as a regex")
 			} else {
 				assert.NoError(t, err)
 			}

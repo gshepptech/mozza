@@ -1,10 +1,15 @@
 package template
 
 import (
+	"io/fs"
+	"path"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/gshepptech/mozza/internal/plan"
 	"github.com/gshepptech/mozza/internal/recipe"
 )
 
@@ -141,6 +146,38 @@ func TestAllTemplatesParseAfterRender(t *testing.T) {
 			r, err := p.Parse()
 			require.NoError(t, err, "Parse failed for %s:\n%s", tmpl.ID, rendered)
 			assert.NotEmpty(t, r.Name, "recipe Name should be set for %s", tmpl.ID)
+		})
+	}
+}
+
+// TestAllRecipesCompileClean walks every embedded recipe file the way
+// `mozza recipe install` does — RenderDefaults, then parse, build and validate —
+// so a bundled recipe that cannot be compiled fails the build rather than the
+// user's first deploy. Globbing the filesystem rather than the catalog also
+// catches a .mozza file that was added without a catalog entry.
+func TestAllRecipesCompileClean(t *testing.T) {
+	catalog, err := Load()
+	require.NoError(t, err)
+
+	files, err := fs.Glob(recipesFS, "recipes/*.mozza")
+	require.NoError(t, err)
+	require.NotEmpty(t, files, "no recipe files found in the embedded filesystem")
+
+	for _, file := range files {
+		id := strings.TrimSuffix(path.Base(file), ".mozza")
+		t.Run(id, func(t *testing.T) {
+			tmpl, err := catalog.Get(id)
+			require.NoError(t, err, "%s has no catalog.json entry", file)
+
+			rendered := RenderDefaults(*tmpl)
+
+			p := recipe.NewParser(rendered)
+			r, err := p.Parse()
+			require.NoError(t, err, "Parse failed for %s:\n%s", id, rendered)
+
+			ap, err := plan.Build(r)
+			require.NoError(t, err, "Build failed for %s", id)
+			require.NoError(t, plan.Validate(ap), "Validate failed for %s", id)
 		})
 	}
 }
