@@ -19,6 +19,7 @@ import (
 
 	"github.com/gshepptech/mozza/internal/auth"
 	"github.com/gshepptech/mozza/internal/cluster"
+	"github.com/gshepptech/mozza/internal/compile"
 	"github.com/gshepptech/mozza/internal/deploy"
 	"github.com/gshepptech/mozza/internal/doctor"
 	"github.com/gshepptech/mozza/internal/gitdeploy"
@@ -27,6 +28,7 @@ import (
 	"github.com/gshepptech/mozza/internal/plan"
 	"github.com/gshepptech/mozza/internal/proxy"
 	"github.com/gshepptech/mozza/internal/store"
+	"github.com/gshepptech/mozza/internal/targets"
 	"github.com/gshepptech/mozza/internal/template"
 )
 
@@ -89,6 +91,13 @@ type Config struct {
 	// Proxy is the optional reverse proxy server. When set, proxy status
 	// endpoints are available in the API.
 	Proxy *proxy.Server
+	// Targets is the compile-target registry. When nil, the server falls back to
+	// targets.DefaultRegistry() so every built-in target works out of the box.
+	//
+	// The rest of this struct uses "when nil, the endpoint returns 503" because
+	// those dependencies reach outside the process. Compiling does not — it is a
+	// pure function of the recipe — so there is nothing to degrade to.
+	Targets *compile.Registry
 }
 
 // Server is the Mozza HTTP dashboard server.
@@ -119,6 +128,12 @@ type Server struct {
 // New creates a Server with the given configuration.
 // It initialises the router, applies middleware, and registers routes.
 func New(cfg Config) *Server {
+	// Resolved here rather than at every call site so callers that do not care
+	// about compile targets need no wiring at all.
+	if cfg.Targets == nil {
+		cfg.Targets = targets.DefaultRegistry()
+	}
+
 	s := &Server{
 		router: chi.NewRouter(),
 		cfg:    cfg,

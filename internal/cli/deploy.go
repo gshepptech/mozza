@@ -12,8 +12,8 @@ import (
 	"github.com/gshepptech/mozza/internal/config"
 	"github.com/gshepptech/mozza/internal/deploy"
 	k8sdeploy "github.com/gshepptech/mozza/internal/deploy/k8s"
-	"github.com/gshepptech/mozza/internal/plan"
 	"github.com/gshepptech/mozza/internal/store"
+	"github.com/gshepptech/mozza/internal/targets"
 )
 
 // newDeployCmd creates the "mozza deploy" command.
@@ -27,7 +27,8 @@ func newDeployCmd() *cobra.Command {
 
 	cmd.Flags().String("context", "", "kubeconfig context override")
 	cmd.Flags().Duration("timeout", 5*time.Minute, "readiness wait timeout")
-	cmd.Flags().Bool("export", false, "write manifests to disk without applying")
+	cmd.Flags().Bool("export", false,
+		`write manifests to disk without applying (deprecated: use "mozza compile --target kubernetes")`)
 
 	return cmd
 }
@@ -47,7 +48,7 @@ func runDeploy(cmd *cobra.Command, _ []string) error {
 
 	// Export mode: write manifests and exit.
 	if export {
-		return exportManifests(cmd, p)
+		return exportManifests(cmd)
 	}
 
 	// Read raw recipe content for audit trail.
@@ -116,7 +117,13 @@ func runDeploy(cmd *cobra.Command, _ []string) error {
 }
 
 // exportManifests compiles and writes K8s manifests to disk without applying.
-func exportManifests(cmd *cobra.Command, p *plan.AppPlan) error {
-	_, err := compileAndWrite(cmd, "kubernetes")
+//
+// This is `mozza compile --target kubernetes` under another name. It stays for
+// compatibility; the notice goes to stderr so it cannot corrupt piped output.
+func exportManifests(cmd *cobra.Command) error {
+	cmd.PrintErrln("Warning: --export is deprecated; use `mozza compile --target kubernetes` instead.")
+
+	_, err := compileAndWrite(cmd, targets.Default, ".")
+
 	return err
 }

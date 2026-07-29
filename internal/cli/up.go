@@ -27,7 +27,7 @@ func newUpCmd() *cobra.Command {
 // runUp generates a docker-compose.yml from the recipe and starts services
 // with docker compose up -d.
 func runUp(cmd *cobra.Command, _ []string) error {
-	p, err := compileAndWrite(cmd, "local")
+	p, err := compileAndWrite(cmd, "local", ".")
 	if err != nil {
 		return err
 	}

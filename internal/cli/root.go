@@ -15,10 +15,9 @@ import (
 
 	"github.com/gshepptech/mozza/internal/compile"
 	"github.com/gshepptech/mozza/internal/config"
-	"github.com/gshepptech/mozza/internal/k8s"
-	"github.com/gshepptech/mozza/internal/local"
 	"github.com/gshepptech/mozza/internal/plan"
 	"github.com/gshepptech/mozza/internal/recipe"
+	"github.com/gshepptech/mozza/internal/targets"
 )
 
 // New creates the root Cobra command with all subcommands registered.
@@ -34,6 +33,18 @@ func New() *cobra.Command {
 		SilenceErrors: true,
 	}
 
+	// Cobra's Print* helpers resolve through OutOrStderr, which walks the
+	// command tree for a writer set by SetOut and only falls back to os.Stderr
+	// when it finds none. Nothing set one, so every Print* in the tree landed on
+	// stderr and stdout was always empty — `mozza targets | grep local` matched
+	// nothing and `mozza compile > out.txt` wrote an empty file. Setting the
+	// writer once on the root reaches every subcommand through that same walk.
+	//
+	// Progress and diagnostics deliberately stay on stderr via PrintErr*: for a
+	// command whose payload is files on disk, the chatter is not the output. See
+	// writeCompileResult and printCompileWarnings.
+	root.SetOut(os.Stdout)
+
 	root.PersistentFlags().String("log-level", "info", "logging level (debug, info, warn, error)")
 	root.PersistentFlags().String("recipe", "app.mozza", "path to the recipe file")
 
@@ -42,6 +53,8 @@ func New() *cobra.Command {
 		newInitCmd(),
 		newUpCmd(),
 		newDownCmd(),
+		newCompileCmd(),
+		newTargetsCmd(),
 		newDeployCmd(),
 		newStatusCmd(),
 		newDoctorCmd(),
@@ -111,15 +124,6 @@ func loadPlan(recipePath string) (*plan.AppPlan, error) {
 	return p, nil
 }
 
-// newRegistry creates a compiler registry with all built-in compilers.
-func newRegistry() *compile.Registry {
-	reg := compile.NewRegistry()
-	reg.Register("local", local.New())
-	reg.Register("kubernetes", k8s.New())
-
-	return reg
-}
-
 // writeCompileResult writes all output files from a compile result to disk
 // relative to the given output directory.
 func writeCompileResult(cmd *cobra.Command, result *compile.Result, outDir string) error {
@@ -149,7 +153,9 @@ func writeCompileResult(cmd *cobra.Command, result *compile.Result, outDir strin
 			return fmt.Errorf("writeCompileResult: %w", err)
 		}
 
-		cmd.Printf("  wrote %s\n", target)
+		// Progress, not payload: the artifacts are the files themselves, so this
+		// goes to stderr and leaves stdout clean for redirection.
+		cmd.PrintErrf("  wrote %s\n", target)
 	}
 
 	return nil
@@ -162,9 +168,9 @@ func recipeFlagValue(cmd *cobra.Command) string {
 }
 
 // compileAndWrite runs the full pipeline: load plan, compile with the named
-// target, and write output files. It returns the compiled plan for callers
-// that need to record deployment state.
-func compileAndWrite(cmd *cobra.Command, target string) (*plan.AppPlan, error) {
+// target, and write output files into outDir. It returns the compiled plan for
+// callers that need to record deployment state.
+func compileAndWrite(cmd *cobra.Command, target, outDir string) (*plan.AppPlan, error) {
 	recipePath := recipeFlagValue(cmd)
 
 	p, err := loadPlan(recipePath)
@@ -172,9 +178,7 @@ func compileAndWrite(cmd *cobra.Command, target string) (*plan.AppPlan, error) {
 		return nil, err
 	}
 
-	reg := newRegistry()
-
-	compiler, err := reg.Get(target)
+	compiler, err := targets.DefaultRegistry().Get(target)
 	if err != nil {
 		return nil, fmt.Errorf("compileAndWrite: %w", err)
 	}
@@ -184,11 +188,31 @@ func compileAndWrite(cmd *cobra.Command, target string) (*plan.AppPlan, error) {
 		return nil, fmt.Errorf("compileAndWrite: %w", err)
 	}
 
-	if err := writeCompileResult(cmd, result, "."); err != nil {
+	if err := writeCompileResult(cmd, result, outDir); err != nil {
 		return nil, err
 	}
 
-	cmd.Println(result.Summary)
+	cmd.PrintErrln(result.Summary)
+	printCompileWarnings(cmd, result)
 
 	return p, nil
+}
+
+// printCompileWarnings reports a target's capability gaps. Warnings exist to
+// tell the user what the target could not express, so every caller of
+// compileAndWrite surfaces them rather than each deciding for itself.
+//
+// This is the CLI's single renderer for compile diagnostics, on stderr so a
+// redirected stdout still leaves gaps visible to a human. When Result.Warnings
+// becomes Result.Diagnostics (M1 / AD-3), extend this function rather than
+// adding a second render path.
+func printCompileWarnings(cmd *cobra.Command, result *compile.Result) {
+	if len(result.Warnings) == 0 {
+		return
+	}
+
+	cmd.PrintErrf("\n%d warning(s):\n", len(result.Warnings))
+	for _, w := range result.Warnings {
+		cmd.PrintErrf("  ! %s\n", w)
+	}
 }

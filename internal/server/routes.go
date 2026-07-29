@@ -87,6 +87,13 @@ func (s *Server) registerRoutes() {
 			// Registry scanning — discover images in a Docker Hub namespace.
 			r.Get("/registry/scan", s.handleScanNamespace())
 
+			// Compile targets. POST /compile is mutation-shaped but mutates
+			// nothing — it writes no store rows and contacts no cluster — so it
+			// deliberately sits with the read-only routes rather than behind
+			// requireRole("deployer","admin"). A viewer can compile.
+			r.Get("/targets", s.handleTargets())
+			r.Post("/compile", s.handleCompile())
+
 			// Proxy endpoints — routing table and certificate status.
 			r.Get("/proxy/routes", s.handleProxyRoutes())
 			r.Get("/proxy/certificates", s.handleProxyCertificates())

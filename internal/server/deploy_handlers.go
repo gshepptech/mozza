@@ -16,10 +16,10 @@ import (
 	"github.com/gshepptech/mozza/internal/compile"
 	"github.com/gshepptech/mozza/internal/deploy"
 	k8sdeployer "github.com/gshepptech/mozza/internal/deploy/k8s"
-	"github.com/gshepptech/mozza/internal/k8s"
 	"github.com/gshepptech/mozza/internal/plan"
 	"github.com/gshepptech/mozza/internal/recipe"
 	"github.com/gshepptech/mozza/internal/store"
+	"github.com/gshepptech/mozza/internal/targets"
 )
 
 type deployPreviewRequest struct {
@@ -157,12 +157,16 @@ func (s *Server) handleDeployPreview() http.HandlerFunc {
 		}
 		summary.Total = len(p.Slices)
 
-		// Compile to K8s manifests for preview.
+		// Compile to K8s manifests for preview. The target is fixed here — this
+		// endpoint's contract is a manifest string — but it resolves through the
+		// registry so the server holds no direct reference to a backend.
+		// A missing target is treated like a compile failure: preview omits the
+		// manifests rather than failing the whole response.
 		var manifests string
-		compiler := k8s.New()
-		result, compileErr := compiler.Compile(r.Context(), p)
-		if compileErr == nil {
-			manifests = compileResultToYAML(result)
+		if compiler, err := s.cfg.Targets.Get(targets.Default); err == nil {
+			if result, compileErr := compiler.Compile(r.Context(), p); compileErr == nil {
+				manifests = compileResultToYAML(result)
+			}
 		}
 
 		JSON(w, http.StatusOK, deployPreviewResponse{

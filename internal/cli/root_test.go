@@ -33,6 +33,8 @@ func TestNew_HasAllSubcommands(t *testing.T) {
 		"init",
 		"up",
 		"down",
+		"compile",
+		"targets",
 		"deploy",
 		"status",
 		"doctor",
