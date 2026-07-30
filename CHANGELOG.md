@@ -62,6 +62,32 @@ surface. See [docs/VISION.md](docs/VISION.md).
 
 ### Fixed
 
+- **A storage size that was not a quantity passed `mozza validate` and then killed `mozza compile`
+  with a Go stack trace.** `each copy needs its own storage of BIGGISH` validated cleanly, reported
+  the recipe valid, and then panicked inside `resource.MustParse` — which panics rather than
+  returning an error — printing the raw apimachinery regular expression and a goroutine dump at
+  someone who had written one wrong word. Three fields were never checked at all: a stateful slice's
+  per-copy storage, a database's and a cache's, so `postgres 16, 500K, daily backups` did the same
+  thing (only a lowercase `k` is an SI suffix). Every field that becomes a Kubernetes quantity —
+  those three plus the CPU and memory limits — is now checked by `mozza validate` against
+  `resource.ParseQuantity`, the same rule a cluster applies, so the panic is unreachable from any
+  recipe that validates. The value is named and the accepted form explained in words rather than as
+  a regular expression; a size still carrying an unrendered `{{STORAGE_SIZE}}` is told that a
+  template variable was never substituted, instead of being handed a number-format complaint about a
+  value that was never meant to survive rendering; and a negative size is rejected, where
+  `postgres 16, -1Gi` used to validate and compile to `storage: -1Gi`. The rule the CPU and memory
+  limits were held to was a hand-written regular expression that had drifted from Kubernetes in both
+  directions — it rejected `2G`, `1e3`, `500k` and `1Ei`, which Kubernetes accepts — and it was also
+  the only thing keeping values the local target cannot render out of a generated
+  `docker-compose.yml`, so both quantity converters were brought onto the same rule in the same
+  change. The local target's memory limit is now the number Kubernetes means wherever the two used to
+  read the same string differently — a suffix Compose spells differently (`limit memory to 500m` was
+  500 MiB to Compose and half a byte to Kubernetes), a suffix it does not accept at all
+  (`limit memory to 1Ti` reached it verbatim and was refused with `invalid suffix`, the converter
+  having no `Ti` mapping), or a size that is not a whole number of bytes, which Compose truncated and
+  Kubernetes rounds up (`1.5` was 1 byte and is now 2; `1.1Mi` was 1153433 and is now 1153434).
+  Compose's `K`/`M`/`G` are 1024-based, so the existing `Mi`→`M` rename was already byte-exact and
+  stays so: `256Mi` still compiles to `256M`, which Compose reads as 268435456
 - **Three bundled recipes could not be deployed at all.** `ghost`, `gitea` and `prometheus`
   installed cleanly and then failed to compile, because env-key validation was narrower than
   Kubernetes' own rule and rejected keys as ordinary as Ghost's `database__connection__user`. Every

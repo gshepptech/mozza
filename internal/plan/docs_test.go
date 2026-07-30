@@ -17,11 +17,11 @@ import (
 )
 
 // minCompiledDocRecipes is the floor on how many documentation blocks must
-// actually reach the end of the pipeline. Twenty compile today; the two blocks
-// of headroom absorb ordinary editing. A bare non-zero check would let someone
-// silence the suite by marking every awkward block `ignore`, so removing doc
-// examples has to be a deliberate act of lowering this number.
-const minCompiledDocRecipes = 18
+// actually reach the end of the pipeline. Seventeen compile today; the two
+// blocks of headroom absorb ordinary editing. A bare non-zero check would let
+// someone silence the suite by marking every awkward block `ignore`, so removing
+// doc examples has to be a deliberate act of lowering this number.
+const minCompiledDocRecipes = 15
 
 // appDeclaration matches the line that makes a fenced block a recipe rather
 // than shell, YAML or prose.
@@ -44,9 +44,13 @@ type fencedBlock struct {
 // field on the fence itself, as in ```mozza ignore. The marker travels on the
 // fence so it cannot drift away from the block it marks.
 //
-// The pipeline deliberately stops at Validate. Several blocks reproduce catalog
-// templates with unrendered {{...}} placeholders; those validate cleanly but
-// panic resource.MustParse if compiled any further.
+// The pipeline stops at Validate, which is where loadPlan stops too. It used to
+// stop there of necessity: blocks reproducing catalog templates with unrendered
+// {{...}} placeholders validated cleanly and then panicked in resource.MustParse
+// if taken any further. A placeholder in a quantity slot is now a validation
+// error, so those blocks carry an `ignore` marker instead and nothing reaching
+// this far can panic — which makes extending the run to Compile a change worth
+// making on its own terms rather than a hazard to be avoided.
 //
 // The subtests run sequentially on purpose: they tally the counts the floor
 // below is asserted against, which a parallel subtest would race and defer past

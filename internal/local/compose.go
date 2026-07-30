@@ -8,38 +8,74 @@ import (
 	"strings"
 
 	"gopkg.in/yaml.v3"
+	"k8s.io/apimachinery/pkg/api/resource"
 
 	"github.com/gshepptech/mozza/internal/plan"
 )
 
 // k8sCPUToCompose converts a Kubernetes CPU value (e.g., "500m", "1", "2")
 // to a Docker Compose cpus float string (e.g., "0.5", "1", "2").
+//
+// Both converters here parse with resource.ParseQuantity rather than reading
+// suffixes off the string, because the validator now admits every quantity
+// Kubernetes does — "2G", "1e3", "500u" and "1Ei" among them — and a converter
+// that recognises only the handful of suffixes an old regex allowed would pass
+// the rest through verbatim into a file Compose then refuses to load.
+//
+// A value that will not parse is returned unchanged. That branch is unreachable
+// for a plan that passed Validate and exists only because these compilers are
+// also reachable with a hand-built plan.
 func k8sCPUToCompose(cpu string) string {
 	if cpu == "" {
 		return ""
 	}
-	if strings.HasSuffix(cpu, "m") {
-		millis, err := strconv.ParseFloat(strings.TrimSuffix(cpu, "m"), 64)
-		if err != nil {
-			return cpu
-		}
-		return strconv.FormatFloat(millis/1000, 'f', -1, 64)
+
+	q, err := resource.ParseQuantity(cpu)
+	if err != nil {
+		return cpu
 	}
-	return cpu // already a plain number
+
+	return strconv.FormatFloat(q.AsApproximateFloat64(), 'f', -1, 64)
 }
 
 // k8sMemToCompose converts a Kubernetes memory value (e.g., "256Mi", "1Gi")
 // to a Docker Compose memory string (e.g., "256M", "1G").
+//
+// Compose's K/M/G are 1024-based and it rejects the "i" forms outright with
+// "invalid suffix", so the conversion is load-bearing rather than cosmetic:
+// "256M" is exactly 256Mi to Compose, which is why the byte count is preserved
+// across the rename. Verified with `docker compose config`, not inferred.
+//
+// Formatting back into a unit rather than emitting a raw byte count keeps a file
+// that users read and hand-edit legible. The largest exact unit wins, so a value
+// that is a whole number of GiB stays one.
 func k8sMemToCompose(mem string) string {
 	if mem == "" {
 		return ""
 	}
-	// Docker Compose uses M/G (powers of 1000) but also accepts them as
-	// binary-compatible. K8s Mi/Gi are binary. Close enough for limits.
-	mem = strings.Replace(mem, "Mi", "M", 1)
-	mem = strings.Replace(mem, "Gi", "G", 1)
-	mem = strings.Replace(mem, "Ki", "K", 1)
-	return mem
+
+	q, err := resource.ParseQuantity(mem)
+	if err != nil {
+		return mem
+	}
+
+	// The b > 0 guard does two jobs, and both matter. It keeps a zero limit as
+	// "0" instead of "0G", and it routes every negative into the byte-count
+	// branch — Compose rejects "-1G" and "-1073741824" alike, so neither form
+	// ships a working file, but only the second reports the number the author
+	// actually wrote. Relaxing this to b >= 0 silently turns 0 into "0G".
+	b := q.Value()
+
+	switch {
+	case b > 0 && b%(1<<30) == 0:
+		return strconv.FormatInt(b>>30, 10) + "G"
+	case b > 0 && b%(1<<20) == 0:
+		return strconv.FormatInt(b>>20, 10) + "M"
+	case b > 0 && b%(1<<10) == 0:
+		return strconv.FormatInt(b>>10, 10) + "K"
+	default:
+		return strconv.FormatInt(b, 10)
+	}
 }
 
 // Healthcheck timing defaults. They apply only where the recipe states no

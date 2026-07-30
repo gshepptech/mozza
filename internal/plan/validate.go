@@ -6,6 +6,7 @@ import (
 	"regexp"
 	"strings"
 
+	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/util/validation"
 )
 
@@ -39,9 +40,6 @@ var kindsWithReplicas = map[SliceKind]bool{ //nolint:gochecknoglobals // immutab
 	SliceKindStateful: true,
 	SliceKindGateway:  true,
 }
-
-// validResourceValue matches Kubernetes-style resource values (e.g., "500m", "256Mi", "1Gi", "0.5").
-var validResourceValue = regexp.MustCompile(`^[0-9]+(\.[0-9]+)?(m|Mi|Gi|Ki|Ti)?$`)
 
 // Validate checks an AppPlan for structural and semantic correctness.
 // It returns a joined error containing all validation failures found.
@@ -141,14 +139,7 @@ func validateOneSlice(idx int, s Slice, seen, allNames map[string]bool) []error 
 		errs = append(errs, fmt.Errorf("slice[%d] %q: restart policy %q must be one of: always, unless-stopped, on-failure, no", idx, s.Name, s.RestartPolicy))
 	}
 
-	if s.Resources != nil {
-		if s.Resources.CPULimit != "" && !validResourceValue.MatchString(s.Resources.CPULimit) {
-			errs = append(errs, fmt.Errorf("slice[%d] %q: cpu limit %q is not a valid resource value", idx, s.Name, s.Resources.CPULimit))
-		}
-		if s.Resources.MemoryLimit != "" && !validResourceValue.MatchString(s.Resources.MemoryLimit) {
-			errs = append(errs, fmt.Errorf("slice[%d] %q: memory limit %q is not a valid resource value", idx, s.Name, s.Resources.MemoryLimit))
-		}
-	}
+	errs = append(errs, validateQuantities(idx, s)...)
 
 	// Kind-specific validation rules.
 	errs = append(errs, validateKindConstraints(idx, s, allNames)...)
@@ -312,6 +303,96 @@ func envKeyProblem(key string) string {
 
 	return `must contain only letters, digits, underscores, hyphens, and dots, ` +
 		`and must not start with a digit (for example DATABASE_URL)`
+}
+
+// validateQuantities checks every field that a compiler turns into a Kubernetes
+// resource.Quantity. Each of those fields reaches resource.MustParse, which
+// panics rather than returning an error, so a value that is not a quantity has
+// to be stopped here or it takes the whole command down with a stack trace
+// instead of a sentence.
+//
+// An empty value is skipped rather than rejected: the storage fields use "" to
+// mean "no volume" — pvc.go and statefulset.go both read it that way — so every
+// storage-free recipe depends on empty staying valid.
+func validateQuantities(idx int, s Slice) []error {
+	var errs []error
+
+	// Subject nouns, not field names: the message is read by someone who wrote a
+	// recipe and has never seen the struct.
+	type quantityField struct {
+		subject string
+		value   string
+	}
+
+	fields := []quantityField{{"per-copy storage", s.StatefulStorage}}
+
+	if s.Resources != nil {
+		fields = append(fields,
+			quantityField{"cpu limit", s.Resources.CPULimit},
+			quantityField{"memory limit", s.Resources.MemoryLimit},
+		)
+	}
+
+	if s.Database != nil {
+		fields = append(fields, quantityField{"database storage", s.Database.Storage})
+	}
+
+	if s.Cache != nil {
+		fields = append(fields, quantityField{"cache storage", s.Cache.Storage})
+	}
+
+	for _, f := range fields {
+		if f.value == "" {
+			continue
+		}
+
+		if problem := quantityProblem(f.value); problem != "" {
+			errs = append(errs, fmt.Errorf("slice[%d] %q: %s %q %s", idx, s.Name, f.subject, f.value, problem))
+		}
+	}
+
+	return errs
+}
+
+// quantityProblem describes why value is not a usable Kubernetes quantity, or
+// returns "" when it is fine. Like envKeyProblem, the rule is delegated to
+// apimachinery so it cannot drift from the semantics Mozza compiles against,
+// while the wording stays Mozza's own: ParseQuantity's ErrFormatWrong quotes the
+// raw regular expression at the reader, which is the string that appears in the
+// panic this rule exists to prevent. The error is consulted, never wrapped.
+//
+// A leftover template placeholder is reported before the syntax rule. It is not
+// a quantity either, but telling an author that "{{STORAGE_SIZE}}" fails a
+// number format sends them to fix the wrong thing — the value was never meant to
+// survive rendering.
+func quantityProblem(value string) string {
+	if unrenderedPlaceholder(value) {
+		return "is still a template variable — substitute a real value before deploying"
+	}
+
+	q, err := resource.ParseQuantity(value)
+	if err != nil {
+		return "is not a quantity Kubernetes understands — write a number with an optional unit, " +
+			"for example 10Gi, 512Mi or 500m"
+	}
+
+	// Kubernetes' own rule is non-negative rather than positive, so zero is
+	// deliberately allowed; a stricter rule here would be Mozza inventing one.
+	if q.Sign() < 0 {
+		return "is negative — a quantity must be zero or more"
+	}
+
+	return ""
+}
+
+// unrenderedPlaceholder reports whether value still carries a template variable
+// the renderer was meant to substitute. RenderRecipe replaces the literal
+// "{{"+key+"}}", so that pair is exactly the shape a leftover takes, and no
+// Kubernetes quantity can contain a brace — there is no false positive to weigh.
+func unrenderedPlaceholder(value string) bool {
+	_, rest, ok := strings.Cut(value, "{{")
+
+	return ok && strings.Contains(rest, "}}")
 }
 
 // validateKindConstraints checks kind-specific semantic rules and new field
