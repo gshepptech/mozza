@@ -1,6 +1,8 @@
 package server
 
 import (
+	"bufio"
+	"fmt"
 	"log/slog"
 	"net"
 	"net/http"
@@ -45,6 +47,44 @@ type responseRecorder struct {
 func (rr *responseRecorder) WriteHeader(code int) {
 	rr.statusCode = code
 	rr.ResponseWriter.WriteHeader(code)
+}
+
+// Flush forwards to the wrapped writer so streaming handlers keep working
+// through requestLogger.
+//
+// Embedding http.ResponseWriter promotes only that interface's method set —
+// Header, Write, WriteHeader — so Flush is *not* inherited from whatever
+// concrete writer is underneath. Without this method every SSE handler's
+// w.(http.Flusher) assertion fails and the endpoint answers 500 instead of
+// streaming.
+//
+// The same trap applies to every optional interface a handler may assert for.
+// Hijack below is the second one this cost us. Before adding a handler that
+// type-asserts the ResponseWriter for anything else — http.Pusher, io.ReaderFrom
+// — forward it here too, or it will fail only at runtime and only on that route.
+func (rr *responseRecorder) Flush() {
+	if f, ok := rr.ResponseWriter.(http.Flusher); ok {
+		f.Flush()
+	}
+}
+
+// Hijack forwards to the wrapped writer so handlers that take over the raw
+// connection keep working through requestLogger.
+//
+// nhooyr.io/websocket's Accept type-asserts http.Hijacker and fails the upgrade
+// when it is absent, and handleBuildLogs upgrades GET /api/v1/builds/{id}/logs,
+// so without this that endpoint is broken by the same defect Flush fixes for SSE.
+func (rr *responseRecorder) Hijack() (net.Conn, *bufio.ReadWriter, error) {
+	hj, ok := rr.ResponseWriter.(http.Hijacker)
+	if !ok {
+		return nil, nil, fmt.Errorf("Hijack: %T does not implement http.Hijacker", rr.ResponseWriter)
+	}
+
+	conn, rw, err := hj.Hijack()
+	if err != nil {
+		return nil, nil, fmt.Errorf("Hijack: %w", err)
+	}
+	return conn, rw, nil
 }
 
 // requestLogger logs the method, path, status code, and duration of each request.

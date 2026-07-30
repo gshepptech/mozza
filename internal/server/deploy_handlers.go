@@ -341,6 +341,11 @@ func (s *Server) runDeployWith(deployer deploy.Deployer, deployID, source, targe
 	}
 
 	result, err := deployer.Deploy(ctx, p, opts)
+
+	// Reported before the outcome, and on both outcomes: a deploy that fails to
+	// start lost exactly the same capabilities as one that succeeded.
+	deploy.LogWarnings(result, logMsg)
+
 	if err != nil {
 		fail(fmt.Sprintf("deploy failed: %v", err))
 		return
@@ -565,8 +570,7 @@ func (s *Server) handleDeploymentLogs() http.HandlerFunc {
 		}
 
 		// Send existing log as initial event.
-		fmt.Fprintf(w, "data: %s\n\n", deploy.Log)
-		flusher.Flush()
+		writeLogEvents(w, flusher, deploy.Log)
 
 		// If deployment is finished, send done event and close.
 		if deploy.FinishedAt != nil {
@@ -589,9 +593,7 @@ func (s *Server) handleDeploymentLogs() http.HandlerFunc {
 					return
 				}
 				if len(updated.Log) > lastLen {
-					newData := updated.Log[lastLen:]
-					fmt.Fprintf(w, "data: %s\n\n", newData)
-					flusher.Flush()
+					writeLogEvents(w, flusher, updated.Log[lastLen:])
 					lastLen = len(updated.Log)
 				}
 				if updated.FinishedAt != nil {
@@ -602,4 +604,36 @@ func (s *Server) handleDeploymentLogs() http.HandlerFunc {
 			}
 		}
 	}
+}
+
+// isSSELineTerminator reports whether r ends a line under the SSE grammar, which
+// terminates on CR, LF or CRLF — not LF alone.
+func isSSELineTerminator(r rune) bool {
+	return r == '\n' || r == '\r'
+}
+
+// writeLogEvents sends each line of a deployment log chunk as its own SSE event.
+//
+// One event per line is required twice over. The SSE grammar treats only the
+// first line after "data: " as the field value and every following line as a new
+// (unrecognised, therefore discarded) field name, so a multi-line payload reaches
+// the browser as its first line alone. And the dashboard appends each event to a
+// list rendered one row per entry, so packing several lines into one event would
+// collapse them into a single run-on row instead.
+//
+// Framing must break on CR as well as LF. Log text is not trusted — it
+// interpolates user-supplied values such as the deployment environment — and a
+// bare CR would otherwise carry the rest of the line past the "data: " prefix,
+// where a reader parses it as further SSE fields. An injected "event: done" ends
+// the stream early for whoever is watching, which is how a forged completion or a
+// truncated log gets into another team member's browser. Escaping the payload is
+// not an option here: the log is rendered as text, so the terminator has to
+// become a real event boundary rather than a literal.
+func writeLogEvents(w http.ResponseWriter, flusher http.Flusher, chunk string) {
+	// FieldsFuncSeq splits on runs of terminators and never yields an empty
+	// string, so CRLF is a single break and blank lines need no guard.
+	for line := range strings.FieldsFuncSeq(chunk, isSSELineTerminator) {
+		fmt.Fprintf(w, "data: %s\n\n", line)
+	}
+	flusher.Flush()
 }

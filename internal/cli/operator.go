@@ -161,12 +161,14 @@ func executeDeployment(
 	}
 
 	logMsg(fmt.Sprintf("Deploying to %s (%s)...", target, env))
-	opts := deploy.DeployOptions{
+	result, err := deployer.Deploy(ctx, p, deploy.DeployOptions{
 		RecipeContent: source,
 		TriggeredBy:   "operator",
-	}
+	})
 
-	result, err := deployer.Deploy(ctx, p, opts)
+	// Before the outcome and on both outcomes — see deploy.LogWarnings.
+	deploy.LogWarnings(result, logMsg)
+
 	if err != nil {
 		fail(fmt.Sprintf("deploy failed: %v", err))
 		return

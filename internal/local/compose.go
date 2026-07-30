@@ -130,15 +130,6 @@ type buildResult struct {
 	Warnings []string
 }
 
-// BuildComposeFile converts an AppPlan into a composeFile structure.
-func BuildComposeFile(p *plan.AppPlan) (*composeFile, error) {
-	br, err := BuildComposeFileWithWarnings(p)
-	if err != nil {
-		return nil, err
-	}
-	return br.File, nil
-}
-
 // BuildComposeFileWithWarnings converts an AppPlan into a composeFile plus warnings.
 func BuildComposeFileWithWarnings(p *plan.AppPlan) (*buildResult, error) {
 	cf := &composeFile{
@@ -155,7 +146,7 @@ func BuildComposeFileWithWarnings(p *plan.AppPlan) (*buildResult, error) {
 	for _, s := range p.Slices {
 		svc, err := buildService(s, netName)
 		if err != nil {
-			return nil, fmt.Errorf("BuildComposeFile: slice %q: %w", s.Name, err)
+			return nil, fmt.Errorf("BuildComposeFileWithWarnings: slice %q: %w", s.Name, err)
 		}
 		addFileMounts(cf, &svc, s)
 		cf.Services[s.Name] = svc
@@ -207,7 +198,7 @@ func buildService(s plan.Slice, netName string) (service, error) {
 	addHealthcheck(&svc, s)
 	addDeploy(&svc, s)
 	addVolumeMount(&svc, s)
-	// addFileMounts is called from BuildComposeFile (needs composeFile access).
+	// addFileMounts is called from BuildComposeFileWithWarnings (needs composeFile access).
 	addSecurityContext(&svc, s)
 	addGracefulShutdown(&svc, s)
 	addInitDependsOn(&svc, s)
@@ -803,8 +794,12 @@ func collectWarnings(s plan.Slice) []string {
 	}
 
 	if s.AutoScale != nil {
+		// Deliberately does not promise the minimum replica count: addDeploy
+		// substitutes MinReplicas only when the slice declares one replica or
+		// fewer, so a slice with "run 5 copies" keeps 5. What is true either way
+		// is that the count no longer moves.
 		warnings = append(warnings,
-			fmt.Sprintf("%s: Auto-scaling is Kubernetes-only. Running with minimum replica count.", s.Name))
+			fmt.Sprintf("%s: Auto-scaling is Kubernetes-only. Running a fixed replica count locally.", s.Name))
 	}
 
 	if s.DisruptionBudget != nil {
@@ -819,7 +814,7 @@ func collectWarnings(s plan.Slice) []string {
 
 	if s.Kind == plan.SliceKindScheduled {
 		warnings = append(warnings,
-			fmt.Sprintf("%s: Scheduled tasks not supported in Docker Compose. Service will run once on startup.", s.Name))
+			fmt.Sprintf("%s: Scheduled tasks are not supported in Docker Compose. Service will run once on startup.", s.Name))
 	}
 
 	warnings = append(warnings, probeWarnings(s)...)

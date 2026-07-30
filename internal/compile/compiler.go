@@ -4,6 +4,7 @@ package compile
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/gshepptech/mozza/internal/plan"
 )
@@ -33,4 +34,26 @@ type OutputFile struct {
 	Path string
 	// Content holds the file content as bytes.
 	Content []byte
+}
+
+// FormatWarnings renders a warning block as one string per output line: a count
+// line followed by one indented entry per warning. It returns nil when there is
+// nothing to report, so silence keeps meaning nothing was lost.
+//
+// Every surface that reports capability gaps renders them through here — the CLI
+// on stderr, the dashboard and operator deployment logs. The wording is a
+// user-facing contract that must not drift between them, so it lives in one
+// place rather than being reimplemented per surface. A caller that has already
+// rendered a result's warnings must not render them again.
+func FormatWarnings(warnings []string) []string {
+	if len(warnings) == 0 {
+		return nil
+	}
+
+	lines := make([]string, 0, len(warnings)+1)
+	lines = append(lines, fmt.Sprintf("%d warning(s):", len(warnings)))
+	for _, w := range warnings {
+		lines = append(lines, "  ! "+w)
+	}
+	return lines
 }

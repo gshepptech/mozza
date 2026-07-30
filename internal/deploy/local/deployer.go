@@ -47,35 +47,24 @@ func (d *Deployer) Deploy(ctx context.Context, p *plan.AppPlan, opts deploy.Depl
 		return nil, fmt.Errorf("local deploy: mkdir: %w", err)
 	}
 
-	cf, err := localcompose.BuildComposeFile(p)
-	if err != nil {
-		d.failDeploy(dep.ID, start, err)
-		return nil, fmt.Errorf("local deploy: build compose: %w", err)
-	}
-
-	yamlBytes, err := localcompose.MarshalComposeFile(cf)
-	if err != nil {
-		d.failDeploy(dep.ID, start, err)
-		return nil, fmt.Errorf("local deploy: marshal compose: %w", err)
-	}
-
-	composePath := filepath.Join(composeDir, "docker-compose.yml")
-	if err := os.WriteFile(composePath, yamlBytes, 0o644); err != nil {
-		d.failDeploy(dep.ID, start, err)
-		return nil, fmt.Errorf("local deploy: write compose: %w", err)
-	}
-
-	// Run docker compose up.
-	runner, err := localcompose.NewRunner(composeDir)
+	warnings, err := compilePlan(ctx, composeDir, p)
 	if err != nil {
 		d.failDeploy(dep.ID, start, err)
 		return nil, fmt.Errorf("local deploy: %w", err)
 	}
 
+	// Run docker compose up. Past this point the plan has compiled, so any
+	// failure still has warnings worth reporting and returns them.
+	runner, err := localcompose.NewRunner(composeDir)
+	if err != nil {
+		d.failDeploy(dep.ID, start, err)
+		return failedResult(dep.ID, start, warnings), fmt.Errorf("local deploy: %w", err)
+	}
+
 	var buf bytes.Buffer
 	if err := runner.Up(ctx, &buf); err != nil {
 		d.failDeploy(dep.ID, start, fmt.Errorf("%s: %w", buf.String(), err))
-		return nil, fmt.Errorf("local deploy: compose up: %w", err)
+		return failedResult(dep.ID, start, warnings), fmt.Errorf("local deploy: compose up: %w", err)
 	}
 
 	duration := time.Since(start)
@@ -86,7 +75,46 @@ func (d *Deployer) Deploy(ctx context.Context, p *plan.AppPlan, opts deploy.Depl
 		Resources: sliceResources(p.Slices),
 		Duration:  duration,
 		Status:    deploy.StatusSuccess,
+		Warnings:  warnings,
 	}, nil
+}
+
+// failedResult carries the compile-time warnings back alongside a deploy error.
+//
+// A recipe's capability gaps are just as real when the containers fail to start —
+// a bad image tag or a port clash — and the deployment log is the only place the
+// dashboard reports them. Returning nil here is what made a failed local deploy
+// silent about warnings that "mozza up" printed for the same recipe.
+func failedResult(deployID string, start time.Time, warnings []string) *deploy.DeployResult {
+	return &deploy.DeployResult{
+		DeployID: deployID,
+		Duration: time.Since(start),
+		Status:   deploy.StatusFailed,
+		Warnings: warnings,
+	}
+}
+
+// compilePlan writes the plan's compose artifacts into composeDir and returns
+// the target's capability warnings.
+//
+// It goes through the registered local compiler rather than building the compose
+// file directly so that what a deploy produces and what "mozza compile --target
+// local" produces cannot drift apart — including the warnings, which this path
+// used to throw away.
+func compilePlan(ctx context.Context, composeDir string, p *plan.AppPlan) ([]string, error) {
+	result, err := localcompose.New().Compile(ctx, p)
+	if err != nil {
+		return nil, fmt.Errorf("compilePlan: %w", err)
+	}
+
+	for _, f := range result.Files {
+		path := filepath.Join(composeDir, f.Path)
+		if err := os.WriteFile(path, f.Content, 0o644); err != nil {
+			return nil, fmt.Errorf("compilePlan: write %s: %w", f.Path, err)
+		}
+	}
+
+	return result.Warnings, nil
 }
 
 // sliceResources converts plan slices into deployed resource entries.

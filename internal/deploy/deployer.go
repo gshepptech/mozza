@@ -7,8 +7,26 @@ import (
 	"io"
 	"time"
 
+	"github.com/gshepptech/mozza/internal/compile"
 	"github.com/gshepptech/mozza/internal/plan"
 )
+
+// LogWarnings reports a result's capability warnings through log, one line at a
+// time, in the format compile.FormatWarnings defines for every surface.
+//
+// It takes the result rather than the warnings because the nil handling is the
+// contract, not a convenience: Deploy returns a nil result when it fails before
+// the plan compiles and a populated one when it fails afterwards, so every caller
+// needs the same guard. Stating it once keeps the two deploy-log surfaces —
+// the dashboard and the operator — from drifting on it.
+func LogWarnings(result *DeployResult, log func(string)) {
+	if result == nil {
+		return
+	}
+	for _, line := range compile.FormatWarnings(result.Warnings) {
+		log(line)
+	}
+}
 
 // DeployStatus represents the outcome of a deploy operation.
 type DeployStatus string
@@ -48,6 +66,10 @@ type DeployResult struct {
 	Duration time.Duration
 	// Status is the final outcome.
 	Status DeployStatus
+	// Warnings lists what the target could not carry from the recipe. The
+	// deployer cannot report these itself — it has no handle on the caller's
+	// deployment log — so they ride back here for the caller to surface.
+	Warnings []string
 }
 
 // DeployedResource represents a single K8s resource created during a deploy.
@@ -103,6 +125,16 @@ type DownOptions struct {
 // Deployer defines the interface for deploying applications.
 type Deployer interface {
 	// Deploy applies the plan to the target environment.
+	//
+	// A non-nil result may accompany a non-nil error: once the deployment
+	// artifacts are written, the target's capability Warnings are known and are
+	// just as true of a deploy that failed to start as of one that succeeded, so
+	// they ride back on the result rather than being lost with the error. Callers
+	// must read the result for warnings even when err != nil, and must not assume
+	// it is nil on failure.
+	//
+	// The guarantee deliberately starts at "artifacts written" rather than "plan
+	// compiled": a failure between those two points still returns a nil result.
 	Deploy(ctx context.Context, p *plan.AppPlan, opts DeployOptions) (*DeployResult, error)
 
 	// Rollback reverts an application to its previous successful deploy.

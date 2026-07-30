@@ -241,7 +241,7 @@ $ mozza compile --target local -o ./out
 Generated docker-compose.yml for "my-app" with 1 service(s), 1 network(s).
 
 1 warning(s):
-  ! web: Auto-scaling is Kubernetes-only. Running with minimum replica count.
+  ! web: Auto-scaling is Kubernetes-only. Running a fixed replica count locally.
 ```
 
 Warnings don't fail the build, so read them — silence is the signal that nothing was lost.

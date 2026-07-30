@@ -1068,7 +1068,7 @@ func TestCompiler_Compile(t *testing.T) {
 				assert.Equal(t, "no", svc.Restart)
 				assert.Equal(t, "0 */6 * * *", svc.Labels["mozza.schedule"])
 				require.Len(t, warnings, 1)
-				assert.Contains(t, warnings[0], "Scheduled tasks not supported")
+				assert.Contains(t, warnings[0], "Scheduled tasks are not supported")
 			},
 		},
 		{

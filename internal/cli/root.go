@@ -203,16 +203,18 @@ func compileAndWrite(cmd *cobra.Command, target, outDir string) (*plan.AppPlan, 
 // compileAndWrite surfaces them rather than each deciding for itself.
 //
 // This is the CLI's single renderer for compile diagnostics, on stderr so a
-// redirected stdout still leaves gaps visible to a human. When Result.Warnings
-// becomes Result.Diagnostics (M1 / AD-3), extend this function rather than
-// adding a second render path.
+// redirected stdout still leaves gaps visible to a human. The block itself is
+// built by compile.FormatWarnings, shared with the dashboard and operator deploy
+// logs so the same recipe reads the same way on every surface; only the leading
+// blank line is the terminal's own, for spacing.
 func printCompileWarnings(cmd *cobra.Command, result *compile.Result) {
-	if len(result.Warnings) == 0 {
+	lines := compile.FormatWarnings(result.Warnings)
+	if len(lines) == 0 {
 		return
 	}
 
-	cmd.PrintErrf("\n%d warning(s):\n", len(result.Warnings))
-	for _, w := range result.Warnings {
-		cmd.PrintErrf("  ! %s\n", w)
+	cmd.PrintErrln()
+	for _, line := range lines {
+		cmd.PrintErrln(line)
 	}
 }

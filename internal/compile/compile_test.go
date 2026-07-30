@@ -86,6 +86,61 @@ func TestResultAndOutputFileTypes(t *testing.T) {
 	assert.Len(t, result.Warnings, 1)
 }
 
+// TestFormatWarnings pins the wording every surface shares. The CLI, the
+// dashboard deploy log and the operator deploy log all render through this
+// function, so a change here changes all three at once — which is the point.
+func TestFormatWarnings(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name     string
+		warnings []string
+		want     []string
+	}{
+		{
+			name:     "nil warnings render nothing",
+			warnings: nil,
+			want:     nil,
+		},
+		{
+			name:     "empty slice renders nothing",
+			warnings: []string{},
+			want:     nil,
+		},
+		{
+			name:     "single warning",
+			warnings: []string{"api: Permissions are Kubernetes-only. Skipped for local target."},
+			want: []string{
+				"1 warning(s):",
+				"  ! api: Permissions are Kubernetes-only. Skipped for local target.",
+			},
+		},
+		{
+			name: "several warnings keep their order",
+			warnings: []string{
+				"api: Permissions are Kubernetes-only. Skipped for local target.",
+				"api: Auto-scaling is Kubernetes-only. Running a fixed replica count locally.",
+				"worker: DaemonSet mode requires Docker Swarm. Running as single instance.",
+			},
+			want: []string{
+				"3 warning(s):",
+				"  ! api: Permissions are Kubernetes-only. Skipped for local target.",
+				"  ! api: Auto-scaling is Kubernetes-only. Running a fixed replica count locally.",
+				"  ! worker: DaemonSet mode requires Docker Swarm. Running as single instance.",
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			got := FormatWarnings(tt.warnings)
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}
+
 // Compile-time interface check.
 var _ Compiler = (*mockCompiler)(nil)
 
