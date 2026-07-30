@@ -2,6 +2,7 @@ package local
 
 import (
 	"fmt"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -41,11 +42,12 @@ func k8sMemToCompose(mem string) string {
 	return mem
 }
 
-// Healthcheck timing constants.
+// Healthcheck timing defaults. They apply only where the recipe states no
+// timing of its own — a probe's own interval, timeout and delay win.
 const (
-	healthcheckInterval = "10s"
-	healthcheckTimeout  = "5s"
-	healthcheckRetries  = 3
+	defaultHealthcheckInterval = "10s"
+	defaultHealthcheckTimeout  = "5s"
+	defaultHealthcheckRetries  = 3
 )
 
 // networkSuffix is appended to the app name to form the Docker network name.
@@ -107,10 +109,11 @@ type resourceLimits struct {
 
 // healthcheck configures a container health check.
 type healthcheck struct {
-	Test     []string `yaml:"test"`
-	Interval string   `yaml:"interval"`
-	Timeout  string   `yaml:"timeout"`
-	Retries  int      `yaml:"retries"`
+	Test        []string `yaml:"test"`
+	Interval    string   `yaml:"interval"`
+	Timeout     string   `yaml:"timeout"`
+	StartPeriod string   `yaml:"start_period,omitempty"`
+	Retries     int      `yaml:"retries"`
 }
 
 // volume represents a named Docker volume.
@@ -312,21 +315,197 @@ func addMultiPorts(svc *service, s plan.Slice) {
 	}
 }
 
-// addHealthcheck configures a health check if the slice has a HealthPath.
+// addHealthcheck configures the one health check Compose allows per service.
 func addHealthcheck(svc *service, s plan.Slice) {
-	// Resolved the same way the Kubernetes backend resolves it, so a recipe's
-	// health check cannot point at different ports on the two targets.
-	port := s.PrimaryPort()
-	if s.HealthPath == "" || port == 0 {
+	hc, _ := chooseHealthcheck(s)
+	if hc == nil {
 		return
 	}
 
-	svc.Healthcheck = &healthcheck{
-		Test:     []string{"CMD", "curl", "-f", fmt.Sprintf("http://localhost:%d%s", port, s.HealthPath)},
-		Interval: healthcheckInterval,
-		Timeout:  healthcheckTimeout,
-		Retries:  healthcheckRetries,
+	svc.Healthcheck = hc
+}
+
+// chooseHealthcheck picks the probe that becomes the service's health check and
+// builds it, returning the probe it came from so callers can name it.
+//
+// Emittability is decided inside the walk rather than after it: a slice whose
+// readiness check is a TCP one and whose liveness check is an HTTP one still
+// gets the health check the liveness probe describes, instead of nothing at all.
+// Within a type the last declaration wins, matching internal/k8s, where each
+// assignment overwrites the previous probe of that type. Returns a nil check
+// when no candidate can be expressed.
+func chooseHealthcheck(s plan.Slice) (*healthcheck, plan.ProbeSpec) {
+	// Resolved the same way the Kubernetes backend resolves it, so a recipe's
+	// health check cannot point at different ports on the two targets.
+	port := s.PrimaryPort()
+
+	// Backward compat: with no probes the legacy single path reads as a
+	// readiness check — the same precedence internal/k8s's buildContainer uses.
+	if len(s.Probes) == 0 {
+		legacy := plan.ProbeSpec{Type: "readiness", HTTPPath: s.HealthPath}
+		if hc := probeHealthcheck(legacy, port); hc != nil {
+			return hc, legacy
+		}
+		return nil, plan.ProbeSpec{}
 	}
+
+	// Readiness first because Compose's health check is what
+	// `depends_on: condition: service_healthy` gates on — that asks "is this
+	// ready to serve", not "should this be restarted". Compose has no
+	// restart-on-unhealthy at all, so preferring liveness would promise a
+	// restart it never performs.
+	for _, want := range []string{"readiness", "liveness", "startup"} {
+		for i := len(s.Probes) - 1; i >= 0; i-- {
+			ps := s.Probes[i]
+			if !strings.EqualFold(ps.Type, want) {
+				continue
+			}
+			if hc := probeHealthcheck(ps, port); hc != nil {
+				return hc, ps
+			}
+		}
+	}
+
+	return nil, plan.ProbeSpec{}
+}
+
+// probeHealthcheck converts a plan.ProbeSpec into a Compose health check,
+// mirroring internal/k8s's buildProbe field for field so one recipe cannot mean
+// two different checks on the two targets: an HTTP path connects to the probe's
+// own port or the slice's, and a command becomes the same argv Kubernetes execs.
+//
+// Returns nil for a check Compose cannot run. A TCP check is one: the Docker
+// daemon runs a command inside the container and never opens a socket. So is a
+// check with nothing to check, or an HTTP check with no port to reach — the
+// cases buildProbe declines for the same reason, and plan.Validate rejects.
+func probeHealthcheck(ps plan.ProbeSpec, slicePort int) *healthcheck {
+	var test []string
+
+	switch {
+	case ps.HTTPPath != "":
+		httpPort := ps.TCPPort
+		if httpPort == 0 {
+			httpPort = slicePort
+		}
+		if httpPort == 0 {
+			return nil
+		}
+		test = []string{"CMD", "curl", "-f", fmt.Sprintf("http://localhost:%d%s", httpPort, ps.HTTPPath)}
+	case ps.TCPPort > 0:
+		return nil
+	case ps.Command != "":
+		test = append([]string{"CMD"}, strings.Fields(ps.Command)...)
+	default:
+		return nil
+	}
+
+	hc := &healthcheck{
+		Test:     test,
+		Interval: defaultHealthcheckInterval,
+		Timeout:  defaultHealthcheckTimeout,
+		Retries:  defaultHealthcheckRetries,
+	}
+
+	if ps.Interval > 0 {
+		hc.Interval = fmt.Sprintf("%ds", ps.Interval)
+	}
+	if ps.Timeout > 0 {
+		hc.Timeout = fmt.Sprintf("%ds", ps.Timeout)
+	}
+	// start_period is the closest Compose has to an initial delay, not the same
+	// thing: Kubernetes suppresses probing for the window, Compose probes
+	// throughout it but declines to count the failures toward retries.
+	if ps.Delay > 0 {
+		hc.StartPeriod = fmt.Sprintf("%ds", ps.Delay)
+	}
+
+	return hc
+}
+
+// describeProbe names a probe the way the recipe directive that declared it
+// reads — "readiness check on /healthz". The parser always sets Type, but a
+// hand-built ProbeSpec reaching the exported compiler need not, so the fallback
+// still reads as English, following probeSubject in internal/plan.
+func describeProbe(ps plan.ProbeSpec) string {
+	kind := "health check"
+	if ps.Type != "" {
+		kind = strings.ToLower(ps.Type) + " check"
+	}
+
+	switch {
+	case ps.HTTPPath != "":
+		return kind + " on " + ps.HTTPPath
+	case ps.TCPPort > 0:
+		return fmt.Sprintf("%s on TCP port %d", kind, ps.TCPPort)
+	case ps.Command != "":
+		return fmt.Sprintf("%s running %q", kind, ps.Command)
+	}
+
+	return kind
+}
+
+// sameHealthcheck reports whether two health checks would do the same thing.
+func sameHealthcheck(a, b *healthcheck) bool {
+	if a == nil || b == nil {
+		return a == b
+	}
+
+	return slices.Equal(a.Test, b.Test) &&
+		a.Interval == b.Interval &&
+		a.Timeout == b.Timeout &&
+		a.StartPeriod == b.StartPeriod &&
+		a.Retries == b.Retries
+}
+
+// probeWarnings names every check on the slice that the local target could not
+// carry. Silence here is documented as meaning nothing was lost, so a check that
+// went missing has to be said out loud rather than left for the author to notice.
+//
+// A probe that is not the emitted check stays quiet when the check it would have
+// produced is identical: "health check /x" expands into a readiness and a
+// liveness probe on the same path, and warning about the twin would fire on
+// almost every recipe in the catalog. That also suppresses the chosen probe's
+// own entry, since it is trivially identical to itself.
+func probeWarnings(s plan.Slice) []string {
+	if len(s.Probes) == 0 {
+		return nil
+	}
+
+	chosen, chosenProbe := chooseHealthcheck(s)
+
+	var warnings []string
+
+	// Stated as a consequence only. "Because the slice declares no readiness
+	// check" would be false for a slice whose readiness check is a TCP one.
+	if kind := strings.ToLower(chosenProbe.Type); kind == "liveness" || kind == "startup" {
+		warnings = append(warnings, fmt.Sprintf(
+			"%s: The %s became the Compose health check. Compose reports the container unhealthy but will not restart it the way Kubernetes does.",
+			s.Name, describeProbe(chosenProbe)))
+	}
+
+	for _, ps := range s.Probes {
+		hc := probeHealthcheck(ps, s.PrimaryPort())
+		switch {
+		case hc == nil && ps.TCPPort > 0:
+			warnings = append(warnings, fmt.Sprintf(
+				"%s: Compose has no TCP health check, so the %s was dropped. Give the check an HTTP path or a command to have Compose run it.",
+				s.Name, describeProbe(ps)))
+		case hc != nil && chosen == nil:
+			// Compose could have run this one; chooseHealthcheck never offered it
+			// the chance, because only the three known kinds are candidates.
+			// Blaming the one-check-per-service limit here would be false — the
+			// service has no health check at all.
+			warnings = append(warnings, fmt.Sprintf(
+				"%s: The %s is not a readiness, liveness or startup check, so it was dropped and nothing is checked locally. Give the check one of those three kinds to have Compose run it.",
+				s.Name, describeProbe(ps)))
+		case hc != nil && !sameHealthcheck(hc, chosen):
+			warnings = append(warnings, fmt.Sprintf(
+				"%s: Compose runs one health check per service, so the %s was dropped. Only the %s is checked locally.",
+				s.Name, describeProbe(ps), describeProbe(chosenProbe)))
+		}
+	}
+
+	return warnings
 }
 
 // addDeploy configures deployment replicas and resource limits.
@@ -642,6 +821,8 @@ func collectWarnings(s plan.Slice) []string {
 		warnings = append(warnings,
 			fmt.Sprintf("%s: Scheduled tasks not supported in Docker Compose. Service will run once on startup.", s.Name))
 	}
+
+	warnings = append(warnings, probeWarnings(s)...)
 
 	return warnings
 }

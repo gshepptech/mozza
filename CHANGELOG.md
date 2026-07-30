@@ -75,6 +75,24 @@ surface. See [docs/VISION.md](docs/VISION.md).
   declared as a named `ports` entry, and both backends resolve it by the same rule. A check that
   names no port — or nothing to check at all — is now rejected by `mozza validate` rather than
   compiled into a probe aimed at a guess
+- **The local target replaced a recipe's probe timings with its own and dropped every check but one,
+  without a word.** `health check /healthz every 30s, timeout 9s, wait 25s before starting` compiled
+  to `interval: 10s`, `timeout: 5s` and no `start_period` — numbers the author never wrote — and a
+  liveness, startup, TCP or command check was discarded outright, so a recipe with three probes
+  compiled to one, exited 0 and printed nothing, while the README told the reader that no warning
+  means nothing was lost. Compose allows one health check per service, so the local target now emits
+  the first readiness, liveness or startup probe Compose can actually run — an HTTP or command check
+  of a lesser kind is preferred over a TCP check of a senior one, which Compose cannot run at all
+  since the daemon executes a command inside the container rather than opening a socket — and names
+  every probe it could not carry in a warning. A check's interval, timeout and initial delay are now
+  carried; `start_period` is Compose's closest equivalent to an initial delay rather than the same
+  thing, because it keeps probing throughout the window and merely declines to count the failures
+  toward `retries`. The 10s/5s/3 numbers survive as the documented defaults for a recipe that states
+  no timings. Compose reports a container unhealthy but never restarts it, so a promoted liveness
+  check does less locally than on Kubernetes and the warning says so. One deliberate behaviour change
+  rides along: for a slice declaring two readiness probes the emitted check now comes from the last
+  rather than the first, matching what Kubernetes already compiles. No bundled recipe or example
+  declares two readiness probes, so none of them moves
 - `mozza import` no longer writes a health check with no port to check. Rejecting unaimed checks
   would otherwise have turned a working import into a dead end: a Compose service with a healthcheck
   but no published `ports:` imported cleanly and then failed to compile. The importer now takes the

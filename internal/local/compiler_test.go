@@ -100,10 +100,11 @@ type composeLimits struct {
 
 // composeHealth mirrors the internal healthcheck struct for test unmarshaling.
 type composeHealth struct {
-	Test     []string `yaml:"test"`
-	Interval string   `yaml:"interval"`
-	Timeout  string   `yaml:"timeout"`
-	Retries  int      `yaml:"retries"`
+	Test        []string `yaml:"test"`
+	Interval    string   `yaml:"interval"`
+	Timeout     string   `yaml:"timeout"`
+	StartPeriod string   `yaml:"start_period,omitempty"`
+	Retries     int      `yaml:"retries"`
 }
 
 // composeNetwork mirrors the internal network struct for test unmarshaling.
@@ -506,6 +507,343 @@ func TestCompiler_Compile(t *testing.T) {
 
 				api := cf.Services["api"]
 				assert.Nil(t, api.Healthcheck, "no healthcheck expected without HealthPath")
+			},
+		},
+		{
+			name: "healthcheck carries the recipe's own probe timings",
+			plan: &plan.AppPlan{
+				Name: "timings",
+				Slices: []plan.Slice{
+					{
+						Name:       "web",
+						Kind:       plan.SliceKindWeb,
+						Image:      "nginx:1.27",
+						Port:       8080,
+						Public:     true,
+						HealthPath: "/healthz",
+						Probes: []plan.ProbeSpec{
+							{Type: "readiness", HTTPPath: "/healthz", Interval: 30, Timeout: 9, Delay: 25},
+						},
+					},
+				},
+			},
+			assertF: func(t *testing.T, cf composeFile, _ string, warnings []string) {
+				t.Helper()
+
+				web := cf.Services["web"]
+				require.NotNil(t, web.Healthcheck)
+				assert.Equal(t, []string{"CMD", "curl", "-f", "http://localhost:8080/healthz"}, web.Healthcheck.Test)
+				assert.Equal(t, "30s", web.Healthcheck.Interval, "the recipe's interval, not the default")
+				assert.Equal(t, "9s", web.Healthcheck.Timeout, "the recipe's timeout, not the default")
+				assert.Equal(t, "25s", web.Healthcheck.StartPeriod, "the recipe's initial delay")
+				assert.Equal(t, 3, web.Healthcheck.Retries, "no IR field for retries, so the default stands")
+				assert.Empty(t, warnings, "nothing was lost, so nothing to warn about")
+			},
+		},
+		{
+			name: "readiness, liveness and startup probes warn by name about the two Compose drops",
+			plan: &plan.AppPlan{
+				Name: "probes",
+				Slices: []plan.Slice{
+					{
+						Name:       "web",
+						Kind:       plan.SliceKindWeb,
+						Image:      "nginx:1.27",
+						Port:       8080,
+						Public:     true,
+						HealthPath: "/healthz",
+						// What the parser produces for "health check /healthz
+						// every 30s, timeout 9s, wait 25s before starting" plus
+						// "liveness check /alive" and "startup check /started":
+						// the health check directive expands into a readiness
+						// and a liveness probe on the same path.
+						Probes: []plan.ProbeSpec{
+							{Type: "readiness", HTTPPath: "/healthz", Interval: 30, Timeout: 9, Delay: 25},
+							{Type: "liveness", HTTPPath: "/healthz", Interval: 30, Timeout: 9, Delay: 25},
+							{Type: "liveness", HTTPPath: "/alive"},
+							{Type: "startup", HTTPPath: "/started"},
+						},
+					},
+				},
+			},
+			assertF: func(t *testing.T, cf composeFile, _ string, warnings []string) {
+				t.Helper()
+
+				web := cf.Services["web"]
+				require.NotNil(t, web.Healthcheck)
+				assert.Equal(t, []string{"CMD", "curl", "-f", "http://localhost:8080/healthz"}, web.Healthcheck.Test)
+				assert.Equal(t, "30s", web.Healthcheck.Interval)
+				assert.Equal(t, "9s", web.Healthcheck.Timeout)
+				assert.Equal(t, "25s", web.Healthcheck.StartPeriod)
+
+				require.Len(t, warnings, 2, "the /healthz twin is identical, so only /alive and /started were lost")
+				assert.Contains(t, warnings[0], "liveness check on /alive was dropped")
+				assert.Contains(t, warnings[0], "Only the readiness check on /healthz is checked locally")
+				assert.Contains(t, warnings[1], "startup check on /started was dropped")
+			},
+		},
+		{
+			name: "a liveness probe alone becomes the health check and says so",
+			plan: &plan.AppPlan{
+				Name: "liveonly",
+				Slices: []plan.Slice{
+					{
+						Name:  "web",
+						Kind:  plan.SliceKindWeb,
+						Image: "web:latest",
+						Port:  8080,
+						Probes: []plan.ProbeSpec{
+							{Type: "liveness", HTTPPath: "/alive"},
+						},
+					},
+				},
+			},
+			assertF: func(t *testing.T, cf composeFile, _ string, warnings []string) {
+				t.Helper()
+
+				web := cf.Services["web"]
+				require.NotNil(t, web.Healthcheck, "a liveness check is still a check Compose can run")
+				assert.Equal(t, []string{"CMD", "curl", "-f", "http://localhost:8080/alive"}, web.Healthcheck.Test)
+
+				require.Len(t, warnings, 1)
+				assert.Contains(t, warnings[0], "liveness check on /alive became the Compose health check")
+				assert.Contains(t, warnings[0], "will not restart it")
+			},
+		},
+		{
+			name: "a startup probe alone becomes the health check and says so",
+			plan: &plan.AppPlan{
+				Name: "startonly",
+				Slices: []plan.Slice{
+					{
+						Name:  "web",
+						Kind:  plan.SliceKindWeb,
+						Image: "web:latest",
+						Port:  8080,
+						Probes: []plan.ProbeSpec{
+							{Type: "startup", HTTPPath: "/started"},
+						},
+					},
+				},
+			},
+			assertF: func(t *testing.T, cf composeFile, _ string, warnings []string) {
+				t.Helper()
+
+				web := cf.Services["web"]
+				require.NotNil(t, web.Healthcheck)
+				assert.Equal(t, []string{"CMD", "curl", "-f", "http://localhost:8080/started"}, web.Healthcheck.Test)
+
+				require.Len(t, warnings, 1)
+				assert.Contains(t, warnings[0], "startup check on /started became the Compose health check")
+			},
+		},
+		{
+			name: "an HTTP liveness check is preferred over a TCP readiness check Compose cannot run",
+			plan: &plan.AppPlan{
+				Name: "tcpready",
+				Slices: []plan.Slice{
+					{
+						Name:  "cache",
+						Kind:  plan.SliceKindCache,
+						Image: "redis:7",
+						Port:  6379,
+						Probes: []plan.ProbeSpec{
+							{Type: "readiness", TCPPort: 6379},
+							{Type: "liveness", HTTPPath: "/alive"},
+						},
+					},
+				},
+			},
+			assertF: func(t *testing.T, cf composeFile, _ string, warnings []string) {
+				t.Helper()
+
+				cache := cf.Services["cache"]
+				require.NotNil(t, cache.Healthcheck,
+					"the readiness check is inexpressible, but the liveness one is not")
+				assert.Equal(t, []string{"CMD", "curl", "-f", "http://localhost:6379/alive"}, cache.Healthcheck.Test)
+
+				require.Len(t, warnings, 2)
+				assert.Contains(t, warnings[0], "liveness check on /alive became the Compose health check")
+				assert.Contains(t, warnings[1], "Compose has no TCP health check")
+				assert.Contains(t, warnings[1], "readiness check on TCP port 6379 was dropped")
+			},
+		},
+		{
+			name: "an exec probe becomes the Compose command test with no warning",
+			plan: &plan.AppPlan{
+				Name: "execprobe",
+				Slices: []plan.Slice{
+					{
+						Name:  "db",
+						Kind:  plan.SliceKindDatabase,
+						Image: "postgres:16",
+						Port:  5432,
+						Probes: []plan.ProbeSpec{
+							{Type: "readiness", Command: "pg_isready -U postgres"},
+						},
+					},
+				},
+			},
+			assertF: func(t *testing.T, cf composeFile, _ string, warnings []string) {
+				t.Helper()
+
+				db := cf.Services["db"]
+				require.NotNil(t, db.Healthcheck, "a Compose health check is an exec command")
+				assert.Equal(t, []string{"CMD", "pg_isready", "-U", "postgres"}, db.Healthcheck.Test)
+				assert.Empty(t, warnings, "Compose runs this check exactly as Kubernetes does")
+			},
+		},
+		{
+			name: "a TCP probe alone produces no health check and one warning naming it",
+			plan: &plan.AppPlan{
+				Name: "tcponly",
+				Slices: []plan.Slice{
+					{
+						Name:  "cache",
+						Kind:  plan.SliceKindCache,
+						Image: "redis:7",
+						Port:  6379,
+						Probes: []plan.ProbeSpec{
+							{Type: "readiness", TCPPort: 6379},
+						},
+					},
+				},
+			},
+			assertF: func(t *testing.T, cf composeFile, _ string, warnings []string) {
+				t.Helper()
+
+				cache := cf.Services["cache"]
+				assert.Nil(t, cache.Healthcheck, "the Docker daemon runs commands, it does not open sockets")
+
+				require.Len(t, warnings, 1)
+				assert.Contains(t, warnings[0], "readiness check on TCP port 6379 was dropped")
+				assert.Contains(t, warnings[0], "Give the check an HTTP path or a command")
+			},
+		},
+		{
+			name: "twin readiness and liveness checks on one path warn about nothing",
+			plan: &plan.AppPlan{
+				Name: "twins",
+				Slices: []plan.Slice{
+					{
+						Name:       "web",
+						Kind:       plan.SliceKindWeb,
+						Image:      "web:latest",
+						Port:       8080,
+						HealthPath: "/healthz",
+						Probes: []plan.ProbeSpec{
+							{Type: "readiness", HTTPPath: "/healthz", Interval: 20},
+							{Type: "liveness", HTTPPath: "/healthz", Interval: 20},
+						},
+					},
+				},
+			},
+			assertF: func(t *testing.T, cf composeFile, _ string, warnings []string) {
+				t.Helper()
+
+				web := cf.Services["web"]
+				require.NotNil(t, web.Healthcheck)
+				assert.Equal(t, "20s", web.Healthcheck.Interval)
+				assert.Empty(t, warnings, "the two probes check the same thing, so nothing was lost")
+			},
+		},
+		{
+			name: "a probe's own port aims the health check URL, not the slice's",
+			plan: &plan.AppPlan{
+				Name: "probeport",
+				Slices: []plan.Slice{
+					{
+						Name:  "api",
+						Kind:  plan.SliceKindAPI,
+						Image: "api:latest",
+						Port:  8080,
+						Probes: []plan.ProbeSpec{
+							{Type: "readiness", HTTPPath: "/healthz", TCPPort: 9090},
+						},
+					},
+				},
+			},
+			assertF: func(t *testing.T, cf composeFile, _ string, warnings []string) {
+				t.Helper()
+
+				api := cf.Services["api"]
+				require.NotNil(t, api.Healthcheck)
+				assert.Equal(t, []string{"CMD", "curl", "-f", "http://localhost:9090/healthz"}, api.Healthcheck.Test)
+				assert.Empty(t, warnings)
+			},
+		},
+		{
+			name: "the last readiness probe wins, as it does on Kubernetes",
+			plan: &plan.AppPlan{
+				Name: "tworeadiness",
+				Slices: []plan.Slice{
+					{
+						Name:  "api",
+						Kind:  plan.SliceKindAPI,
+						Image: "api:latest",
+						Port:  8080,
+						// plan.Build back-fills HealthPath from the *first*
+						// readiness probe, so this is what a two-readiness recipe
+						// really carries. The choice no longer comes from it.
+						HealthPath: "/first",
+						Probes: []plan.ProbeSpec{
+							{Type: "readiness", HTTPPath: "/first"},
+							{Type: "readiness", HTTPPath: "/second"},
+						},
+					},
+				},
+			},
+			assertF: func(t *testing.T, cf composeFile, _ string, warnings []string) {
+				t.Helper()
+
+				api := cf.Services["api"]
+				require.NotNil(t, api.Healthcheck)
+				assert.Equal(t, []string{"CMD", "curl", "-f", "http://localhost:8080/second"}, api.Healthcheck.Test,
+					"each assignment overwrites the previous probe of its type on Kubernetes, so the last one is the check")
+
+				require.Len(t, warnings, 1)
+				assert.Contains(t, warnings[0], "readiness check on /first was dropped")
+				assert.Contains(t, warnings[0], "Only the readiness check on /second is checked locally")
+			},
+		},
+		{
+			name: "a probe of no recognised kind is dropped without blaming the wrong limit",
+			plan: &plan.AppPlan{
+				Name: "unknownkind",
+				Slices: []plan.Slice{
+					{
+						Name:  "web",
+						Kind:  plan.SliceKindWeb,
+						Image: "web:latest",
+						Port:  8080,
+						// Reachable only from a hand-built plan: the parser always
+						// sets Type, and plan.Validate never inspects it. That is
+						// the caller describeProbe's Type fallback exists for, so
+						// the warning has to be true for it.
+						Probes: []plan.ProbeSpec{
+							{HTTPPath: "/x"},
+							{Type: "ready", HTTPPath: "/y"},
+						},
+					},
+				},
+			},
+			assertF: func(t *testing.T, cf composeFile, _ string, warnings []string) {
+				t.Helper()
+
+				web := cf.Services["web"]
+				require.Nil(t, web.Healthcheck, "no probe of a kind the local target selects from")
+
+				require.Len(t, warnings, 2)
+				for _, w := range warnings {
+					assert.Contains(t, w, "is not a readiness, liveness or startup check")
+					assert.Contains(t, w, "nothing is checked locally")
+					assert.NotContains(t, w, "one health check per service",
+						"Compose's one-check limit is not why this was dropped")
+					assert.NotContains(t, w, "Only the",
+						"nothing is checked locally, so no probe may be named as the thing that is")
+				}
+				assert.Contains(t, warnings[0], "health check on /x")
+				assert.Contains(t, warnings[1], "ready check on /y")
 			},
 		},
 		{
