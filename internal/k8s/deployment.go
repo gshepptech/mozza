@@ -122,9 +122,13 @@ func buildContainer(s plan.Slice) corev1.Container {
 	}
 
 	// Expanded probes: use Probes[] if available, otherwise fall back to HealthPath.
+	probePort := s.PrimaryPort()
 	if len(s.Probes) > 0 {
 		for _, ps := range s.Probes {
-			probe := buildProbe(ps)
+			probe := buildProbe(ps, probePort)
+			if probe == nil {
+				continue
+			}
 			switch strings.ToLower(ps.Type) {
 			case "liveness":
 				c.LivenessProbe = probe
@@ -134,13 +138,13 @@ func buildContainer(s plan.Slice) corev1.Container {
 				c.StartupProbe = probe
 			}
 		}
-	} else if s.HealthPath != "" && s.Port > 0 {
+	} else if s.HealthPath != "" && probePort > 0 {
 		// Backward compat: single HealthPath generates all three probes.
 		probe := &corev1.Probe{
 			ProbeHandler: corev1.ProbeHandler{
 				HTTPGet: &corev1.HTTPGetAction{
 					Path: s.HealthPath,
-					Port: intstr.FromInt32(int32(s.Port)),
+					Port: intstr.FromInt32(int32(probePort)),
 				},
 			},
 		}
@@ -155,19 +159,28 @@ func buildContainer(s plan.Slice) corev1.Container {
 // buildProbe converts a plan.ProbeSpec into a Kubernetes Probe.
 // It selects the probe handler based on which field is set:
 // HTTPPath → httpGet, TCPPort → tcpSocket, Command → exec.
-func buildProbe(ps plan.ProbeSpec) *corev1.Probe {
+//
+// slicePort is the port an HTTP check connects to when the spec names none of
+// its own. buildProbe returns nil when it cannot tell what to check or where:
+// a probe aimed at a guessed port never passes, so the rollout hangs instead of
+// failing, and that is worse than emitting no probe at all. plan.Validate
+// rejects both cases, so a validated plan never reaches them.
+func buildProbe(ps plan.ProbeSpec, slicePort int) *corev1.Probe {
 	probe := &corev1.Probe{}
 
 	switch {
 	case ps.HTTPPath != "":
-		port := intstr.FromInt32(int32(ps.TCPPort))
-		if ps.TCPPort == 0 {
-			port = intstr.FromInt32(80)
+		httpPort := ps.TCPPort
+		if httpPort == 0 {
+			httpPort = slicePort
+		}
+		if httpPort == 0 {
+			return nil
 		}
 		probe.ProbeHandler = corev1.ProbeHandler{
 			HTTPGet: &corev1.HTTPGetAction{
 				Path: ps.HTTPPath,
-				Port: port,
+				Port: intstr.FromInt32(int32(httpPort)),
 			},
 		}
 	case ps.TCPPort > 0:
@@ -182,6 +195,8 @@ func buildProbe(ps plan.ProbeSpec) *corev1.Probe {
 				Command: strings.Fields(ps.Command),
 			},
 		}
+	default:
+		return nil
 	}
 
 	if ps.Interval > 0 {

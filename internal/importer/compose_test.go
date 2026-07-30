@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/gshepptech/mozza/internal/plan"
 	"github.com/gshepptech/mozza/internal/recipe"
 )
 
@@ -589,4 +590,139 @@ secrets:
 	// No blank lines at end of services.
 	lines := strings.Split(strings.TrimSpace(result), "\n")
 	assert.Greater(t, len(lines), 10, "expected multi-line output")
+}
+
+// TestImportedHealthCheckAlwaysHasAPort pins the port dimension of the import
+// invariant: an imported health check always has a port to check, so mozza import
+// never writes an unaimed one for mozza validate to reject. Both authoring paths
+// are checked because `mozza import` uses both — ComposeToRecipe writes the file,
+// and ComposeToRecipeAST supplies the warnings printed alongside it.
+//
+// It is deliberately not a claim that every compose file imports to a valid
+// recipe. Two inputs still do not, both identically so before this change and for
+// reasons that have nothing to do with ports: a build-context-only service imports
+// to a comment with no kind to infer, and a health check URL carrying a query
+// string imports a path the health path format rule rejects.
+func TestImportedHealthCheckAlwaysHasAPort(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		contains []string
+		absent   []string
+		check    func(t *testing.T, s recipe.Slice, w []Warning)
+	}{
+		{
+			name: "healthcheck url supplies the port when compose publishes none",
+			input: `
+services:
+  web:
+    image: myorg/web:1.0
+    expose:
+      - "3000"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+`,
+			contains: []string{"on port 3000", "health check /health"},
+			check: func(t *testing.T, s recipe.Slice, w []Warning) {
+				t.Helper()
+
+				assert.Equal(t, 3000, s.Port, "the port in the check URL should be carried over")
+				assert.Equal(t, "/health", s.Health)
+				assert.Empty(t, w, "nothing was dropped, so there is nothing to warn about")
+			},
+		},
+		{
+			name: "a published port wins over the port in the check url",
+			input: `
+services:
+  web:
+    image: myorg/web:1.0
+    ports:
+      - "8080:3000"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9999/health || exit 1"]
+`,
+			contains: []string{"open to the public on port 3000", "health check /health"},
+			absent:   []string{"on port 9999"},
+			check: func(t *testing.T, s recipe.Slice, _ []Warning) {
+				t.Helper()
+
+				assert.Equal(t, 3000, s.Port)
+			},
+		},
+		{
+			name: "a check with no port anywhere is dropped and explained",
+			input: `
+services:
+  web:
+    image: myorg/web:1.0
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+`,
+			contains: []string{`# WARNING: health check /health dropped`, `add "on port <n>", then restore "health check /health"`},
+			// Anchored to a directive line, so the comment's own wording — which
+			// quotes the check it dropped — cannot satisfy it.
+			absent: []string{"\n  health check /health"},
+			check: func(t *testing.T, s recipe.Slice, w []Warning) {
+				t.Helper()
+
+				assert.Empty(t, s.Health, "an unaimed check must not reach the recipe")
+				assert.Zero(t, s.Port)
+				require.Len(t, w, 1)
+				assert.Equal(t, "healthcheck", w[0].Feature)
+				assert.Equal(t, "warn", w[0].Severity)
+				assert.Contains(t, w[0].Message, "no published port and none in the check URL")
+			},
+		},
+		{
+			name: "a non-http check is left alone",
+			input: `
+services:
+  db:
+    image: postgres:16
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+`,
+			absent: []string{"health check"},
+			check: func(t *testing.T, s recipe.Slice, w []Warning) {
+				t.Helper()
+
+				assert.Empty(t, s.Health)
+				assert.Empty(t, w)
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// The text path: what mozza import writes to disk.
+			text, err := ComposeToRecipe(tt.input)
+			require.NoError(t, err)
+
+			for _, want := range tt.contains {
+				assert.Contains(t, text, want)
+			}
+			for _, unwanted := range tt.absent {
+				assert.NotContains(t, text, unwanted)
+			}
+
+			parsed, err := recipe.NewParser(text).Parse()
+			require.NoError(t, err, "the written recipe must parse:\n%s", text)
+
+			ap, err := plan.Build(parsed)
+			require.NoError(t, err, "the written recipe must build:\n%s", text)
+			require.NoError(t, plan.Validate(ap), "the written recipe must validate:\n%s", text)
+
+			// The AST path: what the server reports and what the warnings come from.
+			r, warnings, err := ComposeToRecipeAST([]byte(tt.input))
+			require.NoError(t, err)
+			require.Len(t, r.Slices, 1)
+
+			astPlan, err := plan.Build(r)
+			require.NoError(t, err)
+			require.NoError(t, plan.Validate(astPlan), "the imported AST must validate too")
+
+			tt.check(t, r.Slices[0], warnings)
+		})
+	}
 }

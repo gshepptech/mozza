@@ -126,6 +126,8 @@ func validateOneSlice(idx int, s Slice, seen, allNames map[string]bool) []error 
 		errs = append(errs, fmt.Errorf("slice[%d] %q: health path must start with / and contain only alphanumeric, hyphens, underscores, dots, and slashes", idx, s.Name))
 	}
 
+	errs = append(errs, validateProbeTargets(idx, s)...)
+
 	for key := range s.Env {
 		if problem := envKeyProblem(key); problem != "" {
 			errs = append(errs, fmt.Errorf("slice[%d] %q: env key %q %s", idx, s.Name, key, problem))
@@ -151,6 +153,50 @@ func validateOneSlice(idx int, s Slice, seen, allNames map[string]bool) []error 
 
 	// Kind-specific validation rules.
 	errs = append(errs, validateKindConstraints(idx, s, allNames)...)
+
+	return errs
+}
+
+// validateProbeTargets checks that every health check on a slice can actually be
+// aimed: an HTTP check needs a port to connect to, and any check needs something
+// to check. Compilers would otherwise have to invent a target or drop the check,
+// and both hide the mistake until the rollout hangs.
+//
+// One "health check <path>" directive lands in three places — HealthPath, plus a
+// readiness and a liveness ProbeSpec carrying the same path — so the no-port
+// complaint is collected and reported once per slice rather than once per copy.
+func validateProbeTargets(idx int, s Slice) []error {
+	var errs []error
+
+	// The path of the first check that resolves to no port, or "" when every
+	// check has a target.
+	unaimed := ""
+	if s.HealthPath != "" && s.PrimaryPort() == 0 {
+		unaimed = s.HealthPath
+	}
+
+	for _, ps := range s.Probes {
+		switch {
+		case ps.HTTPPath != "":
+			if unaimed == "" && ps.TCPPort == 0 && s.PrimaryPort() == 0 {
+				unaimed = ps.HTTPPath
+			}
+		case ps.TCPPort > 0 || ps.Command != "":
+			// The check names its own target, so there is nothing to resolve.
+		default:
+			// The parser leaves Type set, but a hand-built ProbeSpec reaching the
+			// exported compilers need not, so the message still names a subject.
+			subject := "this probe"
+			if ps.Type != "" {
+				subject = ps.Type + " check"
+			}
+			errs = append(errs, fmt.Errorf("slice[%d] %q: %s must say what to check — give it an HTTP path, a TCP port, or a command", idx, s.Name, subject))
+		}
+	}
+
+	if unaimed != "" {
+		errs = append(errs, fmt.Errorf("slice[%d] %q: health check %q has no port to check — add a port to the slice, or use a TCP or command check instead", idx, s.Name, unaimed))
+	}
 
 	return errs
 }

@@ -193,13 +193,17 @@ func ComposeToRecipe(composeYAML string) (string, error) {
 		}
 
 		// Ports.
+		publishedPort := 0
 		for _, p := range svc.Ports {
 			writePort(&b, p)
+			if n, _ := parsePort(p); publishedPort == 0 && n > 0 {
+				publishedPort = n
+			}
 		}
 
 		// Health check.
 		if svc.Healthcheck != nil {
-			writeHealthcheck(&b, svc.Healthcheck)
+			writeHealthcheck(&b, svc.Healthcheck, publishedPort)
 		}
 
 		// Replicas.
@@ -286,9 +290,29 @@ func convertService(
 		}
 	}
 
-	// Health check.
+	// Health check. The healthcheck URL carries the port the service really
+	// listens on, so it can supply one when no published port did. Without a port
+	// the check cannot be aimed, and importing it anyway would write a recipe that
+	// mozza validate rejects — so the check is dropped and the user told why.
 	if svc.Healthcheck != nil {
-		slice.Health = extractHealthPath(svc.Healthcheck)
+		path, urlPort := extractHealthCheck(svc.Healthcheck)
+		if slice.Port == 0 {
+			slice.Port = urlPort
+		}
+		switch {
+		case path == "":
+			// Not an HTTP health check — there is nothing to carry into the recipe.
+		case slice.Port == 0:
+			warnings = append(warnings, Warning{
+				Feature: "healthcheck",
+				Message: fmt.Sprintf(
+					"service %q health check %s dropped — no published port and none in the check URL; publish the port in compose and import again",
+					name, path),
+				Severity: "warn",
+			})
+		default:
+			slice.Health = path
+		}
 	}
 
 	// Replicas.
@@ -492,33 +516,68 @@ func writePort(b *strings.Builder, portSpec string) {
 	}
 }
 
-// writeHealthcheck extracts a health check path from a compose healthcheck.
-func writeHealthcheck(b *strings.Builder, hc *composeHealthcheck) {
-	path := extractHealthPath(hc)
-	if path != "" {
-		fmt.Fprintf(b, "  health check %s\n", path)
+// writeHealthcheck writes a health check directive, preceded by the port the check
+// needs when no published port has already supplied one. publishedPort is the
+// container port already written for this service, or 0 when there was none.
+func writeHealthcheck(b *strings.Builder, hc *composeHealthcheck, publishedPort int) {
+	path, urlPort := extractHealthCheck(hc)
+	if path == "" {
+		return
 	}
+
+	if publishedPort == 0 && urlPort == 0 {
+		// mozza validate rejects a health check with no port to aim at, so explain
+		// the gap in the recipe rather than write a line that cannot compile. The
+		// remedy belongs here too: this file outlives the import output, and by now
+		// the reader is looking at a recipe, not at compose.
+		fmt.Fprintf(b,
+			"  # WARNING: health check %s dropped — no published port and none in the check URL; add \"on port <n>\", then restore \"health check %s\"\n",
+			path, path)
+
+		return
+	}
+
+	if publishedPort == 0 {
+		fmt.Fprintf(b, "  on port %d\n", urlPort)
+	}
+	fmt.Fprintf(b, "  health check %s\n", path)
 }
 
-// extractHealthPath extracts an HTTP path from a compose healthcheck.
-func extractHealthPath(hc *composeHealthcheck) string {
-	if len(hc.Test) == 0 {
-		return ""
-	}
+// extractHealthCheck extracts the HTTP path and the target port from a compose
+// healthcheck command such as ["CMD", "curl", "-f", "http://localhost:3000/health"].
+// It returns ("", 0) when no part of the command holds a localhost URL with a path.
+//
+// The port matters as much as the path: a recipe's health check inherits the
+// slice's port, so a check imported without one cannot be aimed and `mozza
+// validate` rejects it. A zero port means the URL named none — callers decide what
+// to do about it, because the importer will not invent one.
+func extractHealthCheck(hc *composeHealthcheck) (string, int) {
 	for _, part := range hc.Test {
-		if strings.Contains(part, "http://localhost") {
-			idx := strings.Index(part, "http://localhost")
-			rest := part[idx+len("http://localhost"):]
-			if colonIdx := strings.Index(rest, "/"); colonIdx >= 0 {
-				path := rest[colonIdx:]
-				if spaceIdx := strings.IndexAny(path, " |"); spaceIdx > 0 {
-					path = path[:spaceIdx]
-				}
-				return path
-			}
+		_, rest, found := strings.Cut(part, "http://localhost")
+		if !found {
+			continue
 		}
+
+		// rest is ":3000/health || exit 1", or "/health" when the URL omits the
+		// port, so a port is present only directly after the colon.
+		port := 0
+		if afterColon, hasPort := strings.CutPrefix(rest, ":"); hasPort {
+			port = parsePortNumber(afterColon)
+		}
+
+		slashIdx := strings.Index(rest, "/")
+		if slashIdx < 0 {
+			continue
+		}
+		path := rest[slashIdx:]
+		if spaceIdx := strings.IndexAny(path, " |"); spaceIdx > 0 {
+			path = path[:spaceIdx]
+		}
+
+		return path, port
 	}
-	return ""
+
+	return "", 0
 }
 
 // parseDependsOn handles both list and map forms of depends_on.

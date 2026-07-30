@@ -180,9 +180,10 @@ func convertSlice(s recipe.Slice) (Slice, error) {
 		})
 	}
 
-	// Backward compatibility: if Ports is set, use first port for legacy Port field.
-	if len(ps.Ports) > 0 && ps.Port == 0 {
-		ps.Port = ps.Ports[0].Port
+	// Backward compatibility: point the legacy Port field at the slice's primary
+	// port so consumers that read only Port still see a named port.
+	if ps.Port == 0 {
+		ps.Port = ps.PrimaryPort()
 	}
 
 	// Convert probe specs.

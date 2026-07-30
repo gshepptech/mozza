@@ -314,12 +314,15 @@ func addMultiPorts(svc *service, s plan.Slice) {
 
 // addHealthcheck configures a health check if the slice has a HealthPath.
 func addHealthcheck(svc *service, s plan.Slice) {
-	if s.HealthPath == "" || s.Port == 0 {
+	// Resolved the same way the Kubernetes backend resolves it, so a recipe's
+	// health check cannot point at different ports on the two targets.
+	port := s.PrimaryPort()
+	if s.HealthPath == "" || port == 0 {
 		return
 	}
 
 	svc.Healthcheck = &healthcheck{
-		Test:     []string{"CMD", "curl", "-f", fmt.Sprintf("http://localhost:%d%s", s.Port, s.HealthPath)},
+		Test:     []string{"CMD", "curl", "-f", fmt.Sprintf("http://localhost:%d%s", port, s.HealthPath)},
 		Interval: healthcheckInterval,
 		Timeout:  healthcheckTimeout,
 		Retries:  healthcheckRetries,

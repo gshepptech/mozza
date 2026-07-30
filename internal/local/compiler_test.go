@@ -467,6 +467,28 @@ func TestCompiler_Compile(t *testing.T) {
 			},
 		},
 		{
+			name: "healthcheck uses a named port when there is no bare port",
+			plan: &plan.AppPlan{
+				Name: "hcnamed",
+				Slices: []plan.Slice{
+					{
+						Name:       "api",
+						Kind:       plan.SliceKindWeb,
+						Image:      "api:latest",
+						Ports:      []plan.PortSpec{{Name: "http", Port: 3000}},
+						HealthPath: "/ready",
+					},
+				},
+			},
+			assertF: func(t *testing.T, cf composeFile, _ string, _ []string) {
+				t.Helper()
+
+				api := cf.Services["api"]
+				require.NotNil(t, api.Healthcheck, "a named port is still a port to check")
+				assert.Equal(t, []string{"CMD", "curl", "-f", "http://localhost:3000/ready"}, api.Healthcheck.Test)
+			},
+		},
+		{
 			name: "no healthcheck when HealthPath empty",
 			plan: &plan.AppPlan{
 				Name: "nohc",

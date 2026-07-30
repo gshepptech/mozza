@@ -184,7 +184,9 @@ type ProbeSpec struct {
 	HTTPPath string
 	// Command is the exec command for exec probes.
 	Command string
-	// TCPPort is the port for TCP socket probes.
+	// TCPPort is the port the probe targets — the socket for a tcpSocket check
+	// and the connect port for an httpGet check. Zero means the probe inherits
+	// the slice's primary port.
 	TCPPort int
 	// Interval is the probe interval in seconds.
 	Interval int
@@ -441,4 +443,22 @@ func (p *AppPlan) GatewaySlices() []Slice {
 		}
 	}
 	return result
+}
+
+// PrimaryPort returns the port the slice listens on: Port when set, otherwise
+// the first named port with a non-zero number, and 0 when the slice declares no
+// port at all. Health checks resolve their target port through this method so
+// that every backend aims a check at the same place.
+func (s Slice) PrimaryPort() int {
+	if s.Port > 0 {
+		return s.Port
+	}
+
+	for _, p := range s.Ports {
+		if p.Port > 0 {
+			return p.Port
+		}
+	}
+
+	return 0
 }

@@ -60,6 +60,21 @@ surface. See [docs/VISION.md](docs/VISION.md).
   Kubernetes' own rule and rejected keys as ordinary as Ghost's `database__connection__user`. Every
   recipe in the catalog is now walked through parse, build and validate by `go test`, so a bundled
   recipe that cannot be compiled fails the build rather than the user's first deploy
+- **Every HTTP health check compiled to port 80.** A `health check /path` directive names a path but
+  no port, and the Kubernetes backend filled that gap with a literal `80` instead of the port the
+  slice listens on — so `ghost` probed 80 while serving 2368, `gitea` 3000, `mattermost` 8065 and
+  `prometheus` 9090. Liveness and readiness were both affected, so those four recipes rolled out pods
+  that could never become ready and hung there. A probe now inherits the slice's port, including one
+  declared as a named `ports` entry, and both backends resolve it by the same rule. A check that
+  names no port — or nothing to check at all — is now rejected by `mozza validate` rather than
+  compiled into a probe aimed at a guess
+- `mozza import` no longer writes a health check with no port to check. Rejecting unaimed checks
+  would otherwise have turned a working import into a dead end: a Compose service with a healthcheck
+  but no published `ports:` imported cleanly and then failed to compile. The importer now takes the
+  port from the healthcheck URL when Compose publishes none, so a `curl` check on
+  `http://localhost:3000/health` yields an `on port 3000` line. Where no port exists anywhere, the
+  check is dropped rather than written — reported at import time and recorded as a comment in the
+  recipe, both naming what to add to restore it
 - **The CLI now writes to stdout.** Every command's output went to stderr and stdout was always
   empty, so `mozza targets | grep local` matched nothing and `mozza deploy --export > list.txt`
   wrote an empty file. Cobra's `Print*` helpers resolve through `OutOrStderr`, which walks the

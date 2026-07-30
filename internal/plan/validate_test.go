@@ -456,6 +456,125 @@ func TestValidate_EnvKeyFormat(t *testing.T) {
 	}
 }
 
+func TestValidate_ProbeTargets(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name    string
+		modify  func(p *plan.AppPlan)
+		wantErr string
+	}{
+		{
+			name: "http check with no port to resolve",
+			modify: func(p *plan.AppPlan) {
+				p.Slices[0].Port = 0
+				p.Slices[0].Probes = []plan.ProbeSpec{{Type: "readiness", HTTPPath: "/ready"}}
+			},
+			wantErr: `health check "/ready" has no port to check`,
+		},
+		{
+			name: "legacy health path with no port to resolve",
+			modify: func(p *plan.AppPlan) {
+				p.Slices[0].Port = 0
+				p.Slices[0].HealthPath = "/healthz"
+			},
+			wantErr: `health check "/healthz" has no port to check`,
+		},
+		{
+			name: "http check inherits the slice port",
+			modify: func(p *plan.AppPlan) {
+				p.Slices[0].Probes = []plan.ProbeSpec{{Type: "readiness", HTTPPath: "/ready"}}
+			},
+			wantErr: "",
+		},
+		{
+			name: "http check inherits a named port",
+			modify: func(p *plan.AppPlan) {
+				p.Slices[0].Port = 0
+				p.Slices[0].Ports = []plan.PortSpec{{Name: "http", Port: 3000}}
+				p.Slices[0].Probes = []plan.ProbeSpec{{Type: "readiness", HTTPPath: "/ready"}}
+			},
+			wantErr: "",
+		},
+		{
+			name: "http check naming its own port needs no slice port",
+			modify: func(p *plan.AppPlan) {
+				p.Slices[0].Port = 0
+				p.Slices[0].Probes = []plan.ProbeSpec{{Type: "readiness", HTTPPath: "/ready", TCPPort: 9000}}
+			},
+			wantErr: "",
+		},
+		{
+			name: "tcp check needs no slice port",
+			modify: func(p *plan.AppPlan) {
+				p.Slices[0].Port = 0
+				p.Slices[0].Probes = []plan.ProbeSpec{{Type: "liveness", TCPPort: 5432}}
+			},
+			wantErr: "",
+		},
+		{
+			name: "command check needs no slice port",
+			modify: func(p *plan.AppPlan) {
+				p.Slices[0].Port = 0
+				p.Slices[0].Probes = []plan.ProbeSpec{{Type: "liveness", Command: "pg_isready"}}
+			},
+			wantErr: "",
+		},
+		{
+			name: "check with nothing to check",
+			modify: func(p *plan.AppPlan) {
+				p.Slices[0].Probes = []plan.ProbeSpec{{Type: "readiness"}}
+			},
+			wantErr: "readiness check must say what to check — give it an HTTP path, a TCP port, or a command",
+		},
+		{
+			name: "check with nothing to check and no type still names a subject",
+			modify: func(p *plan.AppPlan) {
+				p.Slices[0].Probes = []plan.ProbeSpec{{}}
+			},
+			wantErr: "this probe must say what to check — give it an HTTP path, a TCP port, or a command",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			p := validPlan()
+			tt.modify(p)
+
+			err := plan.Validate(p)
+
+			if tt.wantErr == "" {
+				assert.NoError(t, err)
+			} else {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestValidate_UnaimedHealthCheckReportedOnce(t *testing.T) {
+	t.Parallel()
+
+	// A single "health check /ready" directive lands in three places — HealthPath
+	// plus a readiness and a liveness probe — and the author wrote one line, so
+	// they should be told about it once.
+	p := validPlan()
+	p.Slices[0].Port = 0
+	p.Slices[0].HealthPath = "/ready"
+	p.Slices[0].Probes = []plan.ProbeSpec{
+		{Type: "readiness", HTTPPath: "/ready"},
+		{Type: "liveness", HTTPPath: "/ready"},
+	}
+
+	err := plan.Validate(p)
+
+	require.Error(t, err)
+	assert.Equal(t, 1, strings.Count(err.Error(), "has no port to check"))
+}
+
 func TestValidate_KindConstraints(t *testing.T) {
 	t.Parallel()
 

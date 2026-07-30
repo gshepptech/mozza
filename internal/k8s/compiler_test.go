@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v3"
+	corev1 "k8s.io/api/core/v1"
 
 	"github.com/gshepptech/mozza/internal/k8s"
 	"github.com/gshepptech/mozza/internal/plan"
@@ -1371,6 +1372,156 @@ func TestCompiler_Compile_HTTPProbeWithTiming(t *testing.T) {
 
 	startup := container["startupProbe"].(map[string]any)
 	assert.Equal(t, 30, startup["initialDelaySeconds"])
+}
+
+func TestBuildDeployment_ProbePortResolution(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name    string
+		slice   plan.Slice
+		assertF func(t *testing.T, c corev1.Container)
+	}{
+		{
+			name: "http probes inherit the slice port",
+			slice: plan.Slice{
+				Name:  "web",
+				Kind:  plan.SliceKindWeb,
+				Image: "ghost:5",
+				Port:  2368,
+				Probes: []plan.ProbeSpec{
+					{Type: "readiness", HTTPPath: "/ready"},
+					{Type: "liveness", HTTPPath: "/healthz"},
+					{Type: "startup", HTTPPath: "/healthz"},
+				},
+			},
+			assertF: func(t *testing.T, c corev1.Container) {
+				t.Helper()
+
+				require.NotNil(t, c.ReadinessProbe)
+				require.NotNil(t, c.ReadinessProbe.HTTPGet)
+				assert.Equal(t, "/ready", c.ReadinessProbe.HTTPGet.Path)
+				assert.Equal(t, int32(2368), c.ReadinessProbe.HTTPGet.Port.IntVal)
+
+				require.NotNil(t, c.LivenessProbe)
+				require.NotNil(t, c.LivenessProbe.HTTPGet)
+				assert.Equal(t, int32(2368), c.LivenessProbe.HTTPGet.Port.IntVal)
+
+				require.NotNil(t, c.StartupProbe)
+				require.NotNil(t, c.StartupProbe.HTTPGet)
+				assert.Equal(t, int32(2368), c.StartupProbe.HTTPGet.Port.IntVal)
+			},
+		},
+		{
+			name: "http probe inherits a named port when there is no bare port",
+			slice: plan.Slice{
+				Name:   "web",
+				Kind:   plan.SliceKindWeb,
+				Image:  "gitea/gitea:1",
+				Ports:  []plan.PortSpec{{Name: "http", Port: 3000}, {Name: "ssh", Port: 22}},
+				Probes: []plan.ProbeSpec{{Type: "readiness", HTTPPath: "/ready"}},
+			},
+			assertF: func(t *testing.T, c corev1.Container) {
+				t.Helper()
+
+				require.NotNil(t, c.ReadinessProbe)
+				require.NotNil(t, c.ReadinessProbe.HTTPGet)
+				assert.Equal(t, int32(3000), c.ReadinessProbe.HTTPGet.Port.IntVal)
+			},
+		},
+		{
+			name: "a probe's own port wins over the slice port",
+			slice: plan.Slice{
+				Name:   "web",
+				Kind:   plan.SliceKindWeb,
+				Image:  "myorg/api:1.0",
+				Port:   8080,
+				Probes: []plan.ProbeSpec{{Type: "readiness", HTTPPath: "/ready", TCPPort: 9000}},
+			},
+			assertF: func(t *testing.T, c corev1.Container) {
+				t.Helper()
+
+				require.NotNil(t, c.ReadinessProbe)
+				require.NotNil(t, c.ReadinessProbe.HTTPGet)
+				assert.Equal(t, int32(9000), c.ReadinessProbe.HTTPGet.Port.IntVal)
+			},
+		},
+		{
+			name: "no resolvable port emits no probe",
+			slice: plan.Slice{
+				Name:   "worker",
+				Kind:   plan.SliceKindWorker,
+				Image:  "myorg/worker:1.0",
+				Probes: []plan.ProbeSpec{{Type: "readiness", HTTPPath: "/ready"}},
+			},
+			assertF: func(t *testing.T, c corev1.Container) {
+				t.Helper()
+
+				assert.Nil(t, c.ReadinessProbe, "a probe on a guessed port never passes, so none should be emitted")
+			},
+		},
+		{
+			name: "tcp probe keeps its own port",
+			slice: plan.Slice{
+				Name:   "db",
+				Kind:   plan.SliceKindDatabase,
+				Image:  "postgres:16",
+				Port:   5432,
+				Probes: []plan.ProbeSpec{{Type: "liveness", TCPPort: 5433}},
+			},
+			assertF: func(t *testing.T, c corev1.Container) {
+				t.Helper()
+
+				require.NotNil(t, c.LivenessProbe)
+				require.NotNil(t, c.LivenessProbe.TCPSocket)
+				assert.Nil(t, c.LivenessProbe.HTTPGet)
+				assert.Equal(t, int32(5433), c.LivenessProbe.TCPSocket.Port.IntVal)
+			},
+		},
+		{
+			name: "a check with nothing to check emits no probe",
+			slice: plan.Slice{
+				Name:   "web",
+				Kind:   plan.SliceKindWeb,
+				Image:  "myorg/api:1.0",
+				Port:   8080,
+				Probes: []plan.ProbeSpec{{Type: "readiness"}},
+			},
+			assertF: func(t *testing.T, c corev1.Container) {
+				t.Helper()
+
+				assert.Nil(t, c.ReadinessProbe, "an empty probe handler is rejected by the API server")
+			},
+		},
+		{
+			name: "legacy health path resolves a named port too",
+			slice: plan.Slice{
+				Name:       "web",
+				Kind:       plan.SliceKindWeb,
+				Image:      "myorg/api:1.0",
+				Ports:      []plan.PortSpec{{Name: "http", Port: 8065}},
+				HealthPath: "/healthz",
+			},
+			assertF: func(t *testing.T, c corev1.Container) {
+				t.Helper()
+
+				require.NotNil(t, c.ReadinessProbe)
+				require.NotNil(t, c.ReadinessProbe.HTTPGet)
+				assert.Equal(t, int32(8065), c.ReadinessProbe.HTTPGet.Port.IntVal)
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			dep := k8s.BuildDeployment(tt.slice, "default", "probeports")
+			require.Len(t, dep.Spec.Template.Spec.Containers, 1)
+
+			tt.assertF(t, dep.Spec.Template.Spec.Containers[0])
+		})
+	}
 }
 
 func TestCompiler_Compile_BackwardCompatWebDeployment(t *testing.T) {

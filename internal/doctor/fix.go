@@ -37,7 +37,7 @@ func AutoFix(p *plan.AppPlan, findings []Finding) []FixResult {
 }
 
 // fixHealthCheck adds a default /healthz health check to web/API/gateway slices
-// that are missing one.
+// that are missing one and expose a port to check.
 func fixHealthCheck(p *plan.AppPlan, _ Finding) []FixResult {
 	var results []FixResult
 
@@ -47,6 +47,11 @@ func fixHealthCheck(p *plan.AppPlan, _ Finding) []FixResult {
 			continue
 		}
 		if s.HealthPath != "" || len(s.Probes) > 0 {
+			continue
+		}
+		// An HTTP health check needs a port to connect to; adding one to a
+		// portless slice would write a plan Mozza's own validator rejects.
+		if s.PrimaryPort() == 0 {
 			continue
 		}
 		s.HealthPath = "/healthz"

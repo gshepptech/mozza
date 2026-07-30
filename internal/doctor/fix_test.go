@@ -16,8 +16,8 @@ func TestAutoFix_HealthCheck(t *testing.T) {
 	p := &plan.AppPlan{
 		Name: "test",
 		Slices: []plan.Slice{
-			{Name: "web", Kind: plan.SliceKindWeb},
-			{Name: "api", Kind: plan.SliceKindAPI, HealthPath: "/ready"},
+			{Name: "web", Kind: plan.SliceKindWeb, Port: 8080},
+			{Name: "api", Kind: plan.SliceKindAPI, Port: 9090, HealthPath: "/ready"},
 			{Name: "worker", Kind: plan.SliceKindWorker},
 		},
 	}
@@ -34,6 +34,31 @@ func TestAutoFix_HealthCheck(t *testing.T) {
 	assert.Equal(t, "no-health-check", results[0].Rule)
 	assert.Equal(t, "/healthz", p.Slices[0].HealthPath)
 	assert.Equal(t, "/ready", p.Slices[1].HealthPath) // unchanged
+}
+
+func TestAutoFix_HealthCheckNeedsPort(t *testing.T) {
+	t.Parallel()
+
+	p := &plan.AppPlan{
+		Name: "test",
+		Slices: []plan.Slice{
+			{Name: "web", Kind: plan.SliceKindWeb},
+			{Name: "api", Kind: plan.SliceKindAPI, Ports: []plan.PortSpec{{Name: "http", Port: 8080}}},
+		},
+	}
+
+	findings := []doctor.Finding{
+		{Rule: "no-health-check", Fixable: true},
+	}
+
+	results := doctor.AutoFix(p, findings)
+
+	// An HTTP health check needs a port to connect to, so only the slice that
+	// exposes one — here through a named port — gets the fix.
+	require.Len(t, results, 1)
+	assert.Equal(t, "api", results[0].SliceName)
+	assert.Empty(t, p.Slices[0].HealthPath, "portless slice should be left alone")
+	assert.Equal(t, "/healthz", p.Slices[1].HealthPath)
 }
 
 func TestAutoFix_ResourceLimits(t *testing.T) {
@@ -97,8 +122,8 @@ func TestAutoFix_MultipleFixable(t *testing.T) {
 	p := &plan.AppPlan{
 		Name: "test",
 		Slices: []plan.Slice{
-			{Name: "web", Kind: plan.SliceKindWeb},
-			{Name: "api", Kind: plan.SliceKindAPI},
+			{Name: "web", Kind: plan.SliceKindWeb, Port: 8080},
+			{Name: "api", Kind: plan.SliceKindAPI, Port: 9090},
 		},
 	}
 
