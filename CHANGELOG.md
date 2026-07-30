@@ -39,6 +39,13 @@ surface. See [docs/VISION.md](docs/VISION.md).
   digits, `_`, `-` and `.`, not starting with a digit — instead of uppercase and underscores only.
   The rule is taken from `k8s.io/apimachinery` rather than restated, so it cannot drift from what a
   cluster will accept, and a rejected key is now explained in words instead of as a regex
+- Ports are now held to the range Kubernetes accepts — 1 to 65535 — everywhere a recipe or a
+  hand-built plan can carry one: the slice's own port, each named `ports` entry, a sidecar's ports
+  and a TCP health check's port. `on port 0 as http` used to validate and then compile to a
+  `containerPort: 0` and a Service on `port: 0` that the API server refuses. A rejected port now
+  names the offending value and states the range in words — with the line and column when it came
+  from a recipe — and reports once instead of following the real complaint with a spurious
+  `unknown directive`
 
 ### Deprecated
 

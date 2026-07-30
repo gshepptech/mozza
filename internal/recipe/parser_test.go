@@ -1,8 +1,10 @@
 package recipe
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -653,6 +655,107 @@ Api:
 	require.Len(t, recipe.Slices, 1)
 	assert.Equal(t, 8080, recipe.Slices[0].Port)
 	assert.Empty(t, recipe.Slices[0].Ports)
+}
+
+func TestParser_PortNumberRange(t *testing.T) {
+	t.Parallel()
+
+	directives := []struct {
+		name     string
+		template string
+	}{
+		{"public port", "open to the public on port %s"},
+		{"named port", "on port %s as http"},
+		{"sidecar port", "with sidecar envoy from myorg/envoy:1.26 on port %s"},
+		{"tcp probe port", "readiness check on tcp port %s"},
+	}
+
+	ports := []struct {
+		name    string
+		literal string
+		wantErr bool
+	}{
+		{"zero", "0", true},
+		{"lowest usable", "1", false},
+		{"highest usable", "65535", false},
+		{"one above the range", "65536", true},
+		{"too wide for an int", "99999999999999999999", true},
+		// The lexer classifies any Unicode digit as a number, so this reaches the
+		// port check rather than failing as a syntax error a step earlier.
+		{"arabic-indic digit", "٥", true},
+	}
+
+	for _, directive := range directives {
+		for _, port := range ports {
+			t.Run(directive.name+"/"+port.name, func(t *testing.T) {
+				t.Parallel()
+
+				input := fmt.Sprintf("App: t\n\nApi:\n  from image myorg/api:1.0\n  "+directive.template, port.literal)
+
+				_, err := NewParser(input).Parse()
+
+				if !port.wantErr {
+					require.NoError(t, err)
+
+					return
+				}
+
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), "is not a usable port — a port must be a number between 1 and 65535")
+				assert.NotContains(t, err.Error(), "strconv", "the message must be Mozza's own, not Atoi's")
+				// Parse joins its errors with newlines and no single parse error
+				// contains one, so the line count is what proves the rejected port
+				// left no tokens behind for the dispatcher to complain about twice.
+				assert.Len(t, strings.Split(err.Error(), "\n"), 1)
+			})
+		}
+	}
+}
+
+func TestParser_NegativePortFailsTheGrammar(t *testing.T) {
+	t.Parallel()
+
+	// The lexer's isInteger never accepts a leading "-", so a negative port is not
+	// a number token and never reaches the port check — the grammar rejects it
+	// first, which is why the range rule only has to cover 0 and above.
+	input := `App: t
+
+Api:
+  from image myorg/api:1.0
+  on port -1 as http`
+
+	_, err := NewParser(input).Parse()
+
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "expected port number after 'on port'")
+}
+
+func TestParser_RejectedPortStillParsesTheRest(t *testing.T) {
+	t.Parallel()
+
+	input := `App: t
+
+Api:
+  from image myorg/api:1.0
+  on port 70000 as http
+  run 3 copies
+  needs db
+
+Db:
+  postgres 16, 5Gi`
+
+	recipe, err := NewParser(input).Parse()
+
+	require.Error(t, err)
+	assert.Len(t, strings.Split(err.Error(), "\n"), 1)
+
+	// Recovery skips the rest of the offending line only, so everything after it
+	// still lands in the AST.
+	require.Len(t, recipe.Slices, 2)
+	assert.Empty(t, recipe.Slices[0].Ports)
+	assert.Equal(t, 3, recipe.Slices[0].Replicas)
+	assert.Equal(t, []string{"db"}, recipe.Slices[0].Needs)
+	assert.Equal(t, "db", recipe.Slices[1].Name)
 }
 
 func TestParser_ScheduleDirectives(t *testing.T) {

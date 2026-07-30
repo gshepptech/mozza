@@ -308,6 +308,28 @@ func isImageRefToken(tt TokenType) bool {
 	}
 }
 
+// portNumber reads tok as a port number, reporting a parse error at tok's
+// position and returning false when it is not one Kubernetes will accept.
+//
+// The range is judged here as well as in plan.Validate because this is the last
+// point that still knows the author wrote the number: plan.Slice uses zero for
+// "this slice declares no port", so once a plan exists a written 0 and an
+// omitted port are the same value.
+//
+// The lexer classifies any Unicode digit as a number token (isInteger uses
+// unicode.IsDigit), so Atoi here fails on "٥" as readily as on a value too large
+// for an int. One wording is true of both, and of 0 and 70000.
+func (p *Parser) portNumber(tok Token) (int, bool) {
+	n, err := strconv.Atoi(tok.Value)
+	if err != nil || n < 1 || n > 65535 {
+		p.addErrorf(tok.Line, tok.Col, "port %q is not a usable port — a port must be a number between 1 and 65535", tok.Value)
+
+		return 0, false
+	}
+
+	return n, true
+}
+
 // parseOpenPublic parses "open to the public on port <N>".
 func (p *Parser) parseOpenPublic(slice *Slice) {
 	p.advance() // consume 'open'
@@ -334,10 +356,7 @@ func (p *Parser) parseOpenPublic(slice *Slice) {
 
 	tok := p.current()
 	if tok.Type == TokenNumber {
-		n, err := strconv.Atoi(tok.Value)
-		if err != nil {
-			p.addErrorf(tok.Line, tok.Col, "invalid port number %q: %v", tok.Value, err)
-		} else {
+		if n, ok := p.portNumber(tok); ok {
 			slice.Port = n
 		}
 		p.advance()
@@ -360,10 +379,9 @@ func (p *Parser) parseOnPort(slice *Slice) {
 		return
 	}
 
-	n, err := strconv.Atoi(tok.Value)
-	if err != nil {
-		p.addErrorf(tok.Line, tok.Col, "invalid port number %q: %v", tok.Value, err)
-		p.advance()
+	n, ok := p.portNumber(tok)
+	if !ok {
+		p.recoverDirective()
 		return
 	}
 	p.advance()
@@ -1080,9 +1098,9 @@ func (p *Parser) parseWith(slice *Slice) {
 			p.advance()
 		}
 		if numTok := p.current(); numTok.Type == TokenNumber {
-			n, atoiErr := strconv.Atoi(numTok.Value)
-			if atoiErr != nil {
-				p.addErrorf(numTok.Line, numTok.Col, "invalid number %q: %v", numTok.Value, atoiErr)
+			n, ok := p.portNumber(numTok)
+			if !ok {
+				p.recoverDirective()
 				return
 			}
 			sc.Ports = append(sc.Ports, PortSpec{Port: n})
@@ -1174,9 +1192,9 @@ func (p *Parser) parseProbeType(slice *Slice) {
 			p.advance()
 		}
 		if numTok := p.current(); numTok.Type == TokenNumber {
-			n, atoiErr := strconv.Atoi(numTok.Value)
-			if atoiErr != nil {
-				p.addErrorf(numTok.Line, numTok.Col, "invalid number %q: %v", numTok.Value, atoiErr)
+			n, ok := p.portNumber(numTok)
+			if !ok {
+				p.recoverDirective()
 				return
 			}
 			probe.TCPPort = n

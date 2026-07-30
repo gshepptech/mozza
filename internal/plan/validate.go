@@ -114,9 +114,8 @@ func validateOneSlice(idx int, s Slice, seen, allNames map[string]bool) []error 
 		errs = append(errs, fmt.Errorf("slice[%d] %q: image must not contain whitespace", idx, s.Name))
 	}
 
-	if s.Port < 0 || s.Port > 65535 {
-		errs = append(errs, fmt.Errorf("slice[%d] %q: port must be 0-65535, got %d", idx, s.Name, s.Port))
-	}
+	portErrs, primaryUnusable := validatePortRanges(idx, s)
+	errs = append(errs, portErrs...)
 
 	if s.Replicas < 0 {
 		errs = append(errs, fmt.Errorf("slice[%d] %q: replicas must be >= 0, got %d", idx, s.Name, s.Replicas))
@@ -126,7 +125,7 @@ func validateOneSlice(idx int, s Slice, seen, allNames map[string]bool) []error 
 		errs = append(errs, fmt.Errorf("slice[%d] %q: health path must start with / and contain only alphanumeric, hyphens, underscores, dots, and slashes", idx, s.Name))
 	}
 
-	errs = append(errs, validateProbeTargets(idx, s)...)
+	errs = append(errs, validateProbeTargets(idx, s, primaryUnusable)...)
 
 	for key := range s.Env {
 		if problem := envKeyProblem(key); problem != "" {
@@ -157,6 +156,92 @@ func validateOneSlice(idx int, s Slice, seen, allNames map[string]bool) []error 
 	return errs
 }
 
+// validatePortRanges reports every port on the slice that Kubernetes will not
+// accept, so no recipe reaches a compiler that would emit a containerPort or a
+// Service port the API server refuses.
+//
+// The second result reports whether one of the rejected ports was a carrier
+// PrimaryPort reads — Slice.Port or an entry in Slice.Ports. That is what lets
+// validateProbeTargets tell a slice that declares no port from one whose declared
+// port was thrown out, and say only the latter. A rejected sidecar or probe port
+// is deliberately not counted: neither is what a health check would have aimed at.
+//
+// Zero is legal on Slice.Port and ProbeSpec.TCPPort and an error everywhere else,
+// because those two fields use zero to mean "not set" — plan.go documents
+// Slice.Port's zero as "no port" and TCPPort's as "inherit the slice's primary
+// port". Three tests depend on it: a worker slice built with Port: 0 must still
+// compile to a Deployment with no Service (internal/k8s/compiler_test.go:213,
+// internal/local/compiler_test.go:246, internal/doctor/rule_test.go:220).
+//
+// A PortSpec entry carries no such meaning: it exists only because a port was
+// declared, so zero there is always a mistake.
+//
+// That leaves the one case this function cannot judge — an author writing the
+// literal 0 for a slice or probe port. By the time a plan exists that is
+// indistinguishable from writing nothing, so the parser rejects it while it can
+// still tell the difference and name the line.
+func validatePortRanges(idx int, s Slice) ([]error, bool) {
+	var errs []error
+
+	primaryUnusable := false
+
+	if s.Port != 0 && !usablePort(s.Port) {
+		errs = append(errs, fmt.Errorf("slice[%d] %q: port is %d — a port must be between 1 and 65535", idx, s.Name, s.Port))
+		primaryUnusable = true
+	}
+
+	for j, ps := range s.Ports {
+		if !usablePort(ps.Port) {
+			errs = append(errs, fmt.Errorf("slice[%d] %q: %s is %d — a port must be between 1 and 65535", idx, s.Name, namedSubject("port", ps.Name, j), ps.Port))
+			primaryUnusable = true
+		}
+	}
+
+	for j, sc := range s.Sidecars {
+		for k, ps := range sc.Ports {
+			if !usablePort(ps.Port) {
+				errs = append(errs, fmt.Errorf("slice[%d] %q: %s %s is %d — a port must be between 1 and 65535", idx, s.Name, namedSubject("sidecar", sc.Name, j), namedSubject("port", ps.Name, k), ps.Port))
+			}
+		}
+	}
+
+	for _, ps := range s.Probes {
+		if ps.TCPPort != 0 && !usablePort(ps.TCPPort) {
+			errs = append(errs, fmt.Errorf("slice[%d] %q: %s's port is %d — a port must be between 1 and 65535", idx, s.Name, probeSubject(ps), ps.TCPPort))
+		}
+	}
+
+	return errs, primaryUnusable
+}
+
+// usablePort reports whether n is a port number Kubernetes will accept.
+func usablePort(n int) bool {
+	return n >= 1 && n <= 65535
+}
+
+// namedSubject describes one entry of a repeated field by its name when it has
+// one and by its position when it does not, so a message can point at the right
+// entry either way: `port "http"` or `port[1]`, following the `init step[%d]`
+// idiom used elsewhere in this file.
+func namedSubject(noun, name string, idx int) string {
+	if name == "" {
+		return fmt.Sprintf("%s[%d]", noun, idx)
+	}
+
+	return fmt.Sprintf("%s %q", noun, name)
+}
+
+// probeSubject names the probe a message is about. The parser always sets Type,
+// but a hand-built ProbeSpec reaching the exported compilers need not, so there
+// is a fallback that still reads as English.
+func probeSubject(ps ProbeSpec) string {
+	if ps.Type == "" {
+		return "this probe"
+	}
+
+	return ps.Type + " check"
+}
+
 // validateProbeTargets checks that every health check on a slice can actually be
 // aimed: an HTTP check needs a port to connect to, and any check needs something
 // to check. Compilers would otherwise have to invent a target or drop the check,
@@ -165,7 +250,12 @@ func validateOneSlice(idx int, s Slice, seen, allNames map[string]bool) []error 
 // One "health check <path>" directive lands in three places — HealthPath, plus a
 // readiness and a liveness ProbeSpec carrying the same path — so the no-port
 // complaint is collected and reported once per slice rather than once per copy.
-func validateProbeTargets(idx int, s Slice) []error {
+//
+// primaryUnusable says the slice did declare a port and validatePortRanges
+// rejected it. There is then nothing left to tell the author: the port they wrote
+// is already reported, and adding "the health check has no port" on top of it
+// describes a consequence of that one mistake as if it were a second one.
+func validateProbeTargets(idx int, s Slice, primaryUnusable bool) []error {
 	var errs []error
 
 	// The path of the first check that resolves to no port, or "" when every
@@ -184,17 +274,11 @@ func validateProbeTargets(idx int, s Slice) []error {
 		case ps.TCPPort > 0 || ps.Command != "":
 			// The check names its own target, so there is nothing to resolve.
 		default:
-			// The parser leaves Type set, but a hand-built ProbeSpec reaching the
-			// exported compilers need not, so the message still names a subject.
-			subject := "this probe"
-			if ps.Type != "" {
-				subject = ps.Type + " check"
-			}
-			errs = append(errs, fmt.Errorf("slice[%d] %q: %s must say what to check — give it an HTTP path, a TCP port, or a command", idx, s.Name, subject))
+			errs = append(errs, fmt.Errorf("slice[%d] %q: %s must say what to check — give it an HTTP path, a TCP port, or a command", idx, s.Name, probeSubject(ps)))
 		}
 	}
 
-	if unaimed != "" {
+	if unaimed != "" && !primaryUnusable {
 		errs = append(errs, fmt.Errorf("slice[%d] %q: health check %q has no port to check — add a port to the slice, or use a TCP or command check instead", idx, s.Name, unaimed))
 	}
 
