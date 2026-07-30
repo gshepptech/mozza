@@ -84,7 +84,7 @@ This creates an `app.mozza` file with a starter recipe. But let's write one from
 
 Create a file called `app.mozza` and start with the app name:
 
-```
+```mozza ignore
 App: my-app
 ```
 

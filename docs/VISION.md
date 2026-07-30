@@ -118,9 +118,7 @@ Web:
   needs db
 
 Db:
-  postgres 16
-  20Gi storage
-  daily backups
+  postgres 16, 20Gi, daily backups
 ```
 
 Ten lines. Readable by someone who has never seen Kubernetes.
