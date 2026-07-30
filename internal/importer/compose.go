@@ -183,9 +183,8 @@ func ComposeToRecipe(composeYAML string) (string, error) {
 		engineName, version := parseEngineImage(image)
 		if engineName != "" {
 			line := "  " + engineName + " " + version
-			// Add default storage for database engines.
-			if engineName == "postgres" || engineName == "mysql" {
-				line += ", 10Gi"
+			if size := storageFor(engineName, svc.Volumes, namedVolumes); size != "" {
+				line += ", " + size
 			}
 			b.WriteString(line + "\n")
 		} else {
@@ -222,8 +221,8 @@ func ComposeToRecipe(composeYAML string) (string, error) {
 			fmt.Fprintf(&b, "  needs %s\n", strings.Join(deps, " and "))
 		}
 
-		// Named volumes -> storage.
-		writeVolumes(&b, svc.Volumes, namedVolumes)
+		// Named volumes.
+		writeVolumes(&b, engineName, svc.Volumes, namedVolumes)
 
 		// Environment variables.
 		envs := parseEnvironment(svc.Environment)
@@ -270,9 +269,7 @@ func convertService(
 	if engineName != "" {
 		slice.Engine = engineName
 		slice.Version = version
-		if engineName == "postgres" || engineName == "mysql" {
-			slice.Storage = "10Gi"
-		}
+		slice.Storage = storageFor(engineName, svc.Volumes, namedVolumes)
 	} else {
 		slice.Image = svc.Image
 	}
@@ -328,21 +325,51 @@ func convertService(
 	// depends_on.
 	slice.Needs = parseDependsOn(svc.DependsOn)
 
-	// Named volumes -> storage.
+	// Named volumes. The size a volume implies is already on the engine shorthand
+	// (storageFor, above), the only storage form the importer emits — so an
+	// imported service gets one volume at most, at its engine's own path, and
+	// everything compose declared beyond that is said aloud rather than left to be
+	// found as missing persistence in a running cluster. The engine-less warning
+	// below names the per-copy storage directive a reader can add by hand.
+	//
+	// No Mounts entry goes with any of it. A recipe's mounts name an object that
+	// already exists — a pvc mount compiles to a claimName taken verbatim from the
+	// source (k8s/deployment.go addMounts) — and mozza creates no claim under a
+	// compose volume's name, so the pod would wait on one that is never made. That
+	// is why the text builder writes a comment here and why this path must leave
+	// the same nothing behind it: the two are one import, and a mount on one of
+	// them is a volume the other never asked for.
 	for _, v := range svc.Volumes {
 		volName, mountPath := splitVolume(v)
-		if namedVolumes[volName] {
-			if slice.Storage == "" {
-				slice.Storage = "10Gi"
-			}
-			if mountPath != "" {
-				slice.Mounts = append(slice.Mounts, recipe.MountSpec{
-					Type:   "pvc",
-					Source: volName,
-					Target: mountPath,
-				})
-			}
+		if !namedVolumes[volName] {
+			continue
 		}
+
+		if mountIsCarried(slice.Engine, mountPath) {
+			continue
+		}
+
+		at := ""
+		if mountPath != "" {
+			at = " at " + mountPath
+		}
+
+		var message string
+		if slice.Engine == "" {
+			message = fmt.Sprintf(
+				"service %q volume %s%s dropped — this service has no database or cache engine to carry it; add \"each copy needs its own storage of 10Gi\" to deploy the service as a StatefulSet with a 10Gi volume per copy, mounted at %s",
+				name, volName, at, statefulLanding(mountPath))
+		} else {
+			message = fmt.Sprintf(
+				"service %q volume %s%s not carried — a %s slice gets one volume, mounted at %s",
+				name, volName, at, slice.Engine, engineMountPaths[slice.Engine])
+		}
+
+		warnings = append(warnings, Warning{
+			Feature:  "volumes",
+			Message:  message,
+			Severity: "warn",
+		})
 	}
 
 	// Environment.
@@ -437,25 +464,124 @@ func parsePortNumber(s string) int {
 	return port
 }
 
-// splitVolume splits "name:/path" into volume name and mount path.
+// splitVolume splits one compose short-syntax volume — [SOURCE:]TARGET[:MODE] —
+// into its source and the container path it asks for.
+//
+// Splitting on every colon and keeping the first two fields leaves the MODE
+// behind. A mode — "ro", "z", "cached", or a comma-separated run of them — says
+// how the container sees the volume, never where; read as part of the path it
+// would put "/var/lib/mysql:rw" in front of a reader as though it were a
+// directory, and have the importer call the mount uncarried for not matching
+// "/var/lib/mysql".
+//
+// A Windows source keeps its drive letter, so a bind mount from a Windows host
+// is not read as a volume named "C".
+//
+// An anonymous volume that carries a mode and no source — "/data:ro" — reads as
+// a source of "/data" and a target of "ro". No caller acts on it: a compose
+// volume name cannot contain "/", so that source matches no declared volume.
 func splitVolume(v string) (string, string) {
-	parts := strings.SplitN(v, ":", 2)
-	if len(parts) == 2 {
-		return parts[0], parts[1]
+	fields := strings.Split(v, ":")
+	if len(fields) > 1 && len(fields[0]) == 1 && strings.HasPrefix(fields[1], `\`) {
+		fields = append([]string{fields[0] + ":" + fields[1]}, fields[2:]...)
 	}
-	return v, ""
+
+	if len(fields) > 1 {
+		return fields[0], fields[1]
+	}
+
+	return fields[0], ""
 }
 
-// writeVolumes writes storage and mount directives for named volumes.
-func writeVolumes(b *strings.Builder, volumes []string, namedVolumes map[string]bool) {
+// storageFor reports the size a service's engine shorthand should carry, or ""
+// when it should carry none. The shorthand — "postgres 16, 10Gi" — is the only
+// storage form the importer emits; the grammar's other one, "each copy needs its
+// own storage of 10Gi", is left for the reader to add, which is what a dropped
+// volume's warning asks them to do. Both import paths take their size from this
+// function so they cannot come to different answers about the same service.
+func storageFor(engine string, volumes []string, namedVolumes map[string]bool) string {
+	switch engine {
+	case "postgres", "mysql":
+		return "10Gi"
+	case "redis":
+		// A cache is ephemeral unless compose gave it a volume, and asking for
+		// storage it was never meant to have would provision a stray PVC.
+		for _, v := range volumes {
+			if volName, _ := splitVolume(v); namedVolumes[volName] {
+				return "10Gi"
+			}
+		}
+	}
+	return ""
+}
+
+// engineMountPaths is where the compiler really mounts an engine slice's volume,
+// mirroring the mount path plan.Build reads out of its own engine defaults. It
+// takes no notice of the path compose asked for, so the two agree only by
+// coincidence — TestEngineMountPathsMatchWhereTheCompilerMounts holds this table
+// against the plan the compiler actually builds.
+var engineMountPaths = map[string]string{ //nolint:gochecknoglobals // immutable lookup table
+	"postgres": "/var/lib/postgresql/data",
+	"mysql":    "/var/lib/mysql",
+	"redis":    "/data",
+}
+
+// mountIsCarried reports whether the compiler will really mount a volume at the
+// path compose named. A slice's storage is one PVC at the engine's own path, so
+// a compose mount anywhere else — or on a slice with no engine to supply a path
+// — is not carried, however plainly the compose file asked for it.
+func mountIsCarried(engine, mountPath string) bool {
+	canonical, known := engineMountPaths[engine]
+
+	return known && mountPath == canonical
+}
+
+// statefulLanding names where "each copy needs its own storage" puts a volume,
+// and the compose path it displaces. A slice with no engine has no engine path
+// for the compiler to use, so that volume lands at /data whatever compose asked
+// for — advice that did not say so would leave the app writing to a directory
+// nothing is mounted on.
+func statefulLanding(composePath string) string {
+	if composePath == "" || composePath == "/data" {
+		return "/data"
+	}
+
+	return "/data rather than " + composePath
+}
+
+// writeVolumes writes what a service's named volumes can carry into the recipe.
+// A slice carries one volume at most — an engine slice's rides on its shorthand's
+// size and lands at the engine's own path, and a slice with no engine has no
+// shorthand for the importer to write a size on, only the per-copy directive the
+// warning below asks the reader to add — so everything compose declared beyond
+// that is named as uncarried instead of vanishing between the compose file and
+// the cluster.
+func writeVolumes(b *strings.Builder, engine string, volumes []string, namedVolumes map[string]bool) {
 	for _, v := range volumes {
 		volName, mountPath := splitVolume(v)
-		if namedVolumes[volName] {
-			fmt.Fprintf(b, "  storage 10Gi\n")
-			if mountPath != "" {
-				fmt.Fprintf(b, "  # mount %s at %s\n", volName, mountPath)
-			}
-			return // only emit one storage directive per service
+		if !namedVolumes[volName] {
+			continue
+		}
+
+		at := ""
+		if mountPath != "" {
+			at = " at " + mountPath
+		}
+
+		switch {
+		case mountIsCarried(engine, mountPath):
+			fmt.Fprintf(b, "  # mount %s at %s\n", volName, mountPath)
+		case engine != "":
+			fmt.Fprintf(b,
+				"  # WARNING: volume %s%s not carried — a %s slice gets one volume, mounted at %s\n",
+				volName, at, engine, engineMountPaths[engine])
+		default:
+			// The remedy belongs in the file, as it does for a dropped health
+			// check: this recipe outlives the import output, and the reader of it
+			// is no longer looking at compose.
+			fmt.Fprintf(b,
+				"  # WARNING: volume %s%s dropped — this slice has no database or cache engine to carry it; add \"each copy needs its own storage of 10Gi\" to get a 10Gi volume per copy, mounted at %s\n",
+				volName, at, statefulLanding(mountPath))
 		}
 	}
 }

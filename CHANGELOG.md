@@ -126,6 +126,27 @@ surface. See [docs/VISION.md](docs/VISION.md).
   `http://localhost:3000/health` yields an `on port 3000` line. Where no port exists anywhere, the
   check is dropped rather than written — reported at import time and recorded as a comment in the
   recipe, both naming what to add to restore it
+- **`mozza import` wrote a recipe that mozza itself could not read.** A Compose file with a named
+  volume imported to a recipe carrying a `storage 10Gi` line — not a directive the recipe language
+  has — so `mozza validate` answered `unknown directive "storage"` and the on-ramp from Compose ended
+  at a parse error on the importer's own output. The line was wrong to emit at all rather than merely
+  misspelled: a storage size rides on the engine shorthand, as in `postgres 16, 10Gi`, and that
+  shorthand is the only thing in the language that sets one, so on a service with no database or
+  cache engine there was no size for the compiler to read and it discarded it. A volume the recipe
+  cannot carry is now named instead of mistranslated — in a comment beside the slice and on the
+  terminal as the import runs — along with what to write to keep it: `each copy needs its own storage
+  of 10Gi` deploys the service as a StatefulSet with a volume per copy. The advice also says where
+  that volume arrives, because a slice with no engine gives the compiler no path of its own to use
+  and the volume is mounted at `/data` whatever path Compose asked for. An engine slice is given one
+  volume at its engine's own path regardless of what Compose called it, so a second named volume used
+  to vanish in silence — a `postgres` service with a data volume and a backup volume imported to a
+  recipe mentioning only the first — and it is now named too. Lastly, an access mode on a volume —
+  `:ro`, `:rw`, `:z` and the rest — was being read as part of the mount path, so
+  `dbdata:/var/lib/mysql:ro` was recorded as a mount at `/var/lib/mysql:ro`; the mode is now
+  separated from the path it qualifies. The same misreading would also have made the new warnings
+  fire on volumes that are carried after all, but those warnings and the misreading never met in a
+  release — what the released version does with an access mode is carry it into the comment, and
+  nothing more
 - **The CLI now writes to stdout.** Every command's output went to stderr and stdout was always
   empty, so `mozza targets | grep local` matched nothing and `mozza deploy --export > list.txt`
   wrote an empty file. Cobra's `Print*` helpers resolve through `OutOrStderr`, which walks the
