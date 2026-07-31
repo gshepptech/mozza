@@ -108,10 +108,17 @@ func (p *Parser) parseNamespace(recipe *Recipe) {
 	}
 }
 
+// startsAlias reports whether tok begins an `Images:` entry — an alias name is
+// an ident written with a trailing colon.
+func startsAlias(tok Token) bool {
+	return tok.Type == TokenIdent && strings.HasSuffix(tok.Value, ":")
+}
+
 // parseImages parses an `Images:` section containing alias definitions.
 // Each indented line has the format `name: image-ref`.
 func (p *Parser) parseImages(recipe *Recipe) {
 	p.advance() // consume Images token
+	consumedLine := p.lastConsumedLine(0)
 	p.skipInsignificant()
 
 	if recipe.Aliases == nil {
@@ -127,8 +134,15 @@ func (p *Parser) parseImages(recipe *Recipe) {
 			break
 		}
 
+		if p.reportOffLine(tok, consumedLine, "alias", startsAlias(tok)) {
+			consumedLine = p.lastConsumedLine(consumedLine)
+			p.skipInsignificant()
+
+			continue
+		}
+
 		// Each alias line is an ident ending with ":" followed by the image ref.
-		if tok.Type == TokenIdent && strings.HasSuffix(tok.Value, ":") {
+		if startsAlias(tok) {
 			name := strings.TrimSuffix(tok.Value, ":")
 			p.advance()
 
@@ -145,6 +159,7 @@ func (p *Parser) parseImages(recipe *Recipe) {
 			p.recoverDirective()
 		}
 
+		consumedLine = p.lastConsumedLine(consumedLine)
 		p.skipInsignificant()
 	}
 }
@@ -152,6 +167,7 @@ func (p *Parser) parseImages(recipe *Recipe) {
 // parseCRDs parses a `CRDs:` block collecting `from <url>` entries.
 func (p *Parser) parseCRDs(recipe *Recipe) {
 	p.advance() // consume CRDs token
+	consumedLine := p.lastConsumedLine(0)
 	p.skipInsignificant()
 
 	for !p.atEnd() {
@@ -161,6 +177,13 @@ func (p *Parser) parseCRDs(recipe *Recipe) {
 		if tok.Type == TokenSectionHeader || tok.Type == TokenApp ||
 			tok.Type == TokenNamespace || tok.Type == TokenImages || tok.Type == TokenCRDs {
 			break
+		}
+
+		if p.reportOffLine(tok, consumedLine, "entry", tok.Type == TokenFrom) {
+			consumedLine = p.lastConsumedLine(consumedLine)
+			p.skipInsignificant()
+
+			continue
 		}
 
 		// Each line should be: from <url>
@@ -179,6 +202,7 @@ func (p *Parser) parseCRDs(recipe *Recipe) {
 			p.recoverDirective()
 		}
 
+		consumedLine = p.lastConsumedLine(consumedLine)
 		p.skipInsignificant()
 	}
 }
@@ -195,6 +219,8 @@ func (p *Parser) parseSection(recipe *Recipe) {
 
 	p.skipInsignificant()
 
+	consumedLine := headerTok.Line
+
 	// Parse directives until we hit another section header, App, or EOF.
 	for !p.atEnd() {
 		tok := p.current()
@@ -204,7 +230,11 @@ func (p *Parser) parseSection(recipe *Recipe) {
 			break
 		}
 
-		p.parseDirective(&slice)
+		if !p.reportOffLine(tok, consumedLine, "directive", startsDirective(tok)) {
+			p.parseDirective(&slice)
+		}
+
+		consumedLine = p.lastConsumedLine(consumedLine)
 		p.skipInsignificant()
 	}
 
@@ -258,6 +288,28 @@ var directiveTable = map[TokenType]directiveHandler{
 	TokenGraceful:  (*Parser).parseGraceful,
 	TokenReadOnly:  (*Parser).parseReadOnlyFS,
 	TokenIdent:     (*Parser).parseIdentDirective,
+}
+
+// identDirectiveWords mirrors the cases parseIdentDirective handles. TokenIdent
+// is in directiveTable, but only these words begin a directive — every other
+// ident reaching the table is an unknown directive.
+var identDirectiveWords = map[string]bool{
+	"only":  true,
+	"after": true,
+	"start": true,
+	"add":   true,
+	"use":   true,
+}
+
+// startsDirective reports whether tok is the first word of a directive.
+func startsDirective(tok Token) bool {
+	if tok.Type == TokenIdent {
+		return identDirectiveWords[strings.ToLower(tok.Value)]
+	}
+
+	_, ok := directiveTable[tok.Type]
+
+	return ok
 }
 
 // parseDirective dispatches a single directive inside a section body.
@@ -1012,6 +1064,8 @@ func (p *Parser) parseBefore(slice *Slice) {
 // parseInitBlock reads subsequent lines with "run image IMG [with CMD]" until
 // a non-matching line is encountered.
 func (p *Parser) parseInitBlock(slice *Slice) {
+	consumedLine := p.lastConsumedLine(0)
+
 	// Skip to next line.
 	p.skipInsignificant()
 
@@ -1025,6 +1079,12 @@ func (p *Parser) parseInitBlock(slice *Slice) {
 
 		// Each init line starts with "run".
 		if tok.Type != TokenRun {
+			break
+		}
+
+		// An init step must begin a line of its own. Handing a mid-line 'run'
+		// back to parseSection keeps one reporting point for a section body.
+		if tok.Line <= consumedLine {
 			break
 		}
 		p.advance() // consume 'run'
@@ -1056,6 +1116,7 @@ func (p *Parser) parseInitBlock(slice *Slice) {
 		}
 
 		slice.InitSteps = append(slice.InitSteps, step)
+		consumedLine = p.lastConsumedLine(consumedLine)
 		p.skipInsignificant()
 	}
 }
@@ -1376,12 +1437,13 @@ func (p *Parser) parseSpread(slice *Slice) {
 // parseNever parses "never run two copies on the same node".
 func (p *Parser) parseNever(slice *Slice) {
 	p.advance() // consume 'never'
-	// consume rest of line tokens until newline
+
 	if slice.Scheduling == nil {
 		slice.Scheduling = &SchedulingSpec{}
 	}
 	slice.Scheduling.AntiAffinity = true
-	p.recoverDirective()
+
+	p.consumeTrailing("run", "two", "copies", "copy", "on", "the", "same", "node")
 }
 
 // parseScale parses "scale between MIN and MAX copies based on cpu|memory PCT%".
@@ -1489,8 +1551,7 @@ func (p *Parser) parseKeep(slice *Slice) {
 		p.advance()
 	}
 
-	// consume remaining: "copies running during updates"
-	p.recoverDirective()
+	p.consumeTrailing("copies", "copy", "running", "during", "updates")
 }
 
 // parseAllow handles:
@@ -1519,11 +1580,11 @@ func (p *Parser) parseAllow(slice *Slice) {
 			slice.DisruptionBudget.MaxUnavailable = n
 			p.advance()
 		}
-		p.recoverDirective()
+		p.consumeTrailing("copies", "copy", "down", "during", "updates")
 	} else if tok.Type == TokenCopies || (tok.Type == TokenIdent && strings.ToLower(tok.Value) == "copies") {
 		// "allow copies to find each other"
 		slice.PeerDiscovery = true
-		p.recoverDirective()
+		p.consumeTrailing("copies", "to", "find", "each", "other")
 	} else {
 		p.addErrorf(tok.Line, tok.Col, "expected 'at' or 'copies' after 'allow'")
 		p.recoverDirective()
@@ -1600,8 +1661,7 @@ func (p *Parser) parseUpdate(slice *Slice) {
 		p.advance()
 	}
 
-	// consume "at a time"
-	p.recoverDirective()
+	p.consumeTrailing("at", "a", "time")
 	slice.UpdateStrategy = &us
 }
 
@@ -1704,7 +1764,7 @@ func (p *Parser) parseIdentDirective(slice *Slice) {
 		// "start copies in order"
 		p.advance()
 		slice.OrderedStartup = true
-		p.recoverDirective()
+		p.consumeTrailing("copies", "copy", "in", "order")
 
 	case "add":
 		// "add capability NAME"
@@ -1986,6 +2046,66 @@ func (p *Parser) atEnd() bool {
 // matchType reports whether the current token matches the given type.
 func (p *Parser) matchType(tt TokenType) bool {
 	return p.pos < len(p.tokens) && p.tokens[p.pos].Type == tt
+}
+
+// consumeTrailing advances past the words that finish a directive's phrasing,
+// in the order given, skipping any the author left out — "keep at least 2" and
+// "keep at least 2 copies running during updates" mean the same thing. It stops
+// at the first token that is not the next word it expects, so anything else on
+// the line reaches the caller's one-per-line check instead of being swallowed.
+// Matching is on the word rather than the token type because these words lex as
+// keywords in some phrasings and as plain idents in others; where a word varies
+// ("copies", "copy") list both spellings, since only the one written matches.
+func (p *Parser) consumeTrailing(words ...string) {
+	for _, word := range words {
+		if strings.ToLower(p.current().Value) == word {
+			p.advance()
+		}
+	}
+}
+
+// lastConsumedLine reports the line the most recently consumed token sits on,
+// or fallback when nothing has been consumed yet. Callers compare against the
+// token actually consumed rather than an entry's first token because an init
+// block spans lines, and a start-line comparison would wave through whatever
+// follows its last step on the same line.
+func (p *Parser) lastConsumedLine(fallback int) int {
+	if p.pos == 0 || p.pos > len(p.tokens) {
+		return fallback
+	}
+
+	return p.tokens[p.pos-1].Line
+}
+
+// reportOffLine reports tok when it continues a line an earlier entry already
+// finished, and skips the rest of that line. Every entry — directive, alias,
+// CRDs entry, init step — begins a line of its own; the lexer separates tokens
+// by whitespace, so without this rule a value written into one entry can start
+// the next one no matter who wrote the recipe. what names the kind of entry the
+// caller reads.
+//
+// Which mistake this is turns on startsEntry — whether tok begins an entry of
+// the kind the caller reads, which only the caller knows. If it does, the author
+// wrote two entries on one line and the line rule is the fix. If it does not, no
+// line break will help: the word is a misspelling, or an option the entry it
+// follows does not have, and saying "put it on its own line" would name a cause
+// that is not the cause.
+func (p *Parser) reportOffLine(tok Token, consumedLine int, what string, startsEntry bool) bool {
+	if tok.Line > consumedLine {
+		return false
+	}
+
+	if startsEntry {
+		p.addErrorf(tok.Line, tok.Col,
+			"unexpected %q after a complete %s — each %s goes on its own line", tok.Value, what, what)
+	} else {
+		p.addErrorf(tok.Line, tok.Col,
+			"unexpected %q — the %s on this line does not accept it, and no directive starts with it",
+			tok.Value, what)
+	}
+	p.recoverDirective()
+
+	return true
 }
 
 // skipNewlines advances past any newline tokens.

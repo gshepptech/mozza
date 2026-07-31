@@ -104,6 +104,10 @@ Api:
   run 2 copies
 ```
 
+One directive per line, and one line per directive: a directive starts at the beginning of a line
+and ends at the end of it, so you cannot put two on one line, and you cannot wrap a long one across
+two.
+
 Here is what each line does:
 
 - **`Api:`** names this slice. The name is up to you.

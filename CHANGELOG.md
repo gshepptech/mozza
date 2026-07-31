@@ -66,9 +66,10 @@ surface. See [docs/VISION.md](docs/VISION.md).
   into real Kubernetes manifests.** A Compose service carrying `restart: "always run 5 copies"`
   imported to the line `restart always run 5 copies`, which compiled to a Deployment with
   `replicas: 5` — from a file that asked for one copy and never mentioned copies at all. **This
-  needed no newline, and no quote either: the recipe grammar separates directives by whitespace
-  within a section rather than by line, so a single space in the value was enough**, and the recipe
-  the importer wrote for that file contained no quote character anywhere in it. An image tag did the
+  needed no newline, and no quote either: the recipe grammar then separated directives by whitespace
+  within a section rather than by line, so a single space in the value was enough** — the grammar
+  refuses that shape now, below — and the recipe the importer wrote for that file contained no quote
+  character anywhere in it. An image tag did the
   same thing the same way (`nginx:1.25 run 7 copies` compiled to `replicas: 7`); an env value could
   close the quotes the importer put around it and carry on (`replicas: 11`); and a volume name
   reached a `# WARNING:` comment, where a newline ended the comment and the next line was live
@@ -103,10 +104,30 @@ surface. See [docs/VISION.md](docs/VISION.md).
   importer never touches.** The framework-detection endpoint assembles a recipe from its own
   answers, the template and marketplace renderers substitute `{{VAR}}` into recipe source with
   request-supplied values, and the dashboard's wizard builds recipe text in the browser. Those
-  paths are unchanged, and each is the same defect in a different emitter. The recipe language
-  itself is also unchanged: it still accepts a directive that does not begin a line, which is what
-  made a single space enough, and closing that is a change to how every recipe is read rather than
-  to how imported ones are written.
+  paths are unchanged, and each is the same defect in a different emitter. What they no longer get
+  away with is a directive that does not begin a line, which is what made a single space enough —
+  that is closed in the grammar, in the entry below, because it is a change to how every recipe is
+  read rather than to how imported ones are written.
+- **The recipe language now requires a directive to begin a line, so a value landing mid-line cannot
+  become a directive no matter which emitter wrote it.** `restart always run 5 copies` was two
+  directives and compiled to `replicas: 5`; it is now `line 5, col 18: unexpected "run" after a
+  complete directive — each directive goes on its own line`. Every construct that reads one entry
+  per line had the identical hole and each is closed with it — an `Images:` alias pair, two `CRDs:`
+  entries and two `before starting` init steps all parsed silently on one line before, and so did a
+  second directive after any of the five that end in words they may ignore, such as `update one at a
+  time domain evil.example.com`. This is the
+  grammar half of the injection above, not a replacement for it: the importer refuses a value at the
+  source and names the field it came from, the grammar refuses whatever any other emitter produces.
+  **It does not close a value widening the directive it is already inside**, because that damage
+  happens within one directive on one line — `depends_on: "db and cache"` still parses to two
+  dependencies and a health check of `/healthz every 30s` still sets a 30-second interval, both of
+  which stay covered by the import-time refusal. Every recipe in `examples/`,
+  `internal/template/recipes/` and the documentation parses to a byte-identical AST.
+- **A leftover word is only told to move to its own line when moving it would help.** A word that
+  begins no directive is a misspelling or an option the directive does not have, and no line break
+  fixes either: `graceful shutdown after 45s` now reads `unexpected "45s" — the directive on this
+  line does not accept it, and no directive starts with it` rather than being sent to put `45s` on a
+  line of its own.
 - **A compose file whose services share a network imported to a recipe that said nothing about the
   boundary, and to an AST `mozza validate` would have rejected.** `ComposeToRecipeAST` put the
   *network's* name into a slice's `only accept traffic from` list, which holds *slice* names, so the

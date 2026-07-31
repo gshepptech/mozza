@@ -15,12 +15,15 @@ import (
 // only refused, and the predicates below refuse it while naming the field it
 // came from.
 //
-// Rejecting is per-position rather than per-character because the parser does
-// not work in lines: it dispatches on token type, so any keyword token starts a
-// directive wherever on the line it appears. A plain space in a bare word is
-// therefore as structural as a newline — `restart: "always run 5 copies"` needs
-// neither a newline nor a quote to become `run 5 copies` — while the same space
-// inside a quoted string or a comment is inert and must stay accepted.
+// Rejecting is per-position rather than per-character, and the parser's rule
+// that a directive begins a line does not make it redundant. That rule stops a
+// value from starting a second directive; it cannot see one widening the
+// directive it is already inside, because the extra tokens land in that same
+// directive's argument list on the same line — `depends_on: "db and cache"`
+// writes `needs db and cache`, which parses clean as two dependencies. A plain
+// space in a bare word is therefore still as structural as a newline. A newline
+// in a comment still ends the comment and leaves what follows on a live line,
+// while the same space inside a quoted string is inert and must stay accepted.
 const (
 	// structuralInWord is every byte recipe's isDelimiter treats as a token
 	// boundary, plus the two line terminators. A bare word has to lex to exactly
