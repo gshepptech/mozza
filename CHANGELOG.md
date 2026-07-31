@@ -317,6 +317,41 @@ surface. See [docs/VISION.md](docs/VISION.md).
   output), progress and diagnostics on stderr (`compile`'s `wrote …` lines and summary, capability
   warnings, the `--export` notice). `mozza compile > files.txt` stays empty by design — for a
   command whose artifacts are files on disk, the chatter is not the output
+- **`mozza init --detect` wrote an `app.mozza` that mozza itself then refused to read.** The wizard
+  reported `Created app.mozza`, and `mozza validate` on the very next line exited 1 with `line 6, col
+  8: unexpected token Image`. Three of the emitted lines were not the language. The main slice's
+  header was `App:`, which the lexer dispatches as the app declaration rather than reading as a slice
+  name, so the `from image` indented under it had nowhere to belong; both resource limits shared one
+  line as `limit cpu 500m memory 256Mi`, and a directive gets a line to itself (`col 18: unexpected
+  "memory"`); and `store 10Gi` named a directive that does not exist in the grammar at all (`unknown
+  directive "store"`). `POST /api/v1/detect/generate` emitted all three and so failed three ways at
+  once. The headers are now `Web:`, the limits are `limit cpu to "500m"` and `limit memory to
+  "256Mi"` on their own lines, and the size is `each copy needs its own storage of 10Gi` — the form
+  the wizard's own generation spec prescribes. One repaired function covers seven paths: `mozza init
+  --detect`, the five framework detectors that fill the `recipe` field of `POST /api/v1/detect`, and
+  the generate endpoint's own copy. The full-branch response is now a valid four-slice recipe that
+  compiles to 8 Kubernetes manifests, with the database's `volumeClaimTemplates` requesting `storage:
+  10Gi` and each deployment carrying its own CPU and memory limits
+- **Repairing that would have armed a live injection, so both halves land together: the four request
+  values that reach recipe text are now refused at the boundary rather than written into it.**
+  `worker_name` becomes a slice header and the emitter appends the colon itself, so a value carrying
+  one closes the header cleanly — `w:\n  from image evil:latest\n  run 9 copies\nBackdoor` produced a
+  **valid** three-slice recipe compiling to five manifests, among them a `w-deployment.yaml` running
+  `image: evil:latest` at `replicas: 9` and an attacker-named `backdoor-deployment.yaml`. `framework`
+  and `language` land inside a `#` comment, where a trailing `#` re-opens the comment to swallow the
+  emitter's ` (%s)` tail: `nextjs\nBackdoor:\n  from image evil:latest\n  run 9 copies\n#` yielded a
+  valid two-slice recipe. The grammar's begins-a-line rule closes neither, because the injected
+  directives each begin their own line. `app_name` and `worker_name` must now be DNS-1123 labels —
+  the same constraint `mozza init` already applied to the same value, and one that admits no space,
+  tab, comma, quote or line terminator anywhere — and `worker_name` may additionally not be `app`,
+  `namespace`, `images` or `crds`, which are valid labels the lexer dispatches specially instead of
+  reading as headers, nor `web`, `database` or `cache`, which this emitter writes itself. The two
+  comment fields need only line terminators refused, which is the whole of what escapes that
+  position. `worker_name` is checked whenever it is present, independent of the `worker` flag that
+  gates emission today, so the guard cannot be bypassed by omitting that flag and survives a change
+  to the condition. A rejected request names the field to fix and returns no recipe. This is the
+  framework-detection endpoint the note above named as still uncovered; the dashboard's own
+  browser-side copy of the template is not, and remains invalid the way it already was
 - Banner and how-it-works graphics no longer describe Mozza as Kubernetes-only, matching the
   compiler reframe in the README
 - Corrected stale README claims: the template catalog holds 15 recipes (documented as 10), and the

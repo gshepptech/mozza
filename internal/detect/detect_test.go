@@ -9,6 +9,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/gshepptech/mozza/internal/detect"
+	"github.com/gshepptech/mozza/internal/plan"
+	"github.com/gshepptech/mozza/internal/recipe"
 	// Register all framework detectors.
 	_ "github.com/gshepptech/mozza/internal/detect/frameworks"
 )
@@ -391,6 +393,25 @@ func TestGenerateRecipeText(t *testing.T) {
 	assert.Contains(t, text, "port 8000")
 	assert.Contains(t, text, "/health/")
 	assert.Contains(t, text, "django")
+
+	// This is the exact string `mozza init --detect` writes to app.mozza, so
+	// substring assertions alone let a recipe mozza cannot read ship. Run it
+	// through the chain a real command runs.
+	rec, err := recipe.NewParser(text).Parse()
+	require.NoError(t, err, "generated recipe must parse:\n%s", text)
+
+	p, err := plan.Build(rec)
+	require.NoError(t, err, "generated recipe must build a plan:\n%s", text)
+	require.NoError(t, plan.Validate(p), "generated plan must validate:\n%s", text)
+
+	require.Len(t, p.Slices, 1)
+	assert.Equal(t, "web", p.Slices[0].Name)
+	assert.Equal(t, 8000, p.Slices[0].Port)
+	assert.Equal(t, "/health/", p.Slices[0].HealthPath)
+	assert.True(t, p.Slices[0].Public)
+	require.NotNil(t, p.Slices[0].Resources, "both limit lines must survive")
+	assert.Equal(t, "500m", p.Slices[0].Resources.CPULimit)
+	assert.Equal(t, "256Mi", p.Slices[0].Resources.MemoryLimit)
 }
 
 // writeFiles creates files in a directory from a map of relative path -> content.

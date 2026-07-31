@@ -158,12 +158,13 @@ func GenerateRecipeText(appName string, r *Result) string {
 	var sb strings.Builder
 	sb.WriteString(fmt.Sprintf("App: %s\n\n", appName))
 	sb.WriteString(fmt.Sprintf("# Auto-detected: %s (%s confidence)\n\n", r.Framework, r.Confidence))
-	sb.WriteString(fmt.Sprintf("App:\n"))
+	sb.WriteString("Web:\n")
 	sb.WriteString(fmt.Sprintf("  from image %s:latest\n", appName))
 	sb.WriteString(fmt.Sprintf("  open to the public on port %d\n", r.Port))
 	sb.WriteString(fmt.Sprintf("  health check %s\n", r.HealthPath))
 	sb.WriteString("  run 1 copy\n")
-	sb.WriteString("  limit cpu 500m memory 256Mi\n")
+	sb.WriteString("  limit cpu to \"500m\"\n")
+	sb.WriteString("  limit memory to \"256Mi\"\n")
 
 	return sb.String()
 }

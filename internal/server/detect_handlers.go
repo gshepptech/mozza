@@ -124,6 +124,11 @@ func (s *Server) handleDetectGenerate() http.HandlerFunc {
 			return
 		}
 
+		if msg := validateGenerateRequest(req); msg != "" {
+			Error(w, http.StatusBadRequest, msg)
+			return
+		}
+
 		port := req.Port
 		if port == 0 {
 			port = 8080
@@ -144,6 +149,56 @@ func (s *Server) handleDetectGenerate() http.HandlerFunc {
 	}
 }
 
+// reservedSliceNames are the lowered names a caller may not give a slice. The
+// first four are the labels the lexer dispatches specially rather than reading
+// as a slice header, so each one breaks the recipe; the last three are the
+// headers this emitter writes itself, which a caller would otherwise duplicate.
+var reservedSliceNames = map[string]bool{ //nolint:gochecknoglobals // immutable lookup table
+	"app":       true,
+	"namespace": true,
+	"images":    true,
+	"crds":      true,
+	"web":       true,
+	"database":  true,
+	"cache":     true,
+}
+
+// validateGenerateRequest refuses every request field that reaches recipe text
+// carrying structure that position cannot hold. It returns a client-facing
+// message naming the field, or "" when the request is safe to emit.
+//
+// worker_name is checked whenever it is present, independent of
+// user_choices["worker"], so the guard cannot be bypassed by omitting the flag
+// that gates emission today and survives a change to that condition.
+func validateGenerateRequest(req generateRequest) string {
+	if !validSlug.MatchString(req.AppName) {
+		return "app_name must be lowercase alphanumeric with hyphens (e.g. my-app)"
+	}
+
+	if name := req.UserChoices["worker_name"]; name != "" {
+		if !validSlug.MatchString(name) {
+			return "worker_name must be lowercase alphanumeric with hyphens (e.g. mailer)"
+		}
+		if reservedSliceNames[name] {
+			return fmt.Sprintf("worker_name %q is reserved and cannot name a slice", name)
+		}
+	}
+
+	// framework and language land inside a # comment, where a comment is the
+	// whole of its line and so only a line terminator escapes the position —
+	// the same rule as importer.structuralInComment (recipesafe.go).
+	for _, field := range []struct{ name, value string }{
+		{"framework", req.Framework},
+		{"language", req.Language},
+	} {
+		if strings.ContainsAny(field.value, "\n\r") {
+			return fmt.Sprintf("%s cannot contain a newline or carriage return", field.name)
+		}
+	}
+
+	return ""
+}
+
 // buildRecipeFromChoices generates a .mozza recipe incorporating user answers.
 func buildRecipeFromChoices(
 	appName, framework, language string,
@@ -155,12 +210,13 @@ func buildRecipeFromChoices(
 	sb.WriteString(fmt.Sprintf("# Framework: %s (%s)\n\n", framework, language))
 
 	// Main app slice.
-	sb.WriteString("App:\n")
+	sb.WriteString("Web:\n")
 	sb.WriteString(fmt.Sprintf("  from image %s:latest\n", appName))
 	sb.WriteString(fmt.Sprintf("  open to the public on port %d\n", port))
 	sb.WriteString("  health check /health\n")
 	sb.WriteString("  run 1 copy\n")
-	sb.WriteString("  limit cpu 500m memory 256Mi\n")
+	sb.WriteString("  limit cpu to \"500m\"\n")
+	sb.WriteString("  limit memory to \"256Mi\"\n")
 	sb.WriteString("\n")
 
 	// Database slice from user choice.
@@ -178,7 +234,7 @@ func buildRecipeFromChoices(
 		sb.WriteString("Database:\n")
 		sb.WriteString(fmt.Sprintf("  from image %s\n", dbImage))
 		sb.WriteString(fmt.Sprintf("  on port %d\n", dbPort))
-		sb.WriteString("  store 10Gi\n")
+		sb.WriteString("  each copy needs its own storage of 10Gi\n")
 		sb.WriteString("\n")
 	}
 
@@ -192,7 +248,8 @@ func buildRecipeFromChoices(
 			strings.ToUpper(workerName[:1])+workerName[1:]))
 		sb.WriteString(fmt.Sprintf("  from image %s:latest\n", appName))
 		sb.WriteString("  run 1 copy\n")
-		sb.WriteString("  limit cpu 250m memory 128Mi\n")
+		sb.WriteString("  limit cpu to \"250m\"\n")
+		sb.WriteString("  limit memory to \"128Mi\"\n")
 		sb.WriteString("\n")
 	}
 
