@@ -62,6 +62,69 @@ surface. See [docs/VISION.md](docs/VISION.md).
 
 ### Fixed
 
+- **A compose file whose services share a network imported to a recipe that said nothing about the
+  boundary, and to an AST `mozza validate` would have rejected.** `ComposeToRecipeAST` put the
+  *network's* name into a slice's `only accept traffic from` list, which holds *slice* names, so the
+  AST it returned could not survive `plan.Validate` — `network policy references unknown source
+  "backend"`. No production caller compiles that AST, so nobody had hit it: `mozza import` writes the
+  text path's recipe, and that path emitted no network directive at all, dropping the boundary in
+  silence. **Neither path writes a network policy now, and the boundary is reported instead**, on
+  both of them. Two services on one `backend` network import with: *network "backend" draws a
+  boundary the recipe does not carry — this file declares services "api" and "db" on it, and compose
+  lets them reach each other and keeps out everything that did not join*, then, for each of them,
+  *service "api" is on "backend" — to carry that boundary by hand, add `only accept traffic from
+  "api" and "db"` under Api, which is every service this file declares on a network with it*. The
+  names are quoted, so that a service called `public` or `domain` cannot produce a recipe that will
+  not parse, and lowercased to the name `plan.Build` gives the slice; every member is in the list
+  including the slice the directive goes under, because compose lets a service reach its own replicas
+  over a shared network and mozza gives a multi-copy stateful slice a headless service for exactly
+  that traffic.
+- **One warning per network for the boundary, but one per *service* for the directive that carries
+  it**, and that split is load-bearing. A slice carries one `only accept traffic from`, and the
+  presence of that directive is a deny — so a service on two networks needs one directive holding the
+  union of both, not one per network. Reported per network, a three-tier file handed the reader two
+  instructions that each read as complete; following either one alone compiled a policy narrower than
+  compose, `mozza validate` passed, the deploy reported success and a tier went dark with nothing
+  anywhere to read. Every service on a network now gets exactly one instruction, its list is every
+  service this file declares on any network with it, and it is safe to act on by itself.
+- **Deriving the policy was tried and abandoned, which is worth stating rather than leaving as a
+  gap.** The two vocabularies do not line up: a compose network is an undirected broadcast domain,
+  while a recipe's `only accept traffic from` is a directed ingress allow-list whose *presence* is a
+  deny. So a derived policy is right only when its list holds every source compose already allows —
+  and membership read off the `networks:` keys is a lower bound on that set rather than the set. A
+  service joins a network without naming its key through `extends`, `include`, `network_mode`,
+  `external_links`, an `external:` or `attachable:` network, a driver that bridges to a segment
+  compose did not create, a second key whose `name:` resolves to the same real network, a `${VAR}`
+  mozza does not expand, and a `docker-compose.override.yml` that `docker compose up` loads without
+  being asked. Every one missed produced a policy that silently black-holes a service while the
+  deploy reports success, and the last two cannot be closed at all: mozza expands `${VAR}` in no
+  field anywhere, and the server import endpoint is handed compose *content* with no path to look
+  beside. Naming what a file declares is true however incomplete that file is; claiming those are all
+  of them is what could not be. The boundary is still the user's to have — one line, having been told
+  what it should say.
+- **Where the declared members may not be all of them, the warning says so before recommending a
+  list**, naming what brings the others in: `extends`, `include`, `network_mode` on any value but
+  `none`, `external_links`, `external:` (in all three spellings `docker compose config` accepts —
+  `true`, `"true"`, and the legacy `{name: legacy_net}`), `attachable:`, a driver other than `bridge`
+  or `overlay`, a network's own `name:`, and a service that also joins the default network. Where one
+  of a service's networks is in that state, its own instruction repeats the caveat rather than
+  leaving it a network away. A service whose every network is named by a `${VAR}` gets no directive at
+  all, since a list drawn from a network mozza cannot name is not one to follow. A service that
+  publishes a port is offered no directive either, and told why: it is reachable from outside the
+  cluster, and a policy under it would deny the ingress that serves it and take a working site dark
+  with nothing to read anywhere — said out loud for that service, because one passed over in silence
+  is one the reader has to notice the absence of. Two limits are named
+  rather than implied. A container that reconfigures its own networking at run time, under
+  `privileged: true` or `cap_add: [NET_ADMIN]`, is past what any reading of a compose file can
+  account for. And `links:` between services in this file is not treated as reaching: `docker compose
+  config` renders a link across two networks that do not touch without adding a network to either, so
+  a link is an alias on a network the two already share rather than a path between them.
+- **Compose's default network still never becomes a boundary**, however it is spelled — a service
+  that writes `networks: [default]` lands exactly where one that writes nothing lands, so it is a
+  request for no isolation rather than something to carry. It needs no warning of its own now: each
+  network reports what it keeps out, and the services left on the default network are part of that. A
+  compose file that declares no networks, and a file with a single service, import byte for byte as
+  they did before and say nothing about networks at all.
 - **A storage size that was not a quantity passed `mozza validate` and then killed `mozza compile`
   with a Go stack trace.** `each copy needs its own storage of BIGGISH` validated cleanly, reported
   the recipe valid, and then panicked inside `resource.MustParse` — which panics rather than
