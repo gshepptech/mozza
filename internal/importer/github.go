@@ -62,6 +62,19 @@ func ParseGitHubURL(rawURL string) (owner, repo string, err error) {
 
 	owner = parts[0]
 	repo = strings.TrimSuffix(parts[1], ".git")
+
+	// Both are written into recipe text unquoted — as the App line, the section
+	// header, and the image the fallback and the ghcr splice name — and
+	// url.Parse percent-decodes the path on the way here, so "%0A" in a URL
+	// arrives as a real newline. Refusing here rather than at each of those
+	// sites is what makes this the only place they have to be checked.
+	if err := recipeSafeWord("repository owner", owner); err != nil {
+		return "", "", err
+	}
+	if err := recipeSafeWord("repository name", repo); err != nil {
+		return "", "", err
+	}
+
 	return owner, repo, nil
 }
 

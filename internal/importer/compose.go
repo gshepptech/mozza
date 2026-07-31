@@ -38,11 +38,6 @@ const (
 	mapTag  = "!!map"
 )
 
-// maxReportedValue is how much of a value a message quotes back. A compose file
-// can hold a whole certificate in one scalar, and a message that reprints it is
-// no more use than one that names no value at all.
-const maxReportedValue = 40
-
 // resolveAlias follows a node through an alias to the node holding the value.
 //
 // yaml resolves an alias itself when it decodes into a typed field, but a
@@ -743,11 +738,8 @@ func composeGot(tag, value string) string {
 	if value == "" {
 		return "an empty value"
 	}
-	if len(value) > maxReportedValue {
-		return "a value beginning " + strconv.Quote(value[:maxReportedValue])
-	}
 
-	return strconv.Quote(value)
+	return reportedRecipeValue(value)
 }
 
 // kindOfTag reports which kind of node a tag in one of yaml's messages belongs
@@ -946,6 +938,9 @@ func ComposeToRecipe(composeYAML string) (string, error) {
 	if len(cf.Services) == 0 {
 		return "", fmt.Errorf("no services found in compose file")
 	}
+	if err := checkComposeValues(cf); err != nil {
+		return "", err
+	}
 
 	names := sortedKeys(cf.Services)
 
@@ -1039,6 +1034,126 @@ func ComposeToRecipe(composeYAML string) (string, error) {
 	}
 
 	return b.String(), nil
+}
+
+// checkComposeValues refuses a compose file holding a value that cannot be
+// written into recipe text without changing what the recipe says.
+//
+// It runs once, over the whole file, before a line is written — several of the
+// emitters below take a bare *strings.Builder, and threading an error back out
+// of each of them buys the same guarantee for a much larger change. Every value
+// is checked in the shape it will be emitted in, through the same derivation
+// helpers the emitters use, because the two differ often enough to matter: a
+// healthcheck's test command legitimately holds quotes and spaces
+// (`curl -f 'http://...'`), and only the path extracted from it is ever written.
+func checkComposeValues(cf composeFile) error {
+	namedVolumes := make(map[string]bool, len(cf.Volumes))
+	for v := range cf.Volumes {
+		namedVolumes[v] = true
+	}
+
+	// Sorted so a file with two bad values always names the same one first.
+	for _, name := range sortedKeys(cf.Services) {
+		if err := checkComposeService(name, cf.Services[name], namedVolumes); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// recipeValueCheck is one value bound to the predicate for the position it is
+// written into. Building the list before running it keeps which class governs
+// which field the visible content of checkComposeService, rather than something
+// spread across a dozen error returns.
+type recipeValueCheck struct {
+	safe  func(field, value string) error
+	field string
+	value string
+}
+
+// checkComposeService refuses a single service's unwritable values. The checks
+// are built in the order ComposeToRecipe emits them, so a file with several bad
+// values names the one that would have gone wrong first.
+func checkComposeService(name string, svc composeService, namedVolumes map[string]bool) error {
+	// The name is checked before the rest because it is both a value in its own
+	// right — it becomes the App line and the section header — and the prefix
+	// every field path below is built from, which a newline in it would corrupt.
+	if err := recipeSafeWord("services", name); err != nil {
+		return err
+	}
+	field := "services." + name
+
+	// The image is written whole by `from image`; an engine shorthand's version
+	// is a substring of it, so checking the image covers both.
+	checks := []recipeValueCheck{{recipeSafeWord, field + ".image", svc.Image}}
+
+	for _, p := range svc.Ports {
+		port, _ := portDirective(p)
+		checks = append(checks, recipeValueCheck{recipeSafeWord, field + ".ports", port})
+	}
+
+	if svc.Healthcheck != nil {
+		// The path is written as a bare word when the check is kept and into a
+		// comment when it is dropped, and which of those happens turns on the
+		// service's ports rather than on the path — so it answers to the
+		// stricter of the two positions either way.
+		path, _ := extractHealthCheck(svc.Healthcheck)
+		checks = append(checks, recipeValueCheck{recipeSafeWord, field + ".healthcheck.test", path})
+	}
+
+	checks = append(checks, recipeValueCheck{recipeSafeWord, field + ".restart", svc.Restart})
+
+	for _, dep := range parseDependsOn(svc.DependsOn) {
+		checks = append(checks, recipeValueCheck{recipeSafeWord, field + ".depends_on", dep})
+	}
+
+	checks = append(checks, composeVolumeChecks(field, svc.Volumes, namedVolumes)...)
+
+	envs := parseEnvironment(svc.Environment)
+	for _, k := range sortedKeys(envs) {
+		// The key is written unquoted and the value between quotes, so a value
+		// may hold the spaces a sentence needs and the key may not.
+		checks = append(checks,
+			recipeValueCheck{recipeSafeWord, field + ".environment", k},
+			recipeValueCheck{recipeSafeString, field + ".environment." + k, envs[k]})
+	}
+
+	for _, s := range svc.Secrets {
+		// Written twice on one line, uppercased and raw; neither spelling adds
+		// a byte the other does not have.
+		checks = append(checks, recipeValueCheck{recipeSafeWord, field + ".secrets", s.Source})
+	}
+
+	for _, c := range checks {
+		if err := c.safe(c.field, c.value); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// composeVolumeChecks returns the checks for a service's mounts. Only a named
+// volume is checked, because writeVolumes writes nothing at all for any other
+// kind of mount — a bind mount's host path never reaches the recipe, and
+// rejecting a space in one would fail imports that work today.
+func composeVolumeChecks(field string, volumes []string, namedVolumes map[string]bool) []recipeValueCheck {
+	checks := make([]recipeValueCheck, 0, len(volumes)*2)
+
+	for _, v := range volumes {
+		volName, mountPath := splitVolume(v)
+		if !namedVolumes[volName] {
+			continue
+		}
+
+		// Both land in a comment, which only a line ending can escape.
+		checks = append(checks,
+			recipeValueCheck{recipeSafeComment, field + ".volumes", volName},
+			recipeValueCheck{recipeSafeComment, field + ".volumes", mountPath})
+	}
+
+	return checks
 }
 
 // convertService converts a single compose service to a recipe Slice.
@@ -1858,20 +1973,33 @@ func parseEngineImage(image string) (engine, version string) {
 	return eng, version
 }
 
-// writePort writes a port directive to the builder.
-func writePort(b *strings.Builder, portSpec string) {
-	// Formats: "8080:80", "8080", "8080:80/udp"
+// portDirective reduces a compose port spec to the port a recipe directive
+// names, and reports whether compose published it. Formats: "8080:80", "8080",
+// "8080:80/udp".
+//
+// It is separate from writePort because checkComposeValues has to check the
+// value that reaches the recipe rather than the spec it was derived from, and a
+// second copy of this derivation is a second answer to the same question.
+func portDirective(portSpec string) (string, bool) {
 	portSpec = strings.TrimSpace(portSpec)
 
 	// Strip protocol suffix for now.
 	portSpec = strings.Split(portSpec, "/")[0]
 
 	if strings.Contains(portSpec, ":") {
-		parts := strings.SplitN(portSpec, ":", 2)
-		containerPort := parts[1]
-		fmt.Fprintf(b, "  open to the public on port %s\n", containerPort)
+		return strings.SplitN(portSpec, ":", 2)[1], true
+	}
+
+	return portSpec, false
+}
+
+// writePort writes a port directive to the builder.
+func writePort(b *strings.Builder, portSpec string) {
+	port, published := portDirective(portSpec)
+	if published {
+		fmt.Fprintf(b, "  open to the public on port %s\n", port)
 	} else {
-		fmt.Fprintf(b, "  on port %s\n", portSpec)
+		fmt.Fprintf(b, "  on port %s\n", port)
 	}
 }
 

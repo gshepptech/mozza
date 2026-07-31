@@ -22,6 +22,16 @@ func DockerfileToRecipe(dockerfile string, repoName string) (string, error) {
 		port = "8080"
 	}
 
+	// Both are written into the recipe unquoted. repoName is checked here rather
+	// than left to ParseGitHubURL because this is an exported entry point and
+	// its callers need not have come through one.
+	if err := recipeSafeWord("repository name", repoName); err != nil {
+		return "", err
+	}
+	if err := recipeSafeWord("Dockerfile EXPOSE port", port); err != nil {
+		return "", err
+	}
+
 	var b strings.Builder
 	fmt.Fprintf(&b, "App: %s\n\n", repoName)
 	fmt.Fprintf(&b, "%s:\n", capitalize(repoName))

@@ -19,12 +19,28 @@ func HelmToRecipe(valuesYAML string, chartName string) (string, error) {
 		chartName = "app"
 	}
 
+	// Every value below is written into the recipe unquoted, and values.yaml is
+	// as much someone else's file as the chart name is someone else's URL — the
+	// port especially, which is formatted from whatever YAML node was found
+	// there rather than from a number.
+	imageRepo, imageTag := extractHelmImage(values)
+	port, portField := extractHelmPort(values)
+	for _, v := range []struct{ field, value string }{
+		{"chart name", chartName},
+		{"values.yaml image.repository", imageRepo},
+		{"values.yaml image.tag", imageTag},
+		{portField, port},
+	} {
+		if err := recipeSafeWord(v.field, v.value); err != nil {
+			return "", err
+		}
+	}
+
 	var b strings.Builder
 	fmt.Fprintf(&b, "App: %s\n\n", chartName)
 	fmt.Fprintf(&b, "%s:\n", capitalize(chartName))
 
 	// Extract image.
-	imageRepo, imageTag := extractHelmImage(values)
 	if imageRepo != "" {
 		tag := imageTag
 		if tag == "" {
@@ -37,7 +53,6 @@ func HelmToRecipe(valuesYAML string, chartName string) (string, error) {
 	}
 
 	// Extract port.
-	port := extractHelmPort(values)
 	if port != "" {
 		fmt.Fprintf(&b, "  on port %s\n", port)
 	}
@@ -86,23 +101,25 @@ func extractHelmImage(values map[string]interface{}) (repo, tag string) {
 	return repo, tag
 }
 
-// extractHelmPort looks for service.port or containerPort in values.
-func extractHelmPort(values map[string]interface{}) string {
+// extractHelmPort looks for service.port or containerPort in values, returning
+// the port alongside the key it was read from so a refusal names a key the
+// file being imported actually holds.
+func extractHelmPort(values map[string]interface{}) (port, field string) {
 	// Try service.port first.
 	if svcRaw, ok := values["service"]; ok {
 		if svcMap, ok := svcRaw.(map[string]interface{}); ok {
-			if port, ok := svcMap["port"]; ok {
-				return fmt.Sprintf("%v", port)
+			if p, ok := svcMap["port"]; ok {
+				return fmt.Sprintf("%v", p), "values.yaml service.port"
 			}
 		}
 	}
 
 	// Try containerPort.
-	if port, ok := values["containerPort"]; ok {
-		return fmt.Sprintf("%v", port)
+	if p, ok := values["containerPort"]; ok {
+		return fmt.Sprintf("%v", p), "values.yaml containerPort"
 	}
 
-	return ""
+	return "", ""
 }
 
 // extractHelmReplicas looks for replicaCount in values.

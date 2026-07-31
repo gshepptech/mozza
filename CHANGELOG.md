@@ -62,6 +62,51 @@ surface. See [docs/VISION.md](docs/VISION.md).
 
 ### Fixed
 
+- **A value inside an imported file could write recipe directives of its own, and they compiled
+  into real Kubernetes manifests.** A Compose service carrying `restart: "always run 5 copies"`
+  imported to the line `restart always run 5 copies`, which compiled to a Deployment with
+  `replicas: 5` — from a file that asked for one copy and never mentioned copies at all. **This
+  needed no newline, and no quote either: the recipe grammar separates directives by whitespace
+  within a section rather than by line, so a single space in the value was enough**, and the recipe
+  the importer wrote for that file contained no quote character anywhere in it. An image tag did the
+  same thing the same way (`nginx:1.25 run 7 copies` compiled to `replicas: 7`); an env value could
+  close the quotes the importer put around it and carry on (`replicas: 11`); and a volume name
+  reached a `# WARNING:` comment, where a newline ended the comment and the next line was live
+  again (`replicas: 21`). Each of those compiled clean, with no complaint anywhere along the way.
+- **A value the grammar cannot hold is now refused at import rather than escaped, because escaping
+  is not something this language offers.** There is no escape sequence in any position: `set Q to
+  "a\"b"` fails to parse with `unterminated string literal`, and `set Q to "a\nb"` reaches the
+  cluster as the literal characters `a\nb`. So quoting a value that carries structure produces text
+  the parser will not read back as the value that went in — it cannot round-trip in any encoding —
+  and writing it anyway is exactly what produced the directives above. The import now stops, naming
+  the field the value came from (`services.api.restart`, `services.api.environment.EVIL`), which
+  byte it could not write, and what that byte would have ended, and it writes no recipe file.
+- **The rule is per position, not per character**, because what is structural depends entirely on
+  where the value lands. In a bare-word argument every byte that ends a word ends it — a space, a
+  tab, a comma, a quote — since the value has to lex to exactly one token. Inside a quoted value
+  only a quote or a line ending escapes, so an env value goes on holding a sentence and
+  `MESSAGE: "hello world from mozza"` imports byte for byte as it did before. Inside a `#` comment
+  nothing short of a line ending escapes at all, so a mount path may hold spaces *and* quotes —
+  `data:/var/lib/my "app" data dir` still imports unchanged — where a restart policy may not. A
+  single position-blind rule would have had to break both of those to close the unquoted sites.
+- Every importer that builds recipe text is covered: the Compose importer at each field it reads;
+  the Helm importer, both for the chart name and for the values it reads out of `values.yaml` —
+  `image.repository`, `image.tag`, and the port, which it formats from whatever YAML node it finds
+  under `service.port` or `containerPort`, and names by the key it actually read; the Dockerfile
+  importer, for the port it takes off `EXPOSE` and for the repository name; and the GitHub URL all
+  three are reached through, whose owner and repository segments become the chart name, the image
+  name and the fallback recipe a repo scan writes when it recognises nothing. That one is guarded
+  where the URL is parsed, because `url.Parse` percent-decodes the path and a `%0A` in someone's
+  URL arrives as a real newline. Both Compose files in this repository import byte for byte as they
+  did before the change.
+- **What this does not cover is worth saying plainly, because recipe text is built in places the
+  importer never touches.** The framework-detection endpoint assembles a recipe from its own
+  answers, the template and marketplace renderers substitute `{{VAR}}` into recipe source with
+  request-supplied values, and the dashboard's wizard builds recipe text in the browser. Those
+  paths are unchanged, and each is the same defect in a different emitter. The recipe language
+  itself is also unchanged: it still accepts a directive that does not begin a line, which is what
+  made a single space enough, and closing that is a change to how every recipe is read rather than
+  to how imported ones are written.
 - **A compose file whose services share a network imported to a recipe that said nothing about the
   boundary, and to an AST `mozza validate` would have rejected.** `ComposeToRecipeAST` put the
   *network's* name into a slice's `only accept traffic from` list, which holds *slice* names, so the

@@ -85,6 +85,18 @@ func TestParseGitHubURL_Invalid(t *testing.T) {
 		{name: "not GitHub", url: "https://gitlab.com/owner/repo"},
 		{name: "no repo path", url: "https://github.com/owner"},
 		{name: "just github.com", url: "https://github.com/"},
+
+		// url.Parse percent-decodes the path, so an encoded newline arrives as a
+		// real one in a value the fallback recipe and the ghcr splice write into
+		// recipe text unquoted.
+		{name: "encoded newline in owner", url: "https://github.com/ow%0Aner/repo"},
+		{name: "encoded newline in repo", url: "https://github.com/owner/re%0Apo"},
+		{name: "encoded space in owner", url: "https://github.com/ow%20ner/repo"},
+		{name: "encoded space in repo", url: "https://github.com/owner/re%20po"},
+		{name: "encoded quote in repo", url: "https://github.com/owner/re%22po"},
+		{name: "encoded tab in repo", url: "https://github.com/owner/re%09po"},
+		{name: "encoded comma in repo", url: "https://github.com/owner/re%2Cpo"},
+		{name: "encoded carriage return in repo", url: "https://github.com/owner/re%0Dpo"},
 	}
 
 	for _, tt := range tests {
