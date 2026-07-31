@@ -147,6 +147,39 @@ surface. See [docs/VISION.md](docs/VISION.md).
   fire on volumes that are carried after all, but those warnings and the misreading never met in a
   release — what the released version does with an access mode is carry it into the comment, and
   nothing more
+- **A Compose file that `docker compose config` accepts could still stop `mozza import` dead, giving
+  the name of a Go type as the reason.** Compose documents two shapes for several fields and mozza
+  modelled one of each, so a file written the other way produced no recipe at all and, in its place,
+  a line ending `into importer.composeSecretRef` — a type that exists only inside mozza and appears
+  nowhere in a Compose file. The shapes that used to abort now import: a secret listed by name under
+  a service's `secrets:` rather than spelled out as a mapping; the long forms of `volumes:` and
+  `ports:`, which give `source` and `target`, or `target` and `published`, as separate keys; a
+  `healthcheck.test` written as one shell command string rather than a list of arguments; a
+  `deploy.replicas` written as `"3"` rather than `3`; a network's `internal:` written as `"true"`
+  rather than `true`; and a service naming a config under `configs:`, which now imports and is
+  reported dropped rather than stopping the file. Each is rewritten, as the file is read, into the
+  one shape the importer already handled, so a long-form port and the equivalent `"8080:80"` produce
+  the same recipe line and nothing further along the import has learned a second shape. YAML anchors
+  and aliases earn their own mention, because sharing a block between services — `<<: *base` — is
+  how a Compose file of any size avoids repeating itself, and mozza now follows an alias to the
+  value it stands for everywhere it reads the file's structure directly: the port list, the mount
+  list, the replica count and a network's `internal` flag. An aliased value is read as the value
+  rather than as the name of the anchor, and two services sharing one block import as two slices
+  instead of quoting that block's own lines back as errors, once for every service that used it.
+  Where mozza genuinely cannot read something the failure is now a sentence, naming the compose
+  field by the dotted path `docker compose config` prints for the same fault — `services.web.ports`,
+  `networks.backend.internal` — the line the value sits on, and what was expected there: `compose
+  services.web.ports (line 5): expected a list of ports such as "8080:80", or a list of entries with
+  target and published`. A key given twice says which line the first one was on. Two things are
+  worth stating rather than glossing. The top-level `configs:` warning changed for files that
+  already imported: it used to say a config was `mapped as environment reference — verify mount
+  path`, which was untrue — nothing mapped it, nothing mounted it, and the recipe it described
+  contained neither — so it now says the config was dropped and names `mount config "<path>" at
+  <target>` as the line to add to the slice that needs it, as a warning rather than an informational
+  note, matching every other thing the importer drops. And mozza still does not expand `${VAR}` in a
+  Compose file: `deploy.replicas: ${REPLICAS}` now fails with a sentence saying so instead of a YAML
+  type error, but it still fails, and `image: ${IMAGE}` still reaches the recipe with the `${IMAGE}`
+  in it
 - **The CLI now writes to stdout.** Every command's output went to stderr and stdout was always
   empty, so `mozza targets | grep local` matched nothing and `mozza deploy --export > list.txt`
   wrote an empty file. Cobra's `Print*` helpers resolve through `OutOrStderr`, which walks the
