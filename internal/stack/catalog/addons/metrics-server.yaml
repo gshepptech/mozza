@@ -1,0 +1,12 @@
+name: metrics-server
+description: metrics-server, for HorizontalPodAutoscalers and kubectl top
+version: 3.13.0
+namespace: kube-system
+helm:
+  repo: https://kubernetes-sigs.github.io/metrics-server/
+  chart: metrics-server
+  version: ${version}
+values:
+  args:
+    # kind and k3d kubelets serve self-signed certificates.
+    - --kubelet-insecure-tls

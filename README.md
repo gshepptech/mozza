@@ -319,6 +319,18 @@ require a session cookie; neither requires the `deployer` or `admin` role.
 | `mozza operator` | Run the deployment operator |
 | `mozza serve` | Start the web dashboard |
 
+**Stacks — whole local environments for apps that ship their own charts** ([docs/stacks.md](docs/stacks.md))
+
+| Command | What it does |
+|---|---|
+| `mozza stack list` | List the stacks and addons Mozza knows |
+| `mozza stack plan <stack>` | Print every command `up` would run, running none |
+| `mozza stack up <stack>` | Create a local kind/k3d cluster, build and load images, install addons and charts |
+| `mozza stack forward <stack>` | Forward the stack's services to 127.0.0.1 until Ctrl-C |
+| `mozza stack secrets <stack>` | Print the credentials a stack marks for people |
+| `mozza stack status <stack>` | Show nodes, Helm releases and pods |
+| `mozza stack down <stack>` | Delete the cluster, if `up` created it |
+
 **Author and inspect**
 
 | Command | What it does |

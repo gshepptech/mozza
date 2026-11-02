@@ -1,0 +1,30 @@
+# A stack whose only component is an Ansible playbook, run against a local
+# cluster: `mozza stack up examples/stacks/ansible-demo.yaml`.
+#
+# The playbook's own group names (k8s_servers, jumphost) are mapped onto
+# local targets, the way a playbook written for real machines is pointed at
+# a stack instead.
+name: ansible-demo
+description: An Ansible playbook against a local cluster's nodes and its API
+source:
+  path: ansible-demo
+
+cluster:
+  provider: kind
+
+secrets:
+  - name: demo-token
+    namespace: default
+    data:
+      token: { generate: hex, length: 16 }
+
+components:
+  - name: configure
+    ansible:
+      playbook: playbooks/site.yml
+      groups:
+        k8s_servers: control_plane
+        jumphost: runner
+      extraVars:
+        greeting: hello from ${stack}
+        token: ${secret:default/demo-token/token}

@@ -1,0 +1,15 @@
+name: ingress-nginx
+description: ingress-nginx controller as a NodePort service (pair with cluster.ports to reach it on 127.0.0.1)
+version: 4.13.3
+namespace: ingress-nginx
+helm:
+  repo: https://kubernetes.github.io/ingress-nginx
+  chart: ingress-nginx
+  version: ${version}
+values:
+  controller:
+    service:
+      type: NodePort
+      nodePorts:
+        http: 30080
+        https: 30443

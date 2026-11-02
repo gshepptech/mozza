@@ -1,0 +1,11 @@
+name: cert-manager
+description: cert-manager with its CRDs, for charts that request Certificates
+version: v1.18.2
+namespace: cert-manager
+helm:
+  repo: https://charts.jetstack.io
+  chart: cert-manager
+  version: ${version}
+values:
+  crds:
+    enabled: true

@@ -1,0 +1,37 @@
+# Node tasks run inside the cluster's node containers; jumphost tasks run in
+# the Mozza runner container and reach the cluster API through kubeconfig.
+- name: Configure the cluster nodes
+  hosts: k8s_servers
+  become: true
+  tasks:
+    - name: Write a marker file on every server node
+      ansible.builtin.copy:
+        dest: /etc/mozza-demo
+        content: "{{ greeting }}\n"
+        mode: "0644"
+
+- name: Configure the cluster through its API
+  hosts: jumphost
+  gather_facts: false
+  tasks:
+    - name: Record the greeting in a ConfigMap
+      kubernetes.core.k8s:
+        state: present
+        definition:
+          apiVersion: v1
+          kind: ConfigMap
+          metadata:
+            name: mozza-demo
+            namespace: default
+          data:
+            greeting: "{{ greeting }}"
+            token-length: "{{ token | length | string }}"
+
+    - name: Read the nodes back
+      kubernetes.core.k8s_info:
+        kind: Node
+      register: nodes
+
+    - name: Show what the playbook saw
+      ansible.builtin.debug:
+        msg: "{{ nodes.resources | length }} node(s); greeting {{ greeting }}"

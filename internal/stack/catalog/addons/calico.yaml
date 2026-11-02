@@ -1,0 +1,47 @@
+name: calico
+description: Calico CNI and NetworkPolicy, installed through the Tigera operator
+version: v3.32.0
+needs:
+  # Calico replaces the provider's default CNI, and its default IP pool is
+  # this CIDR, so the cluster is created to match.
+  disableDefaultCNI: true
+  podSubnet: 192.168.0.0/16
+manifests:
+  - url: https://raw.githubusercontent.com/projectcalico/calico/${version}/manifests/tigera-operator.yaml
+    # The operator bundle's CRDs overflow client-side apply's annotation limit.
+    serverSide: true
+  - waitFor:
+      - resource: crd/installations.operator.tigera.io
+        for: condition=Established
+      - resource: crd/apiservers.operator.tigera.io
+        for: condition=Established
+    # The upstream custom-resources.yaml minus the Goldmane and Whisker
+    # observability components, which a local cluster has no use for.
+    inline: |
+      apiVersion: operator.tigera.io/v1
+      kind: Installation
+      metadata:
+        name: default
+      spec:
+        calicoNetwork:
+          ipPools:
+            - name: default-ipv4-ippool
+              blockSize: 26
+              cidr: 192.168.0.0/16
+              encapsulation: VXLANCrossSubnet
+              natOutgoing: Enabled
+              nodeSelector: all()
+      ---
+      apiVersion: operator.tigera.io/v1
+      kind: APIServer
+      metadata:
+        name: default
+      spec: {}
+wait:
+  - resource: tigerastatus/calico
+    for: condition=Available
+    timeout: 10m
+  - resource: nodes
+    selector: kubernetes.io/os=linux
+    for: condition=Ready
+    timeout: 5m

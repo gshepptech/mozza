@@ -14,6 +14,17 @@ surface. See [docs/VISION.md](docs/VISION.md).
 
 ### Added
 
+- `mozza stack` — bring up an app that already ships Helm charts on a local kind or k3d cluster,
+  with everything those charts assume: CNI and operators from an addon catalog (`calico`, `cnpg`,
+  `ingress-nginx`, `cert-manager`, `metrics-server`), images built from the app's source and loaded
+  into the nodes, generated Secrets that persist across runs, and the charts themselves. Local
+  only: the API server, published ports and forwards bind 127.0.0.1, and Mozza refuses a
+  kubeconfig whose server is not loopback. Built-in stacks for `inventory`, `storefront` and
+  `webapp`; stacks and addons in `~/.mozza` extend or replace them. Builds can trim a context
+  (`exclude`), patch the streamed Dockerfile (`rewrite`), or build from a git URL; `--image` uses an
+  existing image instead. A component can run an Ansible playbook in a pinned runner container,
+  against an inventory Mozza writes that names only the cluster's node containers and the runner See
+  [docs/stacks.md](docs/stacks.md)
 - `mozza compile [--target <name>] [-o <dir>]` — compile a recipe to deployment artifacts on disk
   without deploying. Contacts no cluster, reads no kubeconfig, records no deployment state, and
   needs no config file. Default target `kubernetes`, default output directory `.`. An unknown

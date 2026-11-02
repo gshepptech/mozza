@@ -1,0 +1,8 @@
+name: cnpg
+description: CloudNativePG operator, for charts that declare postgresql.cnpg.io Clusters
+version: 0.29.1
+namespace: cnpg-system
+helm:
+  repo: https://cloudnative-pg.github.io/charts
+  chart: cloudnative-pg
+  version: ${version}

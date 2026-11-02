@@ -70,6 +70,7 @@ func New() *cobra.Command {
 		newDisconnectCmd(),
 		newProxyCmd(),
 		newPreviewsCmd(),
+		newStackCmd(),
 	)
 
 	return root
