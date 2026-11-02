@@ -27,10 +27,12 @@ Stacks are local only. The cluster API, published ports and forwards all bind
 127.0.0.1, and nothing runs against a cluster that is not on this machine.
 
 STACK is a catalog name (see "mozza stack list") or a path to a stack file.
+Without one, ./mozza-stack.yaml is used — the file "mozza stack init" writes.
 Definitions in ~/.mozza/stacks and ~/.mozza/addons shadow the built-in ones.`,
 	}
 
 	cmd.AddCommand(
+		newStackInitCmd(),
 		newStackListCmd(),
 		newStackPlanCmd(),
 		newStackUpCmd(),
@@ -102,6 +104,17 @@ func loadStackEngine(cmd *cobra.Command, ref string, noSource bool) (*stack.Engi
 	return stack.NewEngine(r, stack.ExecRunner{}, cmd.OutOrStdout(), stack.StateRoot()), nil
 }
 
+// defaultStackFile is the stack file a repository keeps at its root, used
+// when a command names no stack.
+const defaultStackFile = "mozza-stack.yaml"
+
+func stackRef(args []string) string {
+	if len(args) > 0 {
+		return args[0]
+	}
+	return defaultStackFile
+}
+
 // interruptible returns a context cancelled by Ctrl-C or SIGTERM, so a long
 // helm wait or a forward stops the commands it started instead of orphaning them.
 func interruptible() (context.Context, context.CancelFunc) {
@@ -145,13 +158,13 @@ func originNote(e stack.Entry) string {
 
 func newStackPlanCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "plan STACK",
+		Use:   "plan [STACK]",
 		Short: "Print every command `up` would run, without running any",
 		Long: `Print the commands "mozza stack up" runs on a machine where nothing exists
 yet. Nothing is built, created or applied.`,
-		Args: cobra.ExactArgs(1),
+		Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			e, err := stackEngine(cmd, args[0])
+			e, err := stackEngine(cmd, stackRef(args))
 			if err != nil {
 				return err
 			}
@@ -171,14 +184,14 @@ yet. Nothing is built, created or applied.`,
 
 func newStackUpCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "up STACK",
+		Use:   "up [STACK]",
 		Short: "Create the cluster, build and load images, and install everything",
 		Long: `Bring a stack up. Every step is idempotent: re-running "up" after a failure,
 or after changing the source, converges rather than starting over. Images
 already present in docker are reused unless --rebuild is given.`,
-		Args: cobra.ExactArgs(1),
+		Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			e, err := stackEngine(cmd, args[0])
+			e, err := stackEngine(cmd, stackRef(args))
 			if err != nil {
 				return err
 			}
@@ -210,11 +223,11 @@ already present in docker are reused unless --rebuild is given.`,
 
 func newStackStatusCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "status STACK",
+		Use:   "status [STACK]",
 		Short: "Show the stack's nodes, Helm releases and pods",
-		Args:  cobra.ExactArgs(1),
+		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			e, err := runningStackEngine(cmd, args[0])
+			e, err := runningStackEngine(cmd, stackRef(args))
 			if err != nil {
 				return err
 			}
@@ -227,11 +240,11 @@ func newStackStatusCmd() *cobra.Command {
 
 func newStackForwardCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "forward STACK",
+		Use:   "forward [STACK]",
 		Short: "Forward the stack's services to 127.0.0.1 until Ctrl-C",
-		Args:  cobra.ExactArgs(1),
+		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			e, err := runningStackEngine(cmd, args[0])
+			e, err := runningStackEngine(cmd, stackRef(args))
 			if err != nil {
 				return err
 			}
@@ -246,11 +259,11 @@ func newStackForwardCmd() *cobra.Command {
 
 func newStackSecretsCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "secrets STACK",
+		Use:   "secrets [STACK]",
 		Short: "Print the credentials a stack marks for people (admin passwords and the like)",
-		Args:  cobra.ExactArgs(1),
+		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			e, err := runningStackEngine(cmd, args[0])
+			e, err := runningStackEngine(cmd, stackRef(args))
 			if err != nil {
 				return err
 			}
@@ -274,16 +287,16 @@ func newStackSecretsCmd() *cobra.Command {
 
 func newStackDownCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "down STACK",
+		Use:   "down [STACK]",
 		Short: "Delete the stack's cluster (only one `mozza stack up` created)",
 		Long: `Delete the stack's cluster. Mozza deletes only a cluster it created; a cluster
 that already existed when "up" first ran is left alone.
 
 Generated secrets are kept, so the next "up" hands the app the same
 credentials. --purge removes them along with the rest of the stack's state.`,
-		Args: cobra.ExactArgs(1),
+		Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			e, err := runningStackEngine(cmd, args[0])
+			e, err := runningStackEngine(cmd, stackRef(args))
 			if err != nil {
 				return err
 			}

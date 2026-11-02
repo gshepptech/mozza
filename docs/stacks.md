@@ -15,6 +15,42 @@ mozza stack status inventory      # nodes, Helm releases, pods
 mozza stack down inventory        # delete the cluster (only if `up` created it)
 ```
 
+## Your own app: start with `init`
+
+You do not write a stack from scratch. From the root of your app's repository:
+
+```bash
+mozza stack init          # scan the repo, write mozza-stack.yaml
+mozza stack plan          # every command up will run, nothing executed
+mozza stack up            # bring it up
+mozza stack forward       # open it on 127.0.0.1
+```
+
+With no stack named, every command uses `./mozza-stack.yaml`. Commit that file, and anyone with
+the repository runs `mozza stack up` instead of a folder of scripts.
+
+`init` reads only what the repository declares:
+
+| It finds | It drafts |
+|---|---|
+| `Chart.yaml` | The Helm component. A repository with several charts gets the one named after the repository; the others are listed for review. |
+| `values-*.yaml` | The overlays whose names say local, dev or demo, layered in that order. Production and test overlays are never used. |
+| Dockerfiles | A build for each image the chart names, matched by name. The chart's top-level `image` is built by the root Dockerfile. |
+| Empty credentials in values | A generated secret for each one the chart cannot do without. The chart's comment says the app fails without it, or `helm template` refuses to render until it is set. Names of existing Secrets are never generated. |
+| The rendered manifests | Add-ons for the objects they create (CloudNativePG, cert-manager, Calico), the namespace a chart hardcodes, and the Service to forward. |
+| A specific `storageClass` | `${storageClass}`, so the volume binds on kind or k3d. |
+| Playbooks | Commented-out Ansible components, with their host groups mapped onto local targets. |
+
+Anything it cannot settle is written as a review list at the top of the file. Examples are an
+image from a private registry that no Dockerfile builds, a second chart, or a render that still
+fails. The draft always loads, and `init` checks that before writing it.
+
+What `init` cannot know are an app's quirks, such as a container that needs an extra command-line
+argument, or a Dockerfile that no longer builds. Those show up on the first `up`, and the fixes
+belong in the stack file. See [When an app's own build is broken](#when-an-apps-own-build-is-broken).
+
+A repository with only a `docker-compose.yml` is a recipe's job: `init` points at `mozza import`.
+
 ## Local only
 
 Stacks never leave this machine:

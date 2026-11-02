@@ -323,6 +323,7 @@ require a session cookie; neither requires the `deployer` or `admin` role.
 
 | Command | What it does |
 |---|---|
+| `mozza stack init [dir]` | Draft `mozza-stack.yaml` from a repo's chart, Dockerfiles and values |
 | `mozza stack list` | List the stacks and addons Mozza knows |
 | `mozza stack plan <stack>` | Print every command `up` would run, running none |
 | `mozza stack up <stack>` | Create a local kind/k3d cluster, build and load images, install addons and charts |

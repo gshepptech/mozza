@@ -14,6 +14,11 @@ surface. See [docs/VISION.md](docs/VISION.md).
 
 ### Added
 
+- `mozza stack init` — draft a stack file from an app's repository: its chart and local values
+  overlays, a build for each Dockerfile the chart's images match, generated secrets for the
+  credentials the chart cannot run without (confirmed by rendering it), add-ons for the objects it
+  creates, and the Service to forward. What it cannot settle is listed for review at the top of
+  the file. Stack commands default to `./mozza-stack.yaml`
 - `mozza stack` — bring up an app that already ships Helm charts on a local kind or k3d cluster,
   with everything those charts assume: CNI and operators from an addon catalog (`calico`, `cnpg`,
   `ingress-nginx`, `cert-manager`, `metrics-server`), images built from the app's source and loaded
