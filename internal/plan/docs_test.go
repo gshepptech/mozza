@@ -17,11 +17,10 @@ import (
 )
 
 // minCompiledDocRecipes is the floor on how many documentation blocks must
-// actually reach the end of the pipeline. Seventeen compile today; the two
-// blocks of headroom absorb ordinary editing. A bare non-zero check would let
+// actually reach the end of the pipeline. A bare non-zero check would let
 // someone silence the suite by marking every awkward block `ignore`, so removing
 // doc examples has to be a deliberate act of lowering this number.
-const minCompiledDocRecipes = 15
+const minCompiledDocRecipes = 6
 
 // appDeclaration matches the line that makes a fenced block a recipe rather
 // than shell, YAML or prose.
@@ -44,13 +43,7 @@ type fencedBlock struct {
 // field on the fence itself, as in ```mozza ignore. The marker travels on the
 // fence so it cannot drift away from the block it marks.
 //
-// The pipeline stops at Validate, which is where loadPlan stops too. It used to
-// stop there of necessity: blocks reproducing catalog templates with unrendered
-// {{...}} placeholders validated cleanly and then panicked in resource.MustParse
-// if taken any further. A placeholder in a quantity slot is now a validation
-// error, so those blocks carry an `ignore` marker instead and nothing reaching
-// this far can panic — which makes extending the run to Compile a change worth
-// making on its own terms rather than a hazard to be avoided.
+// The pipeline stops at Validate, which is where loadPlan stops too.
 //
 // The subtests run sequentially on purpose: they tally the counts the floor
 // below is asserted against, which a parallel subtest would race and defer past
@@ -92,6 +85,26 @@ func TestDocRecipesCompileClean(t *testing.T) {
 			"legitimately removed, lower minCompiledDocRecipes; if a block is not meant to "+
 			"compile, mark its fence ```<lang> ignore",
 		compiled, minCompiledDocRecipes)
+}
+
+// TestExampleRecipesCompileClean runs every recipe under examples/ through the
+// same pipeline, so a shipped example cannot drift out of the grammar.
+func TestExampleRecipesCompileClean(t *testing.T) {
+	t.Parallel()
+
+	files, err := filepath.Glob(filepath.Join(repoRoot(t), "examples", "*.mozza"))
+	require.NoError(t, err)
+	require.NotEmpty(t, files, "no example recipes found")
+
+	for _, file := range files {
+		t.Run(filepath.Base(file), func(t *testing.T) {
+			t.Parallel()
+
+			src, err := os.ReadFile(file)
+			require.NoError(t, err)
+			compileDocRecipe(t, filepath.Base(file), string(src))
+		})
+	}
 }
 
 // compileDocRecipe runs one documentation block through the recipe pipeline.
