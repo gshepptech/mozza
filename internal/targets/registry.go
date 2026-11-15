@@ -28,8 +28,7 @@ const Default = "kubernetes"
 // compiling to it produces. Used by `mozza targets` and GET /api/v1/targets.
 //
 // Compiler.Name() returns the target key itself, not a description, so this
-// metadata lives here rather than on the interface. Enriching the Compiler
-// interface is M1's job (Capabilities()); M0 keeps the interface untouched.
+// metadata lives here rather than on the interface.
 var descriptions = map[string]string{ //nolint:gochecknoglobals // immutable lookup table
 	"kubernetes": "Kubernetes manifests (Deployment, Service, Ingress, PVC, RBAC, ...)",
 	"local":      "Docker Compose file for running on one machine",

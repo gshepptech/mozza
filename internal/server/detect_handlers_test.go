@@ -73,9 +73,9 @@ func TestDetectGenerate_EveryBranchYieldsAUsableRecipe(t *testing.T) {
 
 	cookie := registerUser(t, ts, "detect-branches@example.com", "Test", "password123")
 
-	// storage is asserted on the database rows because the size used to be
-	// emitted as "store 10Gi", which is not a directive at all — so the whole
-	// recipe failed rather than the size going missing quietly.
+	// storage is asserted on the database rows: a size emitted in a form the
+	// parser does not accept fails the whole recipe rather than going missing
+	// quietly.
 	tests := []struct {
 		name    string
 		choices map[string]string

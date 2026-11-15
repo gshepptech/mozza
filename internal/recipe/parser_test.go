@@ -1652,10 +1652,9 @@ Svc:
 }
 
 // Five directives finish with words they may ignore ("copies running during
-// updates", "at a time"), and used to reach the end of the line by discarding
-// whatever was left. The tokens never became a directive, but nothing refused
-// them either — the trailing directive simply vanished. Each now stops at the
-// first word its own phrasing does not name, so the line rule sees it.
+// updates", "at a time"). Each stops at the first word its own phrasing does not
+// name, so trailing tokens reach the line rule and are refused rather than
+// silently discarded.
 func TestParser_DirectivesWithTrailingWordsRefuseASecondDirective(t *testing.T) {
 	t.Parallel()
 

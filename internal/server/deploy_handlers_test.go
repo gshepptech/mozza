@@ -31,14 +31,13 @@ Api:
   run 1 copy
 `
 
-// TestWriteLogEvents is the regression guard for two framing defects, both of
-// which reached the browser as lost log lines.
+// TestWriteLogEvents covers two framing rules, each of which would otherwise
+// reach the browser as lost log lines.
 //
-// First, both log writers used to send a whole multi-line chunk as one "data:"
-// payload, and the SSE grammar treats every line after the first as an unknown
-// field and drops it, so the browser saw one line per chunk.
+// First, a multi-line chunk must not go out as one "data:" payload: the SSE
+// grammar treats every line after the first as an unknown field and drops it.
 //
-// Second, framing on "\n" alone was still incomplete: SSE terminates a line on
+// Second, framing on "\n" alone is incomplete: SSE terminates a line on
 // CR, LF or CRLF, so a bare CR in log text escaped the "data: " prefix and the
 // remainder was parsed as arbitrary SSE fields. That is reachable — the log
 // interpolates the unvalidated deployment environment — and an injected

@@ -1247,7 +1247,7 @@ func convertService(
 	// below names the per-copy storage directive a reader can add by hand.
 	//
 	// No Mounts entry goes with any of it. A recipe's mounts name an object that
-	// already exists — a pvc mount compiles to a claimName taken verbatim from the
+	// already exists — a pvc mount compiles to a claimName taken unchanged from the
 	// source (k8s/deployment.go addMounts) — and mozza creates no claim under a
 	// compose volume's name, so the pod would wait on one that is never made. That
 	// is why the text builder writes a comment here and why this path must leave

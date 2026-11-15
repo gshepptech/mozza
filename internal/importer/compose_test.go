@@ -397,11 +397,10 @@ volumes:
 			},
 		},
 		{
-			// The AST used to put network names straight into AllowFrom, which holds
-			// slice names — plan.Validate rejects anything else, so the recipe this
-			// function returned could not be deployed by whoever wired it up. It now
-			// sets no policy at all, from any compose file, and reports the boundary
-			// as a warning instead.
+			// AllowFrom holds slice names and plan.Validate rejects anything else,
+			// so compose network names must never land there. The importer sets no
+			// policy at all, from any compose file, and reports the boundary as a
+			// warning instead.
 			name: "service networks set no policy and are reported instead",
 			input: `
 services:
@@ -1723,7 +1722,7 @@ configs:
     file: ./nginx.conf
 `,
 			// The recipe carries no trace of the config, which is precisely what
-			// the warning has to say and what the old wording denied.
+			// the warning has to say.
 			absent: []string{"nginx-conf", "mount", "set "},
 			check: func(t *testing.T, _ recipe.Slice, w []Warning) {
 				t.Helper()
@@ -3346,9 +3345,9 @@ networks:
 
 // TestUnreadableComposeShapesSayWhatTheyExpected covers the other half of the
 // on-ramp: a shape mozza genuinely cannot read fails with a sentence a compose
-// author can act on. yaml.v3 hands a custom unmarshaler's error back verbatim, so
-// what is written here is what reaches the terminal, and the tags and Go type
-// names that used to reach it are asserted absent rather than merely improved on.
+// author can act on. yaml.v3 hands a custom unmarshaler's error back unchanged, so
+// what is written here is what reaches the terminal, and YAML tags and Go type
+// names are asserted absent from it.
 // TestUnreadableComposeShapesSayWhatTheyExpected covers the shapes mozza's own
 // unmarshalers catch, where mozza chooses the words rather than restating yaml's.
 //
@@ -3378,7 +3377,7 @@ services:
 		},
 		{
 			// A service's volumes and the top-level volumes: are different fields
-			// that used to answer to the same name. The path tells them apart —
+			// with the same name. The path tells them apart —
 			// compare "a declared volume is not a mapping" in the sibling test,
 			// which reads volumes.pgdata.
 			name: "volumes as a mapping",

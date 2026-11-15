@@ -99,8 +99,7 @@ func failedResult(deployID string, start time.Time, warnings []string) *deploy.D
 //
 // It goes through the registered local compiler rather than building the compose
 // file directly so that what a deploy produces and what "mozza compile --target
-// local" produces cannot drift apart — including the warnings, which this path
-// used to throw away.
+// local" produces cannot drift apart, warnings included.
 func compilePlan(ctx context.Context, composeDir string, p *plan.AppPlan) ([]string, error) {
 	result, err := localcompose.New().Compile(ctx, p)
 	if err != nil {

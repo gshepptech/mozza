@@ -784,7 +784,7 @@ func TestCompiler_Compile(t *testing.T) {
 						Port:  8080,
 						// plan.Build back-fills HealthPath from the *first*
 						// readiness probe, so this is what a two-readiness recipe
-						// really carries. The choice no longer comes from it.
+						// really carries. The compiler must not choose from it.
 						HealthPath: "/first",
 						Probes: []plan.ProbeSpec{
 							{Type: "readiness", HTTPPath: "/first"},
@@ -1452,7 +1452,6 @@ func TestCompiler_Compile(t *testing.T) {
 // Every wantMemory below was produced by writing it into a compose file and
 // running `docker compose config` (Compose v5.1.2); the byte count in each
 // comment is what Compose reported, not what the shift arithmetic predicts.
-// That is how the "M is 1000-based" folklore in the old comment was disproved:
 // Compose's K/M/G are 1024-based, so 256M is exactly 256Mi, and it rejects the
 // "i" forms outright.
 func TestCompile_ResourceLimitConversion(t *testing.T) {
@@ -1475,14 +1474,14 @@ func TestCompile_ResourceLimitConversion(t *testing.T) {
 
 		// Decimal SI: Kubernetes means powers of ten, Compose reads powers of
 		// two, so the value has to be restated in Compose's units to survive.
-		{name: "decimal gigabytes are restated", memory: "2G", wantMemory: "1953125K"}, // 2000000000, was 2147483648
-		{name: "decimal kilobytes are restated", memory: "500k", wantMemory: "500000"}, // 500000, was 512000
+		{name: "decimal gigabytes are restated", memory: "2G", wantMemory: "1953125K"}, // 2000000000, unconverted: 2147483648
+		{name: "decimal kilobytes are restated", memory: "500k", wantMemory: "500000"}, // 500000, unconverted: 512000
 
-		// Rejected by Compose before this change: it takes no "i" suffix and no
-		// "u", so these reached the file verbatim and failed to load.
-		{name: "tebibytes are converted", memory: "1Ti", wantMemory: "1024G"},       // 1099511627776, was rejected
-		{name: "exbibytes are converted", memory: "1Ei", wantMemory: "1073741824G"}, // 1152921504606846976, was rejected
-		{name: "micro-units round up to a byte", memory: "500u", wantMemory: "1"},   // 1, was rejected
+		// Compose takes no "i" suffix and no "u", so these must be converted or
+		// the file fails to load.
+		{name: "tebibytes are converted", memory: "1Ti", wantMemory: "1024G"},       // 1099511627776, unconverted: rejected
+		{name: "exbibytes are converted", memory: "1Ei", wantMemory: "1073741824G"}, // 1152921504606846976, unconverted: rejected
+		{name: "micro-units round up to a byte", memory: "500u", wantMemory: "1"},   // 1, unconverted: rejected
 
 		// String form changes, byte count does not: Compose reads both spellings
 		// as the same number.

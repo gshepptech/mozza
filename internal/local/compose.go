@@ -833,7 +833,7 @@ func collectWarnings(s plan.Slice) []string {
 		// Deliberately does not promise the minimum replica count: addDeploy
 		// substitutes MinReplicas only when the slice declares one replica or
 		// fewer, so a slice with "run 5 copies" keeps 5. What is true either way
-		// is that the count no longer moves.
+		// is that the count stays fixed.
 		warnings = append(warnings,
 			fmt.Sprintf("%s: Auto-scaling is Kubernetes-only. Running a fixed replica count locally.", s.Name))
 	}

@@ -81,7 +81,7 @@ func TestRecipeSafeWordAcceptsValuesThatLexToOneToken(t *testing.T) {
 // the bare-word set a guarantee rather than a list. It sweeps every byte, and
 // for each one the predicate accepts it proves the lexer really does keep the
 // value whole. A byte added to the lexer's isDelimiter and not to
-// structuralInWord fails here, which is the drift this item exists to prevent.
+// structuralInWord fails here.
 func TestRecipeSafeWordRejectsEveryByteTheLexerBreaksAWordOn(t *testing.T) {
 	for b := range 256 {
 		value := "x" + string([]byte{byte(b)}) + "y"

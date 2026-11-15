@@ -64,10 +64,10 @@ func TestNew_PreservesProjectDir(t *testing.T) {
 	}
 }
 
-// TestCompilePlan_ReturnsWarnings is the regression guard for the deploy path
-// silently dropping capability warnings: it used to call the warning-free
-// BuildComposeFile, so a dashboard or operator deploy reported nothing the CLI
-// reported. Deploy itself needs Docker, so the compile step is tested directly.
+// TestCompilePlan_ReturnsWarnings checks that the deploy path returns the same
+// capability warnings the CLI reports, so a dashboard or operator deploy is not
+// silent about them. Deploy itself needs Docker, so the compile step is tested
+// directly.
 func TestCompilePlan_ReturnsWarnings(t *testing.T) {
 	t.Parallel()
 
@@ -142,15 +142,12 @@ func TestCompilePlan_ReturnsWarnings(t *testing.T) {
 	}
 }
 
-// TestDeploy_ReturnsWarnings guards the wiring the original bug actually was:
-// Deploy compiled through a warning-free path, so DeployResult.Warnings was never
-// populated. TestCompilePlan_ReturnsWarnings covers the helper, not the field
-// assignment on the returned result — deleting that assignment left the whole
-// suite green, so the regression this item fixed could silently come back.
+// TestDeploy_ReturnsWarnings checks that DeployResult.Warnings is populated.
+// TestCompilePlan_ReturnsWarnings covers the helper, not the field assignment on
+// the returned result, so this test is what fails if that assignment goes.
 //
-// Both outcomes are covered. Warnings on the failure path are not a nicety: a bad
-// image tag or a port clash is a path users hit constantly, and reporting nothing
-// there is the same silence this item exists to remove.
+// Both outcomes are covered. A bad image tag or a port clash is a failure users
+// hit often, and the warnings matter there as much as on success.
 func TestDeploy_ReturnsWarnings(t *testing.T) {
 	requireDockerCompose(t)
 
