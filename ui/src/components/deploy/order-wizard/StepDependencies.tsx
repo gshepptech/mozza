@@ -227,9 +227,6 @@ export default function StepDependencies({ traits, dependencies, onUpdate }: Ste
           </div>
         </div>
       </button>
-
-      {/* Message Queue — hidden for now */}
-      {/* AC-5.1: Queue card hidden for future implementation */}
     </div>
   );
 }

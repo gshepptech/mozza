@@ -20,7 +20,7 @@ func isLoopbackIP(ip string) bool {
 }
 
 // applyMiddleware attaches global middleware to the router in the correct order.
-// Note: jsonContentType is applied only to API routes (see registerRoutes).
+// jsonContentType is applied separately, to API routes only (see registerRoutes).
 func (s *Server) applyMiddleware() {
 	s.router.Use(recoverer)
 	s.router.Use(securityHeaders)
