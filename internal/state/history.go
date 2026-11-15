@@ -10,6 +10,9 @@ import (
 // "deployed" record. It returns the newly created rollback record.
 // An error is returned if fewer than two deployed records exist.
 func (s *Store) Rollback() (*DeployRecord, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	if err := s.load(); err != nil {
 		return nil, fmt.Errorf("Rollback: %w", err)
 	}
@@ -58,6 +61,9 @@ func (s *Store) Rollback() (*DeployRecord, error) {
 // the latest record in the source environment. It returns the promoted record.
 // An error is returned if no deployment exists in the source environment.
 func (s *Store) Promote(from, to Environment) (*DeployRecord, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	if err := s.load(); err != nil {
 		return nil, fmt.Errorf("Promote: %w", err)
 	}

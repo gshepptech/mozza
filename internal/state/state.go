@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"sync"
 	"time"
 )
 
@@ -44,8 +45,10 @@ type DeployRecord struct {
 	Status string `json:"status"`
 }
 
-// Store manages deploy state backed by a JSON file.
+// Store manages deploy state backed by a JSON file. It is safe for concurrent
+// use: every method reloads Records from disk, so mu serialises them.
 type Store struct {
+	mu       sync.Mutex
 	filePath string
 	Records  []DeployRecord `json:"records"`
 }
@@ -59,6 +62,9 @@ func NewStore(dir string) *Store {
 
 // Record appends a deploy record and persists the updated state to disk.
 func (s *Store) Record(r DeployRecord) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	if err := s.load(); err != nil {
 		return fmt.Errorf("Record: %w", err)
 	}
@@ -89,6 +95,9 @@ func (s *Store) Record(r DeployRecord) error {
 // Latest returns the most recent deploy record.
 // It returns an error if no records exist.
 func (s *Store) Latest() (*DeployRecord, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	if err := s.load(); err != nil {
 		return nil, fmt.Errorf("Latest: %w", err)
 	}
@@ -104,6 +113,9 @@ func (s *Store) Latest() (*DeployRecord, error) {
 // History returns the most recent N deploy records in reverse chronological order.
 // If limit is zero or exceeds the total count, all records are returned.
 func (s *Store) History(limit int) ([]DeployRecord, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	if err := s.load(); err != nil {
 		return nil, fmt.Errorf("History: %w", err)
 	}
