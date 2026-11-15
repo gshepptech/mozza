@@ -614,7 +614,7 @@ func TestParser_FullStackWithPhase2(t *testing.T) {
 	assert.Equal(t, "always", be.RestartPolicy)
 }
 
-// --- Item 3: Core workload directive tests ---
+// --- Core workload directive tests ---
 
 func TestParser_MultiPort(t *testing.T) {
 	t.Parallel()
@@ -918,7 +918,7 @@ Store:
 	assert.True(t, s.PeerDiscovery)
 }
 
-// --- Item 4: Container and config directive tests ---
+// --- Container and config directive tests ---
 
 func TestParser_InitBlock(t *testing.T) {
 	t.Parallel()
@@ -1134,7 +1134,7 @@ Svc:
 	}
 }
 
-// --- Item 5: Operational directive tests ---
+// --- Operational directive tests ---
 
 func TestParser_Lifecycle(t *testing.T) {
 	t.Parallel()

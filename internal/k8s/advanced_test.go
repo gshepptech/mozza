@@ -12,7 +12,7 @@ import (
 	"github.com/gshepptech/mozza/internal/plan"
 )
 
-// --- Item 9: Init containers, sidecars, lifecycle hooks, graceful shutdown ---
+// --- Init containers, sidecars, lifecycle hooks, graceful shutdown ---
 
 func TestCompiler_InitContainers(t *testing.T) {
 	t.Parallel()
@@ -296,7 +296,7 @@ func TestCompiler_InitContainersOnJob(t *testing.T) {
 	require.Len(t, initContainers, 1)
 }
 
-// --- Item 10: RBAC, ConfigMap, Secret volumes, NetworkPolicy ---
+// --- RBAC, ConfigMap, Secret volumes, NetworkPolicy ---
 
 func TestCompiler_ServiceAccount(t *testing.T) {
 	t.Parallel()
@@ -704,7 +704,7 @@ func TestCompiler_ServiceAccountInPodSpec(t *testing.T) {
 	assert.Equal(t, "custom-sa", podSpec["serviceAccountName"])
 }
 
-// --- Item 11: HPA, PDB, SecurityContext, scheduling, update strategy ---
+// --- HPA, PDB, SecurityContext, scheduling, update strategy ---
 
 func TestCompiler_HPA(t *testing.T) {
 	t.Parallel()
