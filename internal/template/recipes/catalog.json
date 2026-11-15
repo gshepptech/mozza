@@ -283,48 +283,6 @@
     "est_resources": "0.5 CPU, 256MB RAM"
   },
   {
-    "id": "webapp",
-    "name": "webapp",
-    "description": "Kubernetes-based interactive learning platform",
-    "icon": "🎓",
-    "category": "learning",
-    "tags": [
-      "learning",
-      "kubernetes",
-      "training",
-      "lab"
-    ],
-    "variables": [
-      {
-        "key": "GARGANTUA_VERSION",
-        "label": "controller Version",
-        "description": "Version tag for the API server image",
-        "type": "string",
-        "default": "v3.3.5",
-        "required": false
-      },
-      {
-        "key": "UI_VERSION",
-        "label": "UI Version",
-        "description": "Version tag for the UI image",
-        "type": "string",
-        "default": "v3.3.6",
-        "required": false
-      },
-      {
-        "key": "ADMIN_VERSION",
-        "label": "Admin UI Version",
-        "description": "Version tag for the admin UI image",
-        "type": "string",
-        "default": "v3.3.6",
-        "required": false
-      }
-    ],
-    "repo": "https://github.com/webapp/webapp",
-    "official": true,
-    "est_resources": "2 CPU, 2GB RAM"
-  },
-  {
     "id": "grafana",
     "name": "Grafana",
     "description": "Observability dashboards and visualization platform",

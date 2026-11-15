@@ -512,7 +512,7 @@ or a recipe that will not parse:
 
 ## Using Templates
 
-Mozza ships with a catalog of 15 ready-to-use recipes for popular applications. Browse them in the web dashboard under the Template Marketplace, or from the CLI with `mozza recipe search`:
+Mozza ships with a catalog of 14 ready-to-use recipes for popular applications. Browse them in the web dashboard under the Template Marketplace, or from the CLI with `mozza recipe search`:
 
 | Template | Category | Description |
 |----------|----------|-------------|
@@ -530,11 +530,10 @@ Mozza ships with a catalog of 15 ready-to-use recipes for popular applications. 
 | **n8n** | Automation | Workflow automation platform |
 | **RabbitMQ** | Communication | Message broker with management UI |
 | **Mattermost** | Communication | Team messaging and collaboration platform |
-| **webapp** | Learning | Kubernetes-based interactive learning platform |
 
 Templates support variables for passwords, domains, and sizing. When you deploy a template through the dashboard, the guided wizard prompts you for each required variable.
 
-All 15 are embedded in the binary, so `mozza recipe search` works offline. The CLI also tries to
+All 14 are embedded in the binary, so `mozza recipe search` works offline. The CLI also tries to
 merge in a remote community index; when that is unreachable it says so and falls back to the
 embedded catalog rather than failing:
 

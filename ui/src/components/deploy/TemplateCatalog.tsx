@@ -15,7 +15,6 @@ const CATEGORIES = [
   "Analytics",
   "Automation",
   "Storage",
-  "Learning",
 ] as const;
 
 interface TemplateCatalogProps {

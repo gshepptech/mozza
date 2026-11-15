@@ -845,7 +845,7 @@ export function OrderWizard({ onComplete, onAdvancedMode, teamId }: OrderWizardP
                 <Input
                   value={scanQuery}
                   onChange={(e) => setScanQuery(e.target.value)}
-                  placeholder="e.g. webapp"
+                  placeholder="e.g. grafana"
                   className="h-9 text-sm bg-elevated flex-1"
                   onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); doScan(scanQuery); } }}
                 />

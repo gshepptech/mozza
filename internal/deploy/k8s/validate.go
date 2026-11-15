@@ -202,7 +202,7 @@ func checkArchCompat(resp *http.Response, registry string) error {
 
 // extractRepo gets the repository path from the request URL.
 func extractRepo(req *http.Request) string {
-	// URL is like /v2/webapp/controller/manifests/v3.3.5
+	// URL is like /v2/example/webapp/manifests/v1.2.3
 	parts := strings.Split(req.URL.Path, "/")
 	if len(parts) >= 5 {
 		return strings.Join(parts[2:len(parts)-2], "/")

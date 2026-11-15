@@ -63,7 +63,7 @@ func TestCatalogLoad(t *testing.T) {
 	require.NoError(t, err)
 
 	templates := catalog.List("")
-	assert.Len(t, templates, 15)
+	assert.Len(t, templates, 14)
 }
 
 func TestCatalogGet(t *testing.T) {
@@ -125,7 +125,6 @@ func TestAllTemplatesParseAfterRender(t *testing.T) {
 		"postgres-admin":  {"DB_PASSWORD": "testpass", "DB_USER": "postgres", "DB_NAME": "appdb", "ADMIN_EMAIL": "a@b.com", "STORAGE_SIZE": "10Gi"},
 		"n8n":             {"DB_PASSWORD": "testpass"},
 		"redis-commander": {},
-		"webapp":       {"GARGANTUA_VERSION": "v3.3.5", "UI_VERSION": "v3.3.6", "ADMIN_VERSION": "v3.3.6"},
 		"grafana":         {"ADMIN_PASSWORD": "testpass"},
 		"rabbitmq":        {"RABBITMQ_PASSWORD": "testpass"},
 		"nextcloud":       {"DB_PASSWORD": "testpass", "ADMIN_PASSWORD": "testpass"},

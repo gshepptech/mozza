@@ -29,7 +29,7 @@ func TestSearch_AllRecipes(t *testing.T) {
 
 	result, err := svc.Search(context.Background(), ListParams{})
 	require.NoError(t, err)
-	assert.GreaterOrEqual(t, result.Total, 15)
+	assert.GreaterOrEqual(t, result.Total, 14)
 	assert.Equal(t, 1, result.Page)
 	assert.Equal(t, 20, result.PerPage)
 }

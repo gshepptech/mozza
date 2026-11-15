@@ -30,15 +30,15 @@ func TestParseGitHubURL(t *testing.T) {
 	}{
 		{
 			name:      "full HTTPS URL",
-			url:       "https://github.com/webapp/controller",
-			wantOwner: "webapp",
-			wantRepo:  "controller",
+			url:       "https://github.com/example/webapp",
+			wantOwner: "example",
+			wantRepo:  "webapp",
 		},
 		{
 			name:      "URL with .git suffix",
-			url:       "https://github.com/webapp/controller.git",
-			wantOwner: "webapp",
-			wantRepo:  "controller",
+			url:       "https://github.com/example/webapp.git",
+			wantOwner: "example",
+			wantRepo:  "webapp",
 		},
 		{
 			name:      "bare github.com path",
