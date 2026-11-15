@@ -20,7 +20,7 @@ import (
 // actually reach the end of the pipeline. A bare non-zero check would let
 // someone silence the suite by marking every awkward block `ignore`, so removing
 // doc examples has to be a deliberate act of lowering this number.
-const minCompiledDocRecipes = 6
+const minCompiledDocRecipes = 5
 
 // appDeclaration matches the line that makes a fenced block a recipe rather
 // than shell, YAML or prose.

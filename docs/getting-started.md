@@ -228,8 +228,7 @@ mozza targets
 The `*` marks the default. `kubernetes` is the default because it is the reference semantics for
 the recipe language — the other targets are honest projections from it.
 
-More backends (Helm, Nomad) are planned; `mozza targets` is always the truthful list of what the
-binary in your hand can actually do.
+`mozza targets` is always the list of what the binary in your hand can compile to.
 
 ### Step 2: Compile
 
