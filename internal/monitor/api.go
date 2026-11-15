@@ -51,12 +51,8 @@ type AppSummary struct {
 	Status HealthStatus `json:"status"`
 }
 
-const (
-	// cpuAlertThreshold is the CPU usage percentage that triggers an alert.
-	cpuAlertThreshold = 80.0
-	// memAlertThreshold is the memory usage percentage that triggers an alert.
-	memAlertThreshold = 80.0
-)
+// cpuAlertThreshold is the CPU usage percentage that triggers an alert.
+const cpuAlertThreshold = 80.0
 
 // PeriodToDuration maps a human-readable period string to a duration.
 func PeriodToDuration(period string) time.Duration {
