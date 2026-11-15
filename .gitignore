@@ -7,6 +7,7 @@ bin/
 tmp/
 coverage.out
 /mozza
+/out/
 /dist/
 
 # Local state written by mozza
