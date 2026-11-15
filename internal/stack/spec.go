@@ -13,8 +13,7 @@
 // source tree, the images, the charts and the values; reusable pieces such as
 // "Calico through the Tigera operator" or "the CloudNativePG operator" are
 // addons in the embedded catalog, referenced by name. The engine knows how to
-// run kind, k3d, docker, helm and kubectl — it does not know what Inventory or
-// Storefront is.
+// run kind, k3d, docker, helm and kubectl — it knows nothing about any one app.
 //
 // Stacks are local by construction. Clusters bind their API server and every
 // published port to the loopback interface, port-forwards listen on 127.0.0.1,

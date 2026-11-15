@@ -6,13 +6,13 @@ those charts expect: a cluster, the operators and CNI they assume, images built 
 source, the Secrets the app will not start without, and then the charts themselves.
 
 ```bash
-mozza stack list                 # stacks and addons Mozza knows
-mozza stack plan inventory        # every command `up` would run, nothing executed
-mozza stack up inventory          # cluster, images, secrets, addons, charts
-mozza stack forward inventory     # reach it on 127.0.0.1 until Ctrl-C
-mozza stack secrets inventory     # admin passwords and other values meant for people
-mozza stack status inventory      # nodes, Helm releases, pods
-mozza stack down inventory        # delete the cluster (only if `up` created it)
+mozza stack list               # stacks and addons Mozza knows
+mozza stack plan webapp        # every command `up` would run, nothing executed
+mozza stack up webapp          # cluster, images, secrets, addons, charts
+mozza stack forward webapp     # reach it on 127.0.0.1 until Ctrl-C
+mozza stack secrets webapp     # admin passwords and other values meant for people
+mozza stack status webapp      # nodes, Helm releases, pods
+mozza stack down webapp        # delete the cluster (only if `up` created it)
 ```
 
 ## Your own app: start with `init`
@@ -110,8 +110,8 @@ with the extra excludes applied, so Mozza never writes a `.dockerignore` into th
 
 A stack names a default `source.path`. To use a different checkout, either:
 
-- pass `--source ~/src/inventory-feature`, or
-- set `MOZZA_<STACK>_SOURCE` (for example `MOZZA_INVENTORY_SOURCE`).
+- pass `--source ~/src/myapp-feature`, or
+- set `MOZZA_<STACK>_SOURCE` (for example `MOZZA_MYAPP_SOURCE`).
 
 `status`, `forward`, `secrets` and `down` work without the source tree.
 
@@ -271,22 +271,21 @@ with an error.
 
 | Stack | Cluster | Notes |
 |---|---|---|
-| `inventory` | kind + Calico | Server plus pod labs. The lab provider requires Calico's operator status. SQLite and Mailpit come from the chart's demo and dev overlays. |
-| `storefront` | k3d | Server, operator, web UI and PostgreSQL. Generates the KEK, master key and database passwords. Provisioning real clusters still needs cloud credentials. |
-| `webapp` | kind + ingress-nginx on 127.0.0.1:80 | Every backend service is built from the controller fork, and the admin UI from its git tag, because the published images are amd64-only. The UIs are at `learn.hf.localhost` and `admin.hf.localhost`; the admin signs in as `admin` / `Sup3r@dmin`. Scenario VMs still need a cloud provider. |
+| `webapp` | kind | PostgreSQL 16, Redis 7 and a web UI (Adminer) in the `webapp` namespace, all from inline manifests. Generates the database password and prints it. `mozza stack forward webapp` serves the UI on `127.0.0.1:8080`. |
+
+`examples/stacks/ansible-demo.yaml` shows a stack whose only component is an Ansible playbook.
 
 ## When an app's own build is broken
 
 A stack can carry a small, named workaround. The app's tree stays untouched:
 
-- **`rewrite`** edits the streamed copy of a Dockerfile. The `inventory` stack uses it to unpin
-  Alpine package releases the live mirror has replaced. The `storefront` stack uses it to copy a
-  schema file that the web bundle imports from outside `web/`.
-- **`exclude`** trims a build context. The `storefront` stack uses it to keep host-built binaries
-  and the macOS `node_modules` out of the context, since that tree has no `.dockerignore`.
+- **`rewrite`** edits the streamed copy of a Dockerfile, for example to unpin Alpine package
+  releases a mirror no longer serves.
+- **`exclude`** trims a build context, for example to keep host-built binaries and a macOS
+  `node_modules` out of a tree that has no `.dockerignore`.
 - **`--image`** skips the build entirely in favour of an image you already have.
-- **A git `context`** builds an image whose source is not checked out. The `webapp` stack builds
-  its admin UI this way.
+- **A git `context`** builds an image whose source is not checked out, such as a companion UI that
+  lives in its own repository.
 
 Each rewrite reports how many lines it changed, or that it matched nothing. When the app fixes
 its build, the workaround shows up in the log as a no-op and can be deleted.

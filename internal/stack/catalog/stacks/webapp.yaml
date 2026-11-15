@@ -1,0 +1,131 @@
+name: webapp
+description: A web UI with PostgreSQL and Redis behind it, from plain manifests on kind
+
+cluster:
+  provider: kind
+
+# Pulled on the host and loaded into the node, so the cluster never needs to
+# reach a registry.
+images:
+  - ref: postgres:16-alpine
+  - ref: redis:7-alpine
+  - ref: adminer:5
+
+secrets:
+  - name: db
+    namespace: webapp
+    data:
+      username: {value: app}
+      password: {generate: password, length: 24, show: true}
+
+components:
+  - name: postgres
+    namespace: webapp
+    manifests:
+      - inline: |
+          apiVersion: apps/v1
+          kind: Deployment
+          metadata:
+            name: postgres
+          spec:
+            selector:
+              matchLabels: {app: postgres}
+            template:
+              metadata:
+                labels: {app: postgres}
+              spec:
+                containers:
+                  - name: postgres
+                    image: postgres:16-alpine
+                    imagePullPolicy: IfNotPresent
+                    ports: [{containerPort: 5432}]
+                    env:
+                      - {name: POSTGRES_DB, value: app}
+                      - name: POSTGRES_USER
+                        valueFrom: {secretKeyRef: {name: db, key: username}}
+                      - name: POSTGRES_PASSWORD
+                        valueFrom: {secretKeyRef: {name: db, key: password}}
+                    readinessProbe:
+                      exec: {command: [pg_isready, -U, app]}
+          ---
+          apiVersion: v1
+          kind: Service
+          metadata:
+            name: postgres
+          spec:
+            selector: {app: postgres}
+            ports: [{port: 5432}]
+    wait:
+      - {resource: deployment/postgres, namespace: webapp, rollout: true}
+
+  - name: redis
+    namespace: webapp
+    manifests:
+      - inline: |
+          apiVersion: apps/v1
+          kind: Deployment
+          metadata:
+            name: redis
+          spec:
+            selector:
+              matchLabels: {app: redis}
+            template:
+              metadata:
+                labels: {app: redis}
+              spec:
+                containers:
+                  - name: redis
+                    image: redis:7-alpine
+                    imagePullPolicy: IfNotPresent
+                    ports: [{containerPort: 6379}]
+          ---
+          apiVersion: v1
+          kind: Service
+          metadata:
+            name: redis
+          spec:
+            selector: {app: redis}
+            ports: [{port: 6379}]
+    wait:
+      - {resource: deployment/redis, namespace: webapp, rollout: true}
+
+  - name: web
+    namespace: webapp
+    manifests:
+      - inline: |
+          apiVersion: apps/v1
+          kind: Deployment
+          metadata:
+            name: web
+          spec:
+            selector:
+              matchLabels: {app: web}
+            template:
+              metadata:
+                labels: {app: web}
+              spec:
+                containers:
+                  - name: web
+                    image: adminer:5
+                    imagePullPolicy: IfNotPresent
+                    ports: [{containerPort: 8080}]
+                    env:
+                      - {name: ADMINER_DEFAULT_SERVER, value: postgres}
+          ---
+          apiVersion: v1
+          kind: Service
+          metadata:
+            name: web
+          spec:
+            selector: {app: web}
+            ports: [{port: 8080}]
+    wait:
+      - {resource: deployment/web, namespace: webapp, rollout: true}
+
+access:
+  - {name: web, namespace: webapp, service: web, port: 8080, health: /}
+
+notes:
+  - Open http://127.0.0.1:8080 and sign in to server postgres, database app, user app.
+  - The password is printed above; `mozza stack secrets webapp` shows it again.
+  - Redis answers at redis.webapp.svc:6379 inside the cluster.
