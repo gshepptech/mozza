@@ -4,11 +4,9 @@
 package detect
 
 import (
-	"encoding/json"
 	"fmt"
 	"log/slog"
 	"os"
-	"path/filepath"
 	"sort"
 	"strings"
 
@@ -181,48 +179,4 @@ func confidenceRank(c Confidence) int {
 	default:
 		return 0
 	}
-}
-
-// fileExists checks if a file exists at the given path.
-func fileExists(path string) bool {
-	_, err := os.Stat(path)
-	return err == nil
-}
-
-// readFile reads a file and returns its content as a string.
-// Returns empty string on any error.
-func readFile(path string) string {
-	data, err := os.ReadFile(path)
-	if err != nil {
-		return ""
-	}
-	return string(data)
-}
-
-// readJSON reads a JSON file into the target struct.
-// Returns an error if the file cannot be read or parsed.
-func readJSON(path string, target interface{}) error {
-	data, err := os.ReadFile(path)
-	if err != nil {
-		return fmt.Errorf("readJSON: %w", err)
-	}
-	if err := json.Unmarshal(data, target); err != nil {
-		return fmt.Errorf("readJSON: %w", err)
-	}
-	return nil
-}
-
-// containsLine checks if any line in content contains the substring.
-func containsLine(content, substr string) bool {
-	for _, line := range strings.Split(content, "\n") {
-		if strings.Contains(line, substr) {
-			return true
-		}
-	}
-	return false
-}
-
-// joinPath is a convenience wrapper for filepath.Join.
-func joinPath(parts ...string) string {
-	return filepath.Join(parts...)
 }

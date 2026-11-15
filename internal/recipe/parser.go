@@ -2008,15 +2008,6 @@ func (p *Parser) matchIdent(lower string) bool {
 	return (tok.Type == TokenIdent || tok.Type == TokenString) && strings.ToLower(tok.Value) == lower
 }
 
-// peek returns the token at offset ahead of current position without advancing.
-func (p *Parser) peek(offset int) Token {
-	idx := p.pos + offset
-	if idx >= len(p.tokens) {
-		return Token{Type: TokenEOF}
-	}
-	return p.tokens[idx]
-}
-
 // --- Token navigation helpers ---
 
 // current returns the token at the current position.

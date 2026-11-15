@@ -282,7 +282,7 @@ func (s *Server) sessionAuth(next http.Handler) http.Handler {
 			return
 		}
 
-		user, sess, err := s.cfg.Auth.ValidateSession(cookie.Value)
+		user, _, err := s.cfg.Auth.ValidateSession(cookie.Value)
 		if err != nil {
 			http.SetCookie(w, &http.Cookie{
 				Name:   sessionCookieName,
@@ -295,7 +295,6 @@ func (s *Server) sessionAuth(next http.Handler) http.Handler {
 		}
 
 		r = withUser(r, user)
-		r = withSession(r, sess)
 		next.ServeHTTP(w, r)
 	})
 }
