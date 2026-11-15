@@ -11,8 +11,8 @@ If you discover a security vulnerability in Mozza, please report it responsibly.
 
 **Do not open a public GitHub issue for security vulnerabilities.**
 
-Instead, use GitHub's private vulnerability reporting — open a draft advisory at
-**https://github.com/gshepptech/mozza/security/advisories/new** — and include:
+Instead, use GitHub's private vulnerability reporting. Open a draft advisory at
+<https://github.com/gshepptech/mozza/security/advisories/new> and include:
 
 1. A description of the vulnerability
 2. Steps to reproduce the issue

@@ -3,7 +3,7 @@
 ## System Requirements
 
 - **OS**: Linux (amd64/arm64), macOS, Windows
-- **Runtime**: Single static binary — no dependencies
+- **Runtime**: a single binary with no runtime dependencies
 - **Database**: SQLite (dev/small) or PostgreSQL 14+ (production)
 - **Memory**: 128MB minimum, 512MB recommended
 - **Disk**: 100MB for binary + database storage
@@ -310,17 +310,17 @@ pg_restore -d mozza /backups/mozza-20260317.dump
 
 1. Back up the database
 2. Replace the binary (or update the container image)
-3. Restart — migrations run automatically on startup
+3. Restart. Migrations run automatically on startup
 4. Verify with `GET /api/v1/readyz` and `GET /api/v1/version`
 
-Migrations are idempotent — restarting with the same version is safe.
+Migrations are idempotent, so restarting with the same version is safe.
 
 ## Troubleshooting
 
 ### "binding to X exposes the API without authentication"
 
 Add `--no-auth` flag when binding to non-localhost addresses. This is a safety
-guard — make sure TLS and/or network isolation is in place.
+guard. Make sure TLS or network isolation is in place first.
 
 ### Database connection failures
 

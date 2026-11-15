@@ -226,7 +226,8 @@ mozza targets
 ```
 
 The `*` marks the default. `kubernetes` is the default because it is the reference semantics for
-the recipe language — the other targets are honest projections from it.
+the recipe language. The other targets are projections of it, and they warn about anything they
+cannot express.
 
 `mozza targets` is always the list of what the binary in your hand can compile to.
 
@@ -305,7 +306,7 @@ Generated docker-compose.yml for "my-app" with 1 service(s), 1 network(s).
   ! web: Auto-scaling is Kubernetes-only. Running a fixed replica count locally.
 ```
 
-Silence means nothing was dropped. Warnings do not fail the build — the exit code stays `0` — so
+Silence means nothing was dropped. Warnings do not fail the build (the exit code stays `0`), so
 read them rather than relying on exit status to catch a lost setting.
 
 A typo in `--target` fails immediately, before any parsing, and tells you the valid options:
@@ -331,7 +332,7 @@ mozza compile --target local -o ./out
 docker compose -f ./out/docker-compose.yml up -d
 ```
 
-Commit the generated files if you want a GitOps trail — but the file worth reviewing is
+Commit the generated files if you want a GitOps trail, but the file worth reviewing is
 `app.mozza`. That is the source; everything under `./deploy` is a build artifact.
 
 In CI, the whole thing is two lines and needs no credentials:
@@ -341,8 +342,8 @@ In CI, the whole thing is two lines and needs no credentials:
 - run: mozza compile --target kubernetes -o ./deploy
 ```
 
-Mozza splits its streams the way a compiler does — **payload on stdout, progress and diagnostics on
-stderr** — so both piping and redirecting behave predictably:
+Mozza splits its streams the way a compiler does: payload on stdout, progress and diagnostics on
+stderr. Piping and redirecting both behave predictably:
 
 | Stream | What goes there |
 |---|---|
@@ -357,8 +358,8 @@ mozza compile --target kubernetes -o ./deploy > /dev/null   # progress still vis
 mozza targets | grep -q local && echo "compose target available"
 ```
 
-`mozza compile > files.txt` therefore produces an empty file by design — nothing pretends to be
-content. Drive scripts off the **exit code** (`0` on success, non-zero on failure) and the files on
+`mozza compile > files.txt` therefore produces an empty file: compile writes its files to disk,
+not to stdout. Drive scripts off the exit code (`0` on success, non-zero on failure) and the files on
 disk, and pipe `mozza targets` or `mozza status` when you want to grep the result.
 
 ## Local Deploy: Get It Delivered
@@ -381,7 +382,7 @@ Starting services...
 Services started successfully.
 ```
 
-The first two lines are exactly what `mozza compile --target local` would have printed — `up` is
+The first two lines are exactly what `mozza compile --target local` would have printed. `up` is
 the same compile, followed by an apply.
 
 ### Check Status
@@ -444,17 +445,17 @@ mozza serve --host 0.0.0.0 --no-auth    # bind to all interfaces (use with cauti
 
 The dashboard provides:
 
-- **Guided Wizard** -- walk through creating a recipe step by step, no CLI knowledge needed.
-- **Template Marketplace** -- browse and deploy pre-built recipes with one click.
-- **Deployment History** -- view past deployments with order numbers and status tracking.
-- **Recipe Editor** -- edit your `app.mozza` file directly in the browser.
-- **Health Diagnostics** -- run `mozza doctor` checks from the UI.
+- **Guided Wizard**: walk through creating a recipe step by step, no CLI knowledge needed.
+- **Template Marketplace**: browse and deploy pre-built recipes with one click.
+- **Deployment History**: view past deployments with order numbers and status tracking.
+- **Recipe Editor**: edit your `app.mozza` file directly in the browser.
+- **Health Diagnostics**: run `mozza doctor` checks from the UI.
 
 ### Compiling over HTTP
 
 Both paths are available through the API, so the dashboard and your own tooling use the same
 compiler as the CLI. Both endpoints require a session cookie, but neither requires the `deployer`
-or `admin` role — compiling mutates nothing, so a `viewer` can do it.
+or `admin` role. Compiling changes nothing, so a `viewer` can do it.
 
 **`GET /api/v1/targets`** — the same list `mozza targets` prints:
 
@@ -500,7 +501,7 @@ summary line, and any capability warnings. `warnings` is always an array, never 
 }
 ```
 
-Bad input comes back as `400` with a plain-English reason — an unknown target, a missing `source`,
+Bad input comes back as `400` with a plain-English reason, such as an unknown target, a missing `source`
 or a recipe that will not parse:
 
 ```json
@@ -570,11 +571,11 @@ The `--context` flag selects a kubeconfig context. Without it, Mozza uses your c
 
 ### What Happens During Deploy
 
-1. **Image validation** -- Mozza verifies all container images are accessible.
-2. **Manifest generation** -- your recipe compiles into Kubernetes resources.
-3. **Server-side apply** -- manifests are applied to the cluster with progress reporting.
-4. **Health waiting** -- Mozza waits for pods to become ready (default timeout: 5 minutes, `--timeout` to change).
-5. **URL detection** -- if ingress is configured, Mozza reports the application URL.
+1. **Image validation**: Mozza verifies all container images are accessible.
+2. **Manifest generation**: your recipe compiles into Kubernetes resources.
+3. **Server-side apply**: manifests are applied to the cluster with progress reporting.
+4. **Health waiting**: Mozza waits for pods to become ready (default timeout: 5 minutes, `--timeout` to change).
+5. **URL detection**: if ingress is configured, Mozza reports the application URL.
 
 Each deployment gets an **order number** (deploy ID) for tracking. You will see output like:
 
@@ -599,7 +600,7 @@ mozza compile --target kubernetes -o ./deploy
 ```
 
 > **Deprecated:** `mozza deploy --export` does the same thing and still works, but prints a
-> deprecation notice and will be removed. It has no output-directory flag — it always writes to
+> deprecation notice and will be removed. It has no output-directory flag and always writes to
 > `./k8s/` relative to the working directory.
 >
 > ```console
@@ -629,7 +630,7 @@ Mozza retrieves the recipe from the last successful deploy and re-applies it. Th
 
 - Run `mozza doctor` to diagnose environment issues (Docker connectivity, resource availability, recipe problems).
 - Run `mozza serve --help` to see all dashboard options.
-- Explore the full workload taxonomy -- Mozza supports cron jobs (`run every hour`), daemon sets (`run on every node`), stateful services, init containers, sidecars, auto-scaling, and more.
+- Explore the full workload taxonomy. Mozza supports cron jobs (`run every hour`), daemon sets (`run on every node`), stateful services, init containers, sidecars, auto-scaling, and more.
 - Set up team access through the web dashboard.
 - Use `mozza compile` in CI to keep generated manifests in version control.
 - See the [production guide](production-guide.md) for hardening a real deployment.
