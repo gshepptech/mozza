@@ -25,7 +25,7 @@ cd mozza
 make build     # Compiles to bin/mozza
 make test      # Runs tests with -race
 make lint      # Runs golangci-lint
-make check     # All of the above plus security checks
+make check     # gofmt, go vet and the tests
 ```
 
 ### Running Locally
