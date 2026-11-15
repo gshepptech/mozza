@@ -1,5 +1,5 @@
 # Stage 1: Build UI
-FROM node:20-alpine AS ui-builder
+FROM node:24-alpine AS ui-builder
 
 WORKDIR /app
 COPY ui/package.json ui/package-lock.json ./ui/
@@ -9,7 +9,7 @@ COPY internal/ui/ ./internal/ui/
 RUN cd ui && npm run build
 
 # Stage 2: Build Go binary with embedded UI
-FROM golang:1.24-alpine AS builder
+FROM golang:1.25-alpine AS builder
 
 ARG VERSION=dev
 ARG COMMIT=unknown
