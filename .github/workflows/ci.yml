@@ -1,0 +1,33 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  go:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+      - name: gofmt
+        run: test -z "$(gofmt -l cmd internal)" || (gofmt -l cmd internal; exit 1)
+      - name: build
+        run: go build ./...
+      - name: vet
+        run: go vet ./...
+      - name: test
+        run: go test -race -count=1 ./...
+      - name: compile the examples
+        run: |
+          go build -o bin/mozza ./cmd/mozza
+          for f in examples/*.mozza; do
+            ./bin/mozza compile --recipe "$f" -o "out/$(basename "$f" .mozza)"
+            ./bin/mozza compile --recipe "$f" --target local -o "out/$(basename "$f" .mozza)-local"
+          done
