@@ -61,14 +61,16 @@ var gatewayNameHints = []string{"gateway", "proxy"} //nolint:gochecknoglobals //
 var apiNameHints = []string{"api"} //nolint:gochecknoglobals // immutable lookup table
 
 // autoWireEngineEnvVars maps engine names to the env var name and URL pattern
-// used for auto-wiring dependency injection.
+// used for auto-wiring dependency injection. Every %s is the dependency's slice
+// name. The credentials and database name match the defaults the k8s and local
+// targets give the engine's own container, so the URL connects as compiled.
 var autoWireEngineEnvVars = map[string]struct {
 	envVar  string
-	pattern string // %s = slice name, %s = app name (if needed)
+	pattern string
 }{
-	"postgres":  {envVar: "DATABASE_URL", pattern: "postgres://%s:5432/%s"},
-	"mysql":     {envVar: "DATABASE_URL", pattern: "mysql://%s:3306/%s"},
-	"mongo":     {envVar: "MONGO_URL", pattern: "mongodb://%s:27017/%s"},
+	"postgres":  {envVar: "DATABASE_URL", pattern: "postgres://postgres:mozza@%[1]s:5432/%[1]s"},
+	"mysql":     {envVar: "DATABASE_URL", pattern: "mysql://root:mozza@%[1]s:3306/%[1]s"},
+	"mongo":     {envVar: "MONGO_URL", pattern: "mongodb://mozza:mozza@%[1]s:27017/%[1]s?authSource=admin"},
 	"redis":     {envVar: "REDIS_URL", pattern: "redis://%s:6379"},
 	"memcached": {envVar: "MEMCACHED_URL", pattern: "%s:11211"},
 }
@@ -97,7 +99,7 @@ func Build(r *recipe.Recipe) (*AppPlan, error) {
 	}
 
 	// Auto-wire dependency injection env vars after all slices are converted.
-	autoWireDependencies(slices, r.Slices, r.Name)
+	autoWireDependencies(slices, r.Slices)
 
 	return &AppPlan{
 		Name:        r.Name,
@@ -562,7 +564,7 @@ func buildIngredients(slices []recipe.Slice) []Ingredient {
 // autoWireDependencies injects connection environment variables into slices
 // that depend on database/cache/service slices. If the dependent slice already
 // has the env var set, it is not overwritten.
-func autoWireDependencies(planSlices []Slice, recipeSlices []recipe.Slice, appName string) {
+func autoWireDependencies(planSlices []Slice, recipeSlices []recipe.Slice) {
 	// Build index of plan slices by name for dependency lookup.
 	sliceByName := make(map[string]*Slice, len(planSlices))
 	for i := range planSlices {
@@ -584,7 +586,7 @@ func autoWireDependencies(planSlices []Slice, recipeSlices []recipe.Slice, appNa
 			}
 			recDep := recipeByName[need]
 
-			envVar, envVal := autoWireEnvVar(need, depSlice, recDep, appName)
+			envVar, envVal := autoWireEnvVar(need, depSlice, recDep)
 			if envVar == "" {
 				continue
 			}
@@ -602,20 +604,11 @@ func autoWireDependencies(planSlices []Slice, recipeSlices []recipe.Slice, appNa
 
 // autoWireEnvVar returns the env var name and value to inject for a dependency,
 // or empty strings if no auto-wiring applies.
-func autoWireEnvVar(depName string, depSlice *Slice, recDep *recipe.Slice, appName string) (string, string) {
+func autoWireEnvVar(depName string, depSlice *Slice, recDep *recipe.Slice) (string, string) {
 	// Check if the dependency has a known engine for specific auto-wire rules.
 	if recDep != nil && recDep.Engine != "" {
 		if aw, ok := autoWireEngineEnvVars[recDep.Engine]; ok {
-			var val string
-			switch recDep.Engine {
-			case "redis":
-				val = fmt.Sprintf(aw.pattern, depName)
-			case "memcached":
-				val = fmt.Sprintf(aw.pattern, depName)
-			default:
-				val = fmt.Sprintf(aw.pattern, depName, appName)
-			}
-			return aw.envVar, val
+			return aw.envVar, fmt.Sprintf(aw.pattern, depName)
 		}
 	}
 

@@ -836,7 +836,7 @@ func TestBuild_AutoWirePostgres(t *testing.T) {
 
 	api := plan.Slices[0]
 	require.NotNil(t, api.Env)
-	assert.Equal(t, "postgres://db:5432/my-app", api.Env["DATABASE_URL"])
+	assert.Equal(t, "postgres://postgres:mozza@db:5432/db", api.Env["DATABASE_URL"])
 }
 
 func TestBuild_AutoWireRedis(t *testing.T) {
@@ -874,7 +874,7 @@ func TestBuild_AutoWireMongo(t *testing.T) {
 
 	api := plan.Slices[0]
 	require.NotNil(t, api.Env)
-	assert.Equal(t, "mongodb://mongo:27017/my-app", api.Env["MONGO_URL"])
+	assert.Equal(t, "mongodb://mozza:mozza@mongo:27017/mongo?authSource=admin", api.Env["MONGO_URL"])
 }
 
 func TestBuild_AutoWireMySQL(t *testing.T) {
@@ -893,7 +893,7 @@ func TestBuild_AutoWireMySQL(t *testing.T) {
 
 	api := plan.Slices[0]
 	require.NotNil(t, api.Env)
-	assert.Equal(t, "mysql://mydb:3306/my-app", api.Env["DATABASE_URL"])
+	assert.Equal(t, "mysql://root:mozza@mydb:3306/mydb", api.Env["DATABASE_URL"])
 }
 
 func TestBuild_AutoWireMemcached(t *testing.T) {
