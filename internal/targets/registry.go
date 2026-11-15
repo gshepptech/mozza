@@ -20,8 +20,8 @@ import (
 )
 
 // Default is the target used when the caller does not name one. Kubernetes is
-// the reference semantics for the recipe language (see docs/VISION.md), so it is
-// the default everywhere.
+// the reference semantics for the recipe language, so it is the default
+// everywhere.
 const Default = "kubernetes"
 
 // descriptions maps a target name to a one-line human-readable summary of what

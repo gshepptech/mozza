@@ -629,8 +629,6 @@ Mozza retrieves the recipe from the last successful deploy and re-applies it. Th
 
 ## Next Steps
 
-- Read [docs/VISION.md](VISION.md) for why Mozza is shaped like a compiler, and
-  [docs/specs/multi-target-compiler.md](specs/multi-target-compiler.md) for where the targets are going.
 - Run `mozza doctor` to diagnose environment issues (Docker connectivity, resource availability, recipe problems).
 - Run `mozza serve --help` to see all dashboard options.
 - Explore the full workload taxonomy -- Mozza supports cron jobs (`run every hour`), daemon sets (`run on every node`), stateful services, init containers, sidecars, auto-scaling, and more.
