@@ -68,12 +68,6 @@ func (s *Server) registerRoutes() {
 			r.Get("/marketplace/recipes", s.handleListMarketplaceRecipes())
 			r.Get("/marketplace/recipes/{name}", s.handleGetMarketplaceRecipe())
 
-			// Monitoring endpoints — app metrics and health.
-			r.Get("/apps/{id}/metrics", s.handleAppMetrics())
-			r.Get("/apps/{id}/health", s.handleAppHealth())
-			r.Get("/apps/{id}/timeseries", s.handleTimeSeries())
-			r.Get("/monitoring/summary", s.handleMonitoringSummary())
-
 			// Registry scanning — discover images in a Docker Hub namespace.
 			r.Get("/registry/scan", s.handleScanNamespace())
 
