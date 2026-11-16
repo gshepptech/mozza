@@ -232,6 +232,19 @@ workflow.
 | `internal/importer`, `internal/detect` | Compose, Dockerfile and repository import |
 | `internal/server`, `internal/store`, `ui/` | Dashboard API, SQLite/PostgreSQL store and React UI |
 
+## Work in progress
+
+Two features are in the tree but not finished:
+
+- **Git push-to-deploy and branch previews** (`internal/gitdeploy`, `mozza connect`,
+  `mozza disconnect`, `mozza previews`). The webhook handler, build queue and preview
+  bookkeeping exist, but `mozza serve` does not construct the service yet, so the repo,
+  build, webhook and preview endpoints answer 503.
+- **App metrics collector** (`internal/monitor`). It samples container CPU, memory and
+  network and polls health endpoints, but nothing registers apps with it yet, so the
+  per-app metrics, health and time-series endpoints return empty data. The dashboard's
+  monitoring page shows pod health from Kubernetes only.
+
 ## License
 
 Apache License 2.0. See [LICENSE](LICENSE).

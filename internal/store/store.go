@@ -124,6 +124,10 @@ var migrationFiles = []string{
 	"migrations/008_deployment_version_rollback.sql",
 	"migrations/009_cluster_snapshots.sql",
 	"migrations/010_rbac_roles.sql",
+	"migrations/011_connected_repos.sql",
+	"migrations/012_builds.sql",
+	"migrations/013_preview_deploys.sql",
+	"migrations/014_metrics.sql",
 	"migrations/015_marketplace_cache.sql",
 	"migrations/016_certificates.sql",
 }
@@ -140,6 +144,10 @@ var migrationFilesPg = []string{
 	"migrations_pg/008_deployment_version_rollback.sql",
 	"migrations_pg/009_cluster_snapshots.sql",
 	"migrations_pg/010_rbac_roles.sql",
+	"migrations_pg/011_connected_repos.sql",
+	"migrations_pg/012_builds.sql",
+	"migrations_pg/013_preview_deploys.sql",
+	"migrations_pg/014_metrics.sql",
 	"migrations_pg/015_marketplace_cache.sql",
 	"migrations_pg/016_certificates.sql",
 }

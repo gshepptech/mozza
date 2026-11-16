@@ -20,6 +20,7 @@ require (
 	k8s.io/apimachinery v0.35.2
 	k8s.io/client-go v0.35.2
 	modernc.org/sqlite v1.45.0
+	nhooyr.io/websocket v1.8.17
 )
 
 require (

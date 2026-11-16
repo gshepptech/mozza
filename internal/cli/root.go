@@ -66,7 +66,10 @@ func New() *cobra.Command {
 		newOperatorCmd(),
 		newImportCmd(),
 		newRecipeCmd(),
+		newConnectCmd(),
+		newDisconnectCmd(),
 		newProxyCmd(),
+		newPreviewsCmd(),
 		newStackCmd(),
 	)
 
