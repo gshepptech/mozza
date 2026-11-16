@@ -441,28 +441,6 @@ export async function deployMarketplaceRecipe(
   });
 }
 
-// Monitoring Time Series
-export interface TimeSeriesPoint {
-  timestamp: string;
-  cpu: number;
-  memory: number;
-  network_in: number;
-  network_out: number;
-}
-
-export interface TimeSeriesResponse {
-  app_id: string;
-  period: string;
-  points: TimeSeriesPoint[];
-}
-
-export async function getAppTimeSeries(
-  appId: string,
-  period: string = "1h",
-): Promise<TimeSeriesResponse> {
-  return request<TimeSeriesResponse>(`/apps/${appId}/timeseries?period=${period}`);
-}
-
 // Cluster operations
 export async function restartDeployment(namespace: string, name: string): Promise<{ status: string }> {
   return request<{ status: string }>(`/cluster/namespaces/${namespace}/deployments/${name}/restart`, {

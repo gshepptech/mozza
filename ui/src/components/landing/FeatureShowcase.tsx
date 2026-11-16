@@ -31,21 +31,6 @@ function FrameworkDetectIcon() {
   );
 }
 
-function GitPushIcon() {
-  return (
-    <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
-      <circle cx="24" cy="38" r="4" stroke={COLORS.accent} strokeWidth="2" opacity="0.5" />
-      <circle cx="24" cy="24" r="4" stroke={COLORS.accent} strokeWidth="2" opacity="0.7" />
-      <circle cx="24" cy="10" r="4" fill={COLORS.accent} opacity="0.8" />
-      <line x1="24" y1="14" x2="24" y2="20" stroke={COLORS.accent} strokeWidth="2" />
-      <line x1="24" y1="28" x2="24" y2="34" stroke={COLORS.accent} strokeWidth="2" opacity="0.5" />
-      <path d="M36 24c0 0-4 4-12 4" stroke={COLORS.accent} strokeWidth="1.5" strokeDasharray="3 2" opacity="0.3" />
-      <circle cx="36" cy="24" r="3" stroke={COLORS.accent} strokeWidth="1.5" opacity="0.4" />
-      <path d="M20 6l4-2 4 2" stroke={COLORS.accent} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
 function MonitoringIcon() {
   return (
     <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
@@ -78,12 +63,6 @@ const FEATURES = [
     title: "Framework Detection",
     desc: "Point Mozza at your repo. It detects your language, framework, databases, and build tools automatically. Node, Go, Python, Rails, and more.",
     code: "$ mozza init .\nDetected: Next.js + PostgreSQL + Redis\nGenerated: my-app.mozza",
-  },
-  {
-    icon: GitPushIcon,
-    title: "Git Push Deploy",
-    desc: "Push to your branch and Mozza builds, tests, and deploys. No CI config required. Same workflow from local dev to production.",
-    code: "$ git push origin main\n-> Building containers...\n-> Deployed to production",
   },
   {
     icon: MonitoringIcon,
