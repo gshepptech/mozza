@@ -86,15 +86,10 @@ export function AppHealth({ status, appName, details }: AppHealthProps) {
   );
 }
 
-/** Derive health status from pod metrics. */
-export function deriveHealthStatus(
-  runningPods: number,
-  totalPods: number,
-  cpuPercent: number,
-  memPercent: number,
-): HealthStatus {
+/** Derive health status from how many of an app's pods are running. */
+export function deriveHealthStatus(runningPods: number, totalPods: number): HealthStatus {
   if (totalPods === 0) return "unknown";
   if (runningPods === 0) return "down";
-  if (runningPods < totalPods || cpuPercent > 90 || memPercent > 90) return "degraded";
+  if (runningPods < totalPods) return "degraded";
   return "healthy";
 }

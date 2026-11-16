@@ -1,23 +1,17 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import {
   getClusterMetrics, getClusterPods, getClusterEvents, getClusterNodes,
-  getAppTimeSeries,
 } from "@/api/client";
-import type { TimeSeriesPoint } from "@/api/client";
 import type { ClusterMetrics, ClusterPod, ClusterEvent, ClusterInfo } from "@/api/types";
 import {
   Activity, Cpu, HardDrive, Server, AlertTriangle, CheckCircle,
-  Bell, RefreshCw, Loader2, ChevronDown, Network,
+  Bell, RefreshCw, Loader2,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { statusColor, statusBgColor } from "@/lib/format";
-import {
-  MetricsChart, Sparkline, TimePeriodSelector,
-  type TimePeriod, type DataPoint, type DualDataPoint,
-} from "@/components/monitoring/MetricsChart";
 import { AppHealth, deriveHealthStatus } from "@/components/monitoring/AppHealth";
 import { AlertBadge, resourceAlertLevel } from "@/components/monitoring/AlertBadge";
 
@@ -30,34 +24,6 @@ interface AppSummary {
   runningCount: number;
   totalCount: number;
   restartCount: number;
-  cpuEstimate: number;
-  memEstimate: number;
-}
-
-// ── Time-series data helpers ─────────────────────────────────────
-
-function tsPointsToDataPoints(points: TimeSeriesPoint[]): DataPoint[] {
-  return points.map((p) => ({
-    time: p.timestamp,
-    value: Math.round(p.cpu * 10) / 10,
-  }));
-}
-
-function tsPointsToMemDataPoints(points: TimeSeriesPoint[]): DataPoint[] {
-  return points.map((p) => ({
-    time: p.timestamp,
-    // Convert bytes to percentage (estimate, since we don't have the limit).
-    // Show raw MB when < 100, otherwise percentage-like scale.
-    value: Math.round((p.memory / (1024 * 1024)) * 10) / 10,
-  }));
-}
-
-function tsPointsToNetworkDual(points: TimeSeriesPoint[]): DualDataPoint[] {
-  return points.map((p) => ({
-    time: p.timestamp,
-    rx: p.network_in,
-    tx: p.network_out,
-  }));
 }
 
 // ── Group pods by app label ──────────────────────────────────────
@@ -82,9 +48,6 @@ function groupPodsByApp(pods: ClusterPod[]): AppSummary[] {
     const name = slashIdx >= 0 ? key.slice(slashIdx + 1) : key;
     const running = appPods.filter((p) => p.status === "Running").length;
     const restarts = appPods.reduce((s, p) => s + p.restarts, 0);
-    // Estimate resource usage from pod count relative to cluster
-    const cpuEst = Math.min(95, 15 + running * 8 + Math.random() * 20);
-    const memEst = Math.min(95, 20 + running * 10 + Math.random() * 15);
 
     summaries.push({
       name,
@@ -93,8 +56,6 @@ function groupPodsByApp(pods: ClusterPod[]): AppSummary[] {
       runningCount: running,
       totalCount: appPods.length,
       restartCount: restarts,
-      cpuEstimate: Math.round(cpuEst),
-      memEstimate: Math.round(memEst),
     });
   }
   return summaries.sort((a, b) => b.totalCount - a.totalCount);
@@ -141,249 +102,28 @@ function PodGrid({ pods }: { pods: ClusterPod[] }) {
 
 // ── App Card (grid item) ─────────────────────────────────────────
 
-function AppCard({
-  app,
-  selected,
-  onClick,
-}: {
-  app: AppSummary;
-  selected: boolean;
-  onClick: () => void;
-}) {
-  const health = deriveHealthStatus(
-    app.runningCount,
-    app.totalCount,
-    app.cpuEstimate,
-    app.memEstimate,
-  );
-  const cpuAlert = resourceAlertLevel(app.cpuEstimate);
-  const memAlert = resourceAlertLevel(app.memEstimate);
-  const sparkData = useMemo(
-    () => Array.from({ length: 20 }, (_, i) =>
-      Math.max(0, app.cpuEstimate + (Math.sin(i * 0.7) * 12) + (Math.random() - 0.5) * 8),
-    ),
-    [app.cpuEstimate],
-  );
+function AppCard({ app }: { app: AppSummary }) {
+  const health = deriveHealthStatus(app.runningCount, app.totalCount);
 
   return (
-    <Card
-      className={cn(
-        "bg-card cursor-pointer transition-all hover:border-brand/40",
-        selected && "border-brand/60 ring-1 ring-brand/20",
-      )}
-      onClick={onClick}
-    >
+    <Card className="bg-card">
       <CardContent className="pt-4 pb-3 px-4">
-        <div className="flex items-center justify-between mb-3">
+        <div className="mb-3">
           <AppHealth
             status={health}
             appName={app.name}
             details={`${app.runningCount}/${app.totalCount} pods running`}
           />
-          <div className="flex gap-1">
-            {cpuAlert !== "none" && <AlertBadge level={cpuAlert} label={`CPU ${app.cpuEstimate}%`} />}
-            {memAlert !== "none" && <AlertBadge level={memAlert} label={`MEM ${app.memEstimate}%`} />}
-          </div>
         </div>
-        <div className="flex items-end justify-between">
-          <div>
-            <p className="text-[10px] text-muted-foreground">{app.namespace}</p>
-            <p className="text-[10px] text-muted-foreground mt-0.5">
-              {app.runningCount}/{app.totalCount} pods
-              {app.restartCount > 0 && (
-                <span className="text-warning ml-1">({app.restartCount} restarts)</span>
-              )}
-            </p>
-          </div>
-          <Sparkline data={sparkData} width={80} height={24} />
-        </div>
-        {selected && (
-          <div className="mt-2 pt-2 border-t border-border/50">
-            <ChevronDown className="h-3 w-3 text-brand mx-auto" />
-          </div>
-        )}
+        <p className="text-[10px] text-muted-foreground">{app.namespace}</p>
+        <p className="text-[10px] text-muted-foreground mt-0.5">
+          {app.runningCount}/{app.totalCount} pods
+          {app.restartCount > 0 && (
+            <span className="text-warning ml-1">({app.restartCount} restarts)</span>
+          )}
+        </p>
       </CardContent>
     </Card>
-  );
-}
-
-// ── Expanded App View ────────────────────────────────────────────
-
-function ExpandedAppView({
-  app,
-  period,
-}: {
-  app: AppSummary;
-  period: TimePeriod;
-}) {
-  const [tsPoints, setTsPoints] = useState<TimeSeriesPoint[]>([]);
-
-  useEffect(() => {
-    let cancelled = false;
-    getAppTimeSeries(app.name, period).then((res) => {
-      if (!cancelled) setTsPoints(res.points);
-    }).catch(() => {
-      if (!cancelled) setTsPoints([]);
-    });
-    return () => { cancelled = true; };
-  }, [app.name, period]);
-
-  const hasData = tsPoints.length >= 3;
-  const cpuData = useMemo(() => hasData ? tsPointsToDataPoints(tsPoints) : [], [tsPoints, hasData]);
-  const memData = useMemo(() => hasData ? tsPointsToMemDataPoints(tsPoints) : [], [tsPoints, hasData]);
-  const netData = useMemo(() => hasData ? tsPointsToNetworkDual(tsPoints) : [], [tsPoints, hasData]);
-
-  return (
-    <div className="col-span-full">
-      <Card className="bg-card border-brand/20">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm flex items-center gap-2">
-            <Activity className="h-4 w-4 text-brand" />
-            {app.name}
-            <Badge variant="outline" className="text-[10px] ml-1 text-muted-foreground">
-              {app.namespace}
-            </Badge>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {!hasData ? (
-            <div className="flex items-center justify-center py-8">
-              <Loader2 className="h-5 w-5 animate-spin text-brand mr-2" />
-              <span className="text-sm text-muted-foreground">
-                Collecting data... ({tsPoints.length} point{tsPoints.length !== 1 ? "s" : ""} so far)
-              </span>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <Cpu className="h-3.5 w-3.5 text-brand" />
-                  <span className="text-[11px] font-medium text-foreground">CPU Usage</span>
-                  <span className="text-[10px] text-muted-foreground ml-auto">{app.cpuEstimate}%</span>
-                </div>
-                <MetricsChart
-                  type="line"
-                  data={cpuData}
-                  color="#ff6b35"
-                  maxY={100}
-                  width={320}
-                  height={140}
-                />
-              </div>
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <HardDrive className="h-3.5 w-3.5 text-brand" />
-                  <span className="text-[11px] font-medium text-foreground">Memory Usage</span>
-                  <span className="text-[10px] text-muted-foreground ml-auto">{app.memEstimate}%</span>
-                </div>
-                <MetricsChart
-                  type="area"
-                  data={memData}
-                  thresholds={{ green: 60, yellow: 80 }}
-                  width={320}
-                  height={140}
-                />
-              </div>
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <Network className="h-3.5 w-3.5 text-brand" />
-                  <span className="text-[11px] font-medium text-foreground">Network I/O</span>
-                </div>
-                <MetricsChart
-                  type="dual-line"
-                  data={netData}
-                  colors={{ rx: "#3b82f6", tx: "#ff6b35" }}
-                  width={320}
-                  height={140}
-                />
-              </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
-
-// ── Cluster-wide Charts ──────────────────────────────────────────
-
-function ClusterCharts({
-  cpuPercent,
-  memPercent,
-  period,
-}: {
-  cpuPercent: number;
-  memPercent: number;
-  period: TimePeriod;
-}) {
-  const [tsPoints, setTsPoints] = useState<TimeSeriesPoint[]>([]);
-
-  useEffect(() => {
-    let cancelled = false;
-    // Fetch cluster-level timeseries (app id "0" = cluster aggregate).
-    getAppTimeSeries("0", period).then((res) => {
-      if (!cancelled) setTsPoints(res.points);
-    }).catch(() => {
-      if (!cancelled) setTsPoints([]);
-    });
-    return () => { cancelled = true; };
-  }, [period]);
-
-  const hasData = tsPoints.length >= 3;
-  const cpuData = useMemo(() => hasData ? tsPointsToDataPoints(tsPoints) : [], [tsPoints, hasData]);
-  const memData = useMemo(() => hasData ? tsPointsToMemDataPoints(tsPoints) : [], [tsPoints, hasData]);
-  const netData = useMemo(() => hasData ? tsPointsToNetworkDual(tsPoints) : [], [tsPoints, hasData]);
-
-  return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
-      <Card className="bg-card">
-        <CardContent className="pt-4 pb-3 px-4">
-          <div className="flex items-center gap-2 mb-2">
-            <Cpu className="h-3.5 w-3.5 text-brand" />
-            <span className="text-[11px] font-medium text-foreground">CPU Usage</span>
-            <AlertBadge level={resourceAlertLevel(cpuPercent)} />
-          </div>
-          {hasData ? (
-            <MetricsChart type="line" data={cpuData} color="#ff6b35" maxY={100} width={360} height={140} />
-          ) : (
-            <div className="flex items-center justify-center h-[140px]">
-              <span className="text-xs text-muted-foreground">Collecting data...</span>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-      <Card className="bg-card">
-        <CardContent className="pt-4 pb-3 px-4">
-          <div className="flex items-center gap-2 mb-2">
-            <HardDrive className="h-3.5 w-3.5 text-brand" />
-            <span className="text-[11px] font-medium text-foreground">Memory Usage</span>
-            <AlertBadge level={resourceAlertLevel(memPercent)} />
-          </div>
-          {hasData ? (
-            <MetricsChart type="area" data={memData} thresholds={{ green: 60, yellow: 80 }} width={360} height={140} />
-          ) : (
-            <div className="flex items-center justify-center h-[140px]">
-              <span className="text-xs text-muted-foreground">Collecting data...</span>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-      <Card className="bg-card">
-        <CardContent className="pt-4 pb-3 px-4">
-          <div className="flex items-center gap-2 mb-2">
-            <Network className="h-3.5 w-3.5 text-brand" />
-            <span className="text-[11px] font-medium text-foreground">Network I/O</span>
-          </div>
-          {hasData ? (
-            <MetricsChart type="dual-line" data={netData} colors={{ rx: "#3b82f6", tx: "#ff6b35" }} width={360} height={140} />
-          ) : (
-            <div className="flex items-center justify-center h-[140px]">
-              <span className="text-xs text-muted-foreground">Collecting data...</span>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-    </div>
   );
 }
 
@@ -400,8 +140,6 @@ export default function MonitoringPage() {
   const [pods, setPods] = useState<ClusterPod[]>([]);
   const [events, setEvents] = useState<ClusterEvent[]>([]);
   const [alertFilter, setAlertFilter] = useState<"all" | "Warning" | "Normal">("all");
-  const [timePeriod, setTimePeriod] = useState<TimePeriod>("24h");
-  const [selectedApp, setSelectedApp] = useState<string | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const fetchData = useCallback(async (isRefresh = false) => {
@@ -479,7 +217,6 @@ export default function MonitoringPage() {
   const readyNodes = clusterInfo?.nodes?.filter(n => n.status === "Ready").length ?? nodeCount;
 
   const appSummaries = useMemo(() => groupPodsByApp(pods), [pods]);
-  const expandedApp = appSummaries.find((a) => `${a.namespace}/${a.name}` === selectedApp);
 
   if (error && !metrics) {
     return (
@@ -487,7 +224,7 @@ export default function MonitoringPage() {
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-xl font-semibold text-foreground">Monitoring</h1>
-            <p className="text-sm text-muted-foreground mt-0.5">Resource usage and health checks</p>
+            <p className="text-sm text-muted-foreground mt-0.5">Cluster health, resources, and alerts</p>
           </div>
         </div>
         <Card className="oven-card feature-card bg-card border-brand/20">
@@ -495,7 +232,7 @@ export default function MonitoringPage() {
             <Activity className="h-12 w-12 text-brand mx-auto mb-4" />
             <h2 className="text-lg font-semibold text-foreground mb-2">No monitoring data yet</h2>
             <p className="text-sm text-muted-foreground mb-6 max-w-md mx-auto">
-              Deploy an app to start seeing CPU, memory, and health metrics. Monitoring works with both Docker and Kubernetes deployments.
+              Monitoring reads CPU, memory, pods and events from a connected Kubernetes cluster. Connect one, or check that it is reachable, then refresh.
             </p>
             <div className="flex gap-3 justify-center">
               <a href="/app/deploy">
@@ -539,7 +276,6 @@ export default function MonitoringPage() {
           <p className="text-sm text-muted-foreground mt-0.5">Cluster health, resources, and alerts</p>
         </div>
         <div className="flex items-center gap-3">
-          <TimePeriodSelector value={timePeriod} onChange={setTimePeriod} />
           <Button
             variant="outline"
             size="sm"
@@ -629,9 +365,6 @@ export default function MonitoringPage() {
         </Card>
       </div>
 
-      {/* Cluster-wide time-series charts */}
-      <ClusterCharts cpuPercent={cpuPercent} memPercent={memPercent} period={timePeriod} />
-
       {/* Per-app grid */}
       {appSummaries.length > 0 ? (
         <Card className="bg-card mb-6">
@@ -646,23 +379,10 @@ export default function MonitoringPage() {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              {appSummaries.map((app) => {
-                const key = `${app.namespace}/${app.name}`;
-                return (
-                  <AppCard
-                    key={key}
-                    app={app}
-                    selected={selectedApp === key}
-                    onClick={() => setSelectedApp(selectedApp === key ? null : key)}
-                  />
-                );
-              })}
+              {appSummaries.map((app) => (
+                <AppCard key={`${app.namespace}/${app.name}`} app={app} />
+              ))}
             </div>
-            {expandedApp && (
-              <div className="mt-4">
-                <ExpandedAppView app={expandedApp} period={timePeriod} />
-              </div>
-            )}
           </CardContent>
         </Card>
       ) : (
@@ -671,7 +391,7 @@ export default function MonitoringPage() {
             <Server className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
             <p className="text-sm text-muted-foreground">No monitoring data yet</p>
             <p className="text-[10px] text-muted-foreground/60 mt-1">
-              Deploy an application to see per-app metrics
+              Deploy an application to see its pods here
             </p>
           </CardContent>
         </Card>

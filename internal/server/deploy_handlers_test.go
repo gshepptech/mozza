@@ -144,10 +144,9 @@ func TestWriteLogEvents(t *testing.T) {
 // Header/Write/WriteHeader are promoted and any optional interface a handler
 // type-asserts for is silently lost.
 //
-// That cost two endpoints. Without Flush, handleDeploymentLogs' w.(http.Flusher)
-// fails and SSE answers 500 — so TestWriteLogEvents could pass while the endpoint
-// streamed nothing. Without Hijack, websocket.Accept fails the same way and
-// handleBuildLogs cannot upgrade.
+// Without Flush, handleDeploymentLogs' w.(http.Flusher) fails and SSE answers
+// 500, so TestWriteLogEvents could pass while the endpoint streamed nothing.
+// Without Hijack, a websocket upgrade fails the same way.
 func TestRequestLogger_PreservesOptionalInterfaces(t *testing.T) {
 	t.Parallel()
 

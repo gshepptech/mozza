@@ -35,9 +35,6 @@ func (s *Server) registerRoutes() {
 			r.Post("/auth/logout", s.handleLogout())
 		})
 
-		// Webhook endpoint (public, called by GitHub — signature-validated internally).
-		r.Post("/webhooks/github", s.handleGitHubWebhook())
-
 		// Protected endpoints (require session cookie).
 		r.Group(func(r chi.Router) {
 			r.Use(s.sessionAuth)
@@ -70,19 +67,6 @@ func (s *Server) registerRoutes() {
 			r.Get("/templates/{id}", s.handleGetTemplate())
 			r.Get("/marketplace/recipes", s.handleListMarketplaceRecipes())
 			r.Get("/marketplace/recipes/{name}", s.handleGetMarketplaceRecipe())
-			r.Get("/repos", s.handleListRepos())
-			r.Get("/builds", s.handleListBuilds())
-			r.Get("/builds/{id}", s.handleGetBuild())
-			r.Get("/builds/{id}/logs", s.handleBuildLogs())
-
-			// Preview deploy endpoints — list and manage branch previews.
-			r.Get("/apps/{id}/previews", s.handleListPreviews())
-
-			// Monitoring endpoints — app metrics and health.
-			r.Get("/apps/{id}/metrics", s.handleAppMetrics())
-			r.Get("/apps/{id}/health", s.handleAppHealth())
-			r.Get("/apps/{id}/timeseries", s.handleTimeSeries())
-			r.Get("/monitoring/summary", s.handleMonitoringSummary())
 
 			// Registry scanning — discover images in a Docker Hub namespace.
 			r.Get("/registry/scan", s.handleScanNamespace())
@@ -140,9 +124,6 @@ func (s *Server) registerRoutes() {
 				r.Post("/import/compose/deploy", s.handleComposeImportDeploy())
 				r.Post("/detect", s.handleDetect())
 				r.Post("/detect/generate", s.handleDetectGenerate())
-				r.Post("/repos/connect", s.handleConnectRepo())
-				r.Delete("/repos/{id}", s.handleDisconnectRepo())
-				r.Delete("/apps/{id}/previews/{branch}", s.handleDeletePreview())
 			})
 
 			// Admin endpoints — admin role required.

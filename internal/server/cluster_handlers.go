@@ -88,11 +88,6 @@ type clusterMetricsResponse struct {
 	Uptime      string  `json:"uptime"`
 }
 
-type clusterInfoResponse struct {
-	Connected bool                  `json:"connected"`
-	Nodes     []clusterNodeResponse `json:"nodes"`
-}
-
 // clusterErr writes a classified cluster error response.
 func clusterErr(w http.ResponseWriter, err error) {
 	ce := cluster.ClassifyError(err)

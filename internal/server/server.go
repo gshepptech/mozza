@@ -22,9 +22,7 @@ import (
 	"github.com/gshepptech/mozza/internal/compile"
 	"github.com/gshepptech/mozza/internal/deploy"
 	"github.com/gshepptech/mozza/internal/doctor"
-	"github.com/gshepptech/mozza/internal/gitdeploy"
 	"github.com/gshepptech/mozza/internal/marketplace"
-	"github.com/gshepptech/mozza/internal/monitor"
 	"github.com/gshepptech/mozza/internal/plan"
 	"github.com/gshepptech/mozza/internal/proxy"
 	"github.com/gshepptech/mozza/internal/store"
@@ -74,10 +72,6 @@ type Config struct {
 	Templates *template.Catalog
 	// Marketplace is the recipe marketplace service. When nil, marketplace endpoints return 503.
 	Marketplace *marketplace.Service
-	// GitDeploy is the git push-to-deploy service. When nil, git deploy endpoints return 503.
-	GitDeploy *gitdeploy.Service
-	// GitDeployWebhook is the webhook handler for GitHub events.
-	GitDeployWebhook *gitdeploy.WebhookHandler
 	// TLSCert is the path to the TLS certificate file. Both TLSCert and TLSKey
 	// must be set to enable TLS; if only one is provided the server returns an error.
 	TLSCert string
@@ -117,12 +111,6 @@ type Server struct {
 	informerMgr *cluster.InformerManager
 	// snapshotMgr persists cluster cache to SQLite for fast restarts.
 	snapshotMgr *cluster.SnapshotManager
-	// monitorCollector collects Docker container metrics in the background.
-	monitorCollector *monitor.Collector
-	// monitorHealth polls app health endpoints in the background.
-	monitorHealth *monitor.HealthChecker
-	// tsStore holds in-memory time-series metrics for fast chart queries.
-	tsStore *monitor.TimeSeriesStore
 }
 
 // New creates a Server with the given configuration.
@@ -145,11 +133,7 @@ func New(cfg Config) *Server {
 	if cfg.Store != nil {
 		s.snapshotMgr = cluster.NewSnapshotManager(s.clusterCache, cfg.Store)
 		s.snapshotMgr.LoadSnapshot()
-		s.monitorCollector = monitor.NewCollector(cfg.Store)
-		s.tsStore = monitor.NewTimeSeriesStore(0)
-		s.monitorCollector.TSStore = s.tsStore
 	}
-	s.monitorHealth = monitor.NewHealthChecker()
 	if cfg.NoAuth && cfg.Store != nil {
 		s.ensureNoAuthUser()
 	}
@@ -201,11 +185,6 @@ func (s *Server) ListenAndServe(ctx context.Context) error {
 			}
 		}()
 	}
-
-	if s.monitorCollector != nil {
-		s.monitorCollector.Start()
-	}
-	s.monitorHealth.Start()
 
 	// Start the informer manager in the background so it doesn't block
 	// server startup when no Kubernetes cluster is reachable.
@@ -264,10 +243,6 @@ func (s *Server) Handler() http.Handler {
 // shutdown gracefully stops the HTTP server within the shutdown timeout.
 func (s *Server) shutdown(srv *http.Server) error {
 	slog.Info("server shutting down")
-	s.monitorHealth.Stop()
-	if s.monitorCollector != nil {
-		s.monitorCollector.Stop()
-	}
 	if s.snapshotMgr != nil {
 		s.snapshotMgr.Stop()
 	}

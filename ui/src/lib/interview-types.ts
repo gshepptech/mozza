@@ -1,4 +1,4 @@
-// ─── Wizard v2 Types ────────────────────────────────────────
+// ─── Order wizard types ─────────────────────────────────────
 
 export type WizardTarget = "local" | "kitchen";
 export type Trait = "web-facing" | "stateful" | "worker";

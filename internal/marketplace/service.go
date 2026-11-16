@@ -19,28 +19,14 @@ type Service struct {
 	cache    *indexCache
 }
 
-// Option configures a Service.
-type Option func(*Service)
-
-// WithIndexURL overrides the default remote index URL.
-func WithIndexURL(url string) Option {
-	return func(s *Service) {
-		s.indexURL = url
-	}
-}
-
 // New creates a marketplace Service backed by the embedded catalog and store.
-func New(catalog *template.Catalog, st *store.Store, opts ...Option) *Service {
-	s := &Service{
+func New(catalog *template.Catalog, st *store.Store) *Service {
+	return &Service{
 		catalog:  catalog,
 		store:    st,
 		indexURL: defaultIndexURL,
 		cache:    &indexCache{},
 	}
-	for _, opt := range opts {
-		opt(s)
-	}
-	return s
 }
 
 // ListParams holds parameters for listing/searching recipes.

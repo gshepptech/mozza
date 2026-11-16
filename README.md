@@ -26,7 +26,7 @@ want Mozza to do the applying too, `mozza up` and `mozza deploy` use the same co
 - **Two compile targets from one recipe.** `kubernetes` emits Deployments, StatefulSets, Services,
   Ingress, PVCs, Jobs, CronJobs, DaemonSets, HPAs, PDBs, NetworkPolicies and RBAC. `local` emits a
   `docker-compose.yml`.
-- **Honest projections.** When a target cannot express something, such as autoscaling in Compose,
+- **Capability warnings.** When a target cannot express something, such as autoscaling in Compose,
   the compiler prints a warning instead of dropping it silently.
 - **Dependency wiring.** `needs db and cache` orders startup and injects `DATABASE_URL` and
   `REDIS_URL` with values that connect to the generated database and cache containers.

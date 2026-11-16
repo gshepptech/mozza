@@ -66,7 +66,7 @@ The built assets are embedded into the Go binary via `go:embed`.
 2. Make your changes
 3. Run `make check` and fix any issues
 4. Write tests for new functionality
-5. Keep commits atomic -- one logical change per commit
+5. Keep commits atomic: one logical change per commit
 6. Open a pull request with a clear description of what and why
 
 ### Commit Messages
@@ -94,7 +94,7 @@ recipe: add validation for duplicate slice names
 - Passes `make check`
 - Has a description that explains the motivation, not just the mechanics
 - Keeps functions under 40 lines
-- Handles errors explicitly -- no silent discards
+- Handles errors explicitly, with no silent discards
 
 ## Coding Standards
 
