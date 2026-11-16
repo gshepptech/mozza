@@ -22,7 +22,6 @@ import (
 	"github.com/gshepptech/mozza/internal/compile"
 	"github.com/gshepptech/mozza/internal/deploy"
 	"github.com/gshepptech/mozza/internal/doctor"
-	"github.com/gshepptech/mozza/internal/gitdeploy"
 	"github.com/gshepptech/mozza/internal/marketplace"
 	"github.com/gshepptech/mozza/internal/monitor"
 	"github.com/gshepptech/mozza/internal/plan"
@@ -74,10 +73,6 @@ type Config struct {
 	Templates *template.Catalog
 	// Marketplace is the recipe marketplace service. When nil, marketplace endpoints return 503.
 	Marketplace *marketplace.Service
-	// GitDeploy is the git push-to-deploy service. When nil, git deploy endpoints return 503.
-	GitDeploy *gitdeploy.Service
-	// GitDeployWebhook is the webhook handler for GitHub events.
-	GitDeployWebhook *gitdeploy.WebhookHandler
 	// TLSCert is the path to the TLS certificate file. Both TLSCert and TLSKey
 	// must be set to enable TLS; if only one is provided the server returns an error.
 	TLSCert string

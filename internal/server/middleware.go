@@ -59,9 +59,9 @@ func (rr *responseRecorder) WriteHeader(code int) {
 // streaming.
 //
 // The same trap applies to every optional interface a handler may assert for.
-// Hijack below is the second one this cost us. Before adding a handler that
-// type-asserts the ResponseWriter for anything else — http.Pusher, io.ReaderFrom
-// — forward it here too, or it will fail only at runtime and only on that route.
+// Before adding a handler that type-asserts the ResponseWriter for anything
+// else, such as http.Pusher or io.ReaderFrom, forward it here too, or it will
+// fail only at runtime and only on that route.
 func (rr *responseRecorder) Flush() {
 	if f, ok := rr.ResponseWriter.(http.Flusher); ok {
 		f.Flush()
@@ -69,11 +69,7 @@ func (rr *responseRecorder) Flush() {
 }
 
 // Hijack forwards to the wrapped writer so handlers that take over the raw
-// connection keep working through requestLogger.
-//
-// nhooyr.io/websocket's Accept type-asserts http.Hijacker and fails the upgrade
-// when it is absent, and handleBuildLogs upgrades GET /api/v1/builds/{id}/logs,
-// so without this that endpoint is broken by the same defect Flush fixes for SSE.
+// connection, such as a websocket upgrade, keep working through requestLogger.
 func (rr *responseRecorder) Hijack() (net.Conn, *bufio.ReadWriter, error) {
 	hj, ok := rr.ResponseWriter.(http.Hijacker)
 	if !ok {
