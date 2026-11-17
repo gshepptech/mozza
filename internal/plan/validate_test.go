@@ -343,8 +343,8 @@ func TestValidate_PortRanges(t *testing.T) {
 			wantErr: "",
 		},
 		{
-			// The first usable entry backfills Slice.Port, so before this rule
-			// existed a second out-of-range entry was never looked at.
+			// The first usable entry backfills Slice.Port, so a check that stopped
+			// there would never look at a second out-of-range entry.
 			name: "second named port one above the range",
 			modify: func(p *plan.AppPlan) {
 				p.Slices[0].Ports = []plan.PortSpec{{Name: "http", Port: 8080}, {Name: "grpc", Port: 65536}}
@@ -760,8 +760,8 @@ func TestValidate_ProbeTargets(t *testing.T) {
 func TestValidate_UnaimedHealthCheckReportedOnce(t *testing.T) {
 	t.Parallel()
 
-	// A single "health check /ready" directive lands in three places — HealthPath
-	// plus a readiness and a liveness probe — and the author wrote one line, so
+	// A single "health check /ready" directive lands in three places (HealthPath
+	// plus a readiness and a liveness probe), and the author wrote one line, so
 	// they should be told about it once.
 	p := validPlan()
 	p.Slices[0].Port = 0
@@ -1161,7 +1161,7 @@ func TestValidate_Quantities(t *testing.T) {
 		},
 
 		// Only lowercase k is a decimal SI suffix, so 500K is a realistic typo
-		// that reached MustParse before this rule existed.
+		// that would otherwise reach MustParse.
 		{
 			name:    "capital K is not a suffix Kubernetes knows",
 			modify:  database("500K"),
@@ -1218,7 +1218,7 @@ func TestValidate_Quantities(t *testing.T) {
 		{name: "lowercase decimal kilo", modify: database("500k"), wantErr: ""},
 		{name: "micro-units as a cpu limit", modify: cpu("500u"), wantErr: ""},
 
-		// Zero is Kubernetes' own rule — non-negative, not positive.
+		// Zero is Kubernetes' own rule: non-negative, not positive.
 		{name: "zero storage", modify: database("0"), wantErr: ""},
 		{name: "zero cpu limit", modify: cpu("0"), wantErr: ""},
 

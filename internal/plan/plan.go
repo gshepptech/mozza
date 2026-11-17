@@ -184,7 +184,7 @@ type ProbeSpec struct {
 	HTTPPath string
 	// Command is the exec command for exec probes.
 	Command string
-	// TCPPort is the port the probe targets — the socket for a tcpSocket check
+	// TCPPort is the port the probe targets: the socket for a tcpSocket check
 	// and the connect port for an httpGet check. Zero means the probe inherits
 	// the slice's primary port.
 	TCPPort int
