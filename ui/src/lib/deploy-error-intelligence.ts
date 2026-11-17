@@ -26,7 +26,7 @@ const ERROR_PATTERNS: ErrorPattern[] = [
         "If it's a private package, check that your credentials are set up",
       ],
       technicalDetail:
-        "ImagePullBackOff — the container runtime couldn't pull the specified image from the registry. Verify the image ref, tag, and pull secrets.",
+        "ImagePullBackOff: the container runtime couldn't pull the specified image from the registry. Verify the image ref, tag, and pull secrets.",
     },
   },
   {
@@ -36,10 +36,10 @@ const ERROR_PATTERNS: ErrorPattern[] = [
       message: "Mozza doesn't have permission to deploy to this environment.",
       steps: [
         "Ask your system administrator to grant deployment access",
-        "Share this error with them — they'll know what to do",
+        "Share this error with them; they'll know what to do",
       ],
       technicalDetail:
-        "RBAC error — the service account used by Mozza lacks the required ClusterRole/Role bindings for this namespace.",
+        "RBAC error: the service account used by Mozza lacks the required ClusterRole/Role bindings for this namespace.",
     },
   },
   {
@@ -55,7 +55,7 @@ const ERROR_PATTERNS: ErrorPattern[] = [
         "Try reconnecting from the clusters page",
       ],
       technicalDetail:
-        "Connection error — the API server is unreachable. Check network connectivity, firewall rules, and kubeconfig validity.",
+        "Connection error: the API server is unreachable. Check network connectivity, firewall rules, and kubeconfig validity.",
     },
   },
   {
@@ -68,7 +68,7 @@ const ERROR_PATTERNS: ErrorPattern[] = [
         "Check for memory leaks if this happens repeatedly",
       ],
       technicalDetail:
-        "OOMKilled — the container exceeded its memory limit and was terminated by the kernel OOM killer.",
+        "OOMKilled: the container exceeded its memory limit and was terminated by the kernel OOM killer.",
     },
   },
   {
@@ -84,7 +84,7 @@ const ERROR_PATTERNS: ErrorPattern[] = [
         "If you set a health check, make sure the URL path exists",
       ],
       technicalDetail:
-        "CrashLoopBackOff — the container starts, exits with non-zero, and Kubernetes restarts it in a back-off loop.",
+        "CrashLoopBackOff: the container starts, exits with non-zero, and Kubernetes restarts it in a back-off loop.",
     },
   },
   {
@@ -107,7 +107,7 @@ const ERROR_PATTERNS: ErrorPattern[] = [
       message: "Your app hasn't started within the expected time.",
       steps: [
         "Check your app's logs for errors",
-        "Your app might need more time — this is common for large apps",
+        "Your app might need more time; this is common for large apps",
         "Try again in a few minutes",
         "If this keeps happening, try a larger resource size",
       ],

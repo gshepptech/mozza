@@ -280,7 +280,7 @@ function TimelineItem({ deployment, isLast, expanded, onToggle, onRefresh, onNav
                     variant="outline"
                     size="sm"
                     className="text-xs h-8 px-3 text-error border-error/30 hover:bg-error/10"
-                    title="Removes from history — does not stop your running app"
+                    title="Removes from history; does not stop your running app"
                     onClick={async (e) => {
                       e.stopPropagation();
                       if (!confirm("Delete this deployment?")) return;
@@ -451,12 +451,12 @@ export default function DeploymentsPage() {
             </button>
           </div>
           <div className="grid grid-cols-2 gap-2 text-xs">
-            <div className="flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-green-500" /> <span className="text-muted-foreground">Succeeded — Your app is live</span></div>
-            <div className="flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-blue-500" /> <span className="text-muted-foreground">Running — Deploy in progress</span></div>
-            <div className="flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-yellow-500" /> <span className="text-muted-foreground">Pending — Waiting to start</span></div>
-            <div className="flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-orange-500" /> <span className="text-muted-foreground">Partial — Some parts running</span></div>
-            <div className="flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-red-500" /> <span className="text-muted-foreground">Failed — Something went wrong</span></div>
-            <div className="flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-gray-500" /> <span className="text-muted-foreground">Rolled Back — Restored previous version</span></div>
+            <div className="flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-green-500" /> <span className="text-muted-foreground">Succeeded: your app is live</span></div>
+            <div className="flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-blue-500" /> <span className="text-muted-foreground">Running: deploy in progress</span></div>
+            <div className="flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-yellow-500" /> <span className="text-muted-foreground">Pending: waiting to start</span></div>
+            <div className="flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-orange-500" /> <span className="text-muted-foreground">Partial: some parts running</span></div>
+            <div className="flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-red-500" /> <span className="text-muted-foreground">Failed: something went wrong</span></div>
+            <div className="flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-gray-500" /> <span className="text-muted-foreground">Rolled Back: restored previous version</span></div>
           </div>
         </div>
       )}

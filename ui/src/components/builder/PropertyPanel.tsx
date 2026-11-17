@@ -38,7 +38,7 @@ export default function PropertyPanel({ block, allBlocks, onUpdate, onRemove, on
         <Input value={block.image} onChange={(e) => onUpdate(block.id, { image: e.target.value })} />
       </div>
 
-      {/* Port — hide for daemon */}
+      {/* Port: hidden for daemon */}
       {block.kind !== "daemon" && (
         <div className="mb-4 space-y-1.5">
           <Label>Port</Label>
@@ -46,7 +46,7 @@ export default function PropertyPanel({ block, allBlocks, onUpdate, onRemove, on
         </div>
       )}
 
-      {/* Replicas — hide for task, scheduled, daemon */}
+      {/* Replicas: hidden for task, scheduled, daemon */}
       {block.kind !== "task" && block.kind !== "scheduled" && block.kind !== "daemon" && (
         <div className="mb-4 space-y-1.5">
           <Label>Replicas</Label>

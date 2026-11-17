@@ -59,11 +59,11 @@ export default function DeployWizard({ teamId, onDeployComplete }: DeployWizardP
         setDeployment(d);
       } catch (err: unknown) {
         const raw = err instanceof Error ? err.message : "Unknown error";
-        const msg = raw.includes("recipe parse failed") ? "Recipe has syntax errors — check your recipe and try again."
-          : raw.includes("plan build failed") ? "Could not build a deployment plan — check service dependencies."
-          : raw.includes("plan validation failed") ? "Plan validation failed — check service configuration."
+        const msg = raw.includes("recipe parse failed") ? "Recipe has syntax errors. Check your recipe and try again."
+          : raw.includes("plan build failed") ? "Could not build a deployment plan. Check service dependencies."
+          : raw.includes("plan validation failed") ? "Plan validation failed. Check service configuration."
           : raw.includes("not a team member") ? "You don't have access to this team."
-          : raw.includes("deploy failed") ? "Deployment failed — check the logs for details."
+          : raw.includes("deploy failed") ? "Deployment failed. Check the logs for details."
           : `Something went wrong: ${raw}`;
         setDeployError(msg);
         setDeployStatus("burned");
@@ -113,7 +113,7 @@ export default function DeployWizard({ teamId, onDeployComplete }: DeployWizardP
     }
   }, [navigate, teamId]);
 
-  // Review step — show preview before deploying
+  // Review step: show preview before deploying
   if (deployStatus === "reviewing" && preview) {
     return (
       <div className="mx-auto max-w-2xl page-enter">
@@ -210,7 +210,7 @@ export default function DeployWizard({ teamId, onDeployComplete }: DeployWizardP
     );
   }
 
-  // OrderWizard is the single entry point — no SourceSelector gate
+  // OrderWizard is the single entry point, with no SourceSelector gate
   return (
     <div className="mx-auto max-w-3xl page-enter">
       {showOnboarding && (

@@ -27,13 +27,13 @@ export function MozzaMascot({ size = 120, mood = "wink", style }: MozzaMascotPro
       style={{ display: "block", ...style }}
     >
       <defs>
-        {/* Body gradient — creamy white mozzarella */}
+        {/* Body gradient: creamy white mozzarella */}
         <radialGradient id={`${id}-body`} cx="0.45" cy="0.38" r="0.55">
           <stop offset="0%" stopColor="#fffef8" />
           <stop offset="50%" stopColor="#f5f0e8" />
           <stop offset="100%" stopColor="#e8ddd0" />
         </radialGradient>
-        {/* Body shadow — subtle warm undertone */}
+        {/* Body shadow: subtle warm undertone */}
         <radialGradient id={`${id}-bodyShadow`} cx="0.5" cy="0.7" r="0.5">
           <stop offset="0%" stopColor="#ddd4c4" stopOpacity="0.5" />
           <stop offset="100%" stopColor="#ddd4c4" stopOpacity="0" />
@@ -88,7 +88,7 @@ export function MozzaMascot({ size = 120, mood = "wink", style }: MozzaMascotPro
 
       {/* === MAIN BODY === */}
       <g filter={`url(#${id}-shadow)`}>
-        {/* Body — large soft circle, slightly squished */}
+        {/* Body: large soft circle, slightly squished */}
         <ellipse cx="60" cy="62" rx="34" ry="32" fill={`url(#${id}-body)`} />
         {/* Warm shadow on bottom */}
         <ellipse cx="60" cy="62" rx="34" ry="32" fill={`url(#${id}-bodyShadow)`} />
@@ -96,12 +96,12 @@ export function MozzaMascot({ size = 120, mood = "wink", style }: MozzaMascotPro
         <ellipse cx="60" cy="62" rx="34" ry="32" fill="none" stroke="#d8d0c4" strokeWidth="0.8" />
       </g>
 
-      {/* Body highlight — top-left shine */}
+      {/* Body highlight: top-left shine */}
       <ellipse cx="48" cy="46" rx="14" ry="10" fill="#fff" opacity="0.35" transform="rotate(-15, 48, 46)" />
       {/* Secondary smaller highlight */}
       <ellipse cx="42" cy="42" rx="6" ry="4" fill="#fff" opacity="0.2" transform="rotate(-20, 42, 42)" />
 
-      {/* Mozzarella texture — soft organic streaks */}
+      {/* Mozzarella texture: soft organic streaks */}
       <path d="M38 56Q42 54 46 56" stroke="#e8e0d4" strokeWidth="1" strokeLinecap="round" fill="none" opacity="0.5" />
       <path d="M64 72Q70 70 76 73" stroke="#e8e0d4" strokeWidth="0.8" strokeLinecap="round" fill="none" opacity="0.4" />
       <path d="M44 76Q50 74 54 76" stroke="#e8e0d4" strokeWidth="0.8" strokeLinecap="round" fill="none" opacity="0.3" />
@@ -109,7 +109,7 @@ export function MozzaMascot({ size = 120, mood = "wink", style }: MozzaMascotPro
       {/* === ARMS === */}
       {mood === "celebrate" ? (
         <>
-          {/* Left arm — raised up */}
+          {/* Left arm: raised up */}
           <path d="M28 58Q16 46 12 36" stroke="#e8ddd0" strokeWidth="5" strokeLinecap="round" />
           <path d="M28 58Q16 46 12 36" stroke="#f5f0e8" strokeWidth="3.5" strokeLinecap="round" />
           {/* Left hand */}
@@ -117,7 +117,7 @@ export function MozzaMascot({ size = 120, mood = "wink", style }: MozzaMascotPro
           <circle cx="11" cy="34" r="5" fill="none" stroke="#d8d0c4" strokeWidth="0.8" />
           <ellipse cx="9" cy="32" rx="2" ry="1.2" fill="#fff" opacity="0.3" />
 
-          {/* Right arm — raised up */}
+          {/* Right arm: raised up */}
           <path d="M92 58Q104 46 108 36" stroke="#e8ddd0" strokeWidth="5" strokeLinecap="round" />
           <path d="M92 58Q104 46 108 36" stroke="#f5f0e8" strokeWidth="3.5" strokeLinecap="round" />
           {/* Right hand */}
@@ -135,13 +135,13 @@ export function MozzaMascot({ size = 120, mood = "wink", style }: MozzaMascotPro
         </>
       ) : mood === "wink" ? (
         <>
-          {/* Left arm — resting */}
+          {/* Left arm: resting */}
           <path d="M28 64Q16 68 10 66" stroke="#e8ddd0" strokeWidth="5" strokeLinecap="round" />
           <path d="M28 64Q16 68 10 66" stroke="#f5f0e8" strokeWidth="3.5" strokeLinecap="round" />
           <circle cx="8" cy="65" r="5" fill="#f5f0e8" />
           <circle cx="8" cy="65" r="5" fill="none" stroke="#d8d0c4" strokeWidth="0.8" />
 
-          {/* Right arm — waving */}
+          {/* Right arm: waving */}
           <path d="M92 58Q104 50 110 42" stroke="#e8ddd0" strokeWidth="5" strokeLinecap="round" />
           <path d="M92 58Q104 50 110 42" stroke="#f5f0e8" strokeWidth="3.5" strokeLinecap="round" />
           <circle cx="111" cy="40" r="5" fill="#f5f0e8" />
@@ -150,13 +150,13 @@ export function MozzaMascot({ size = 120, mood = "wink", style }: MozzaMascotPro
         </>
       ) : mood === "thinking" ? (
         <>
-          {/* Left arm — resting */}
+          {/* Left arm: resting */}
           <path d="M28 64Q16 68 10 66" stroke="#e8ddd0" strokeWidth="5" strokeLinecap="round" />
           <path d="M28 64Q16 68 10 66" stroke="#f5f0e8" strokeWidth="3.5" strokeLinecap="round" />
           <circle cx="8" cy="65" r="5" fill="#f5f0e8" />
           <circle cx="8" cy="65" r="5" fill="none" stroke="#d8d0c4" strokeWidth="0.8" />
 
-          {/* Right arm — hand on chin thinking */}
+          {/* Right arm: hand on chin thinking */}
           <path d="M92 62Q98 56 96 48" stroke="#e8ddd0" strokeWidth="5" strokeLinecap="round" />
           <path d="M92 62Q98 56 96 48" stroke="#f5f0e8" strokeWidth="3.5" strokeLinecap="round" />
           <circle cx="96" cy="46" r="5" fill="#f5f0e8" />
@@ -164,7 +164,7 @@ export function MozzaMascot({ size = 120, mood = "wink", style }: MozzaMascotPro
         </>
       ) : (
         <>
-          {/* Both arms — friendly open pose */}
+          {/* Both arms: friendly open pose */}
           <path d="M28 62Q14 60 8 64" stroke="#e8ddd0" strokeWidth="5" strokeLinecap="round" />
           <path d="M28 62Q14 60 8 64" stroke="#f5f0e8" strokeWidth="3.5" strokeLinecap="round" />
           <circle cx="6" cy="63" r="5" fill="#f5f0e8" />
@@ -184,12 +184,12 @@ export function MozzaMascot({ size = 120, mood = "wink", style }: MozzaMascotPro
       {/* Eyes */}
       {mood === "wink" ? (
         <>
-          {/* Left eye — large, round, expressive */}
+          {/* Left eye: large, round, expressive */}
           <ellipse cx="48" cy="58" rx="5.5" ry="6" fill="#1a1208" />
           <ellipse cx="48" cy="58" rx="5" ry="5.5" fill="#2a1e10" />
           <circle cx="49.5" cy="56" r="2.2" fill="#fff" opacity="0.9" />
           <circle cx="46.5" cy="59.5" r="1" fill="#fff" opacity="0.35" />
-          {/* Right eye — wink */}
+          {/* Right eye: wink */}
           <path d="M66 58Q71 62.5 76 58" stroke="#1a1208" strokeWidth="2.8" strokeLinecap="round" fill="none" />
           <path d="M67 57L65 54.5" stroke="#1a1208" strokeWidth="1.3" strokeLinecap="round" />
           <path d="M75 57L77 54.5" stroke="#1a1208" strokeWidth="1.3" strokeLinecap="round" />
@@ -210,7 +210,7 @@ export function MozzaMascot({ size = 120, mood = "wink", style }: MozzaMascotPro
         </>
       ) : mood === "celebrate" ? (
         <>
-          {/* Joyful closed eyes — happy arcs */}
+          {/* Joyful closed eyes: happy arcs */}
           <path d="M43 58Q48 52.5 53 58" stroke="#1a1208" strokeWidth="2.8" strokeLinecap="round" fill="none" />
           <path d="M67 58Q72 52.5 77 58" stroke="#1a1208" strokeWidth="2.8" strokeLinecap="round" fill="none" />
           {/* Tiny lash accents */}
@@ -221,7 +221,7 @@ export function MozzaMascot({ size = 120, mood = "wink", style }: MozzaMascotPro
         </>
       ) : (
         <>
-          {/* Default happy — both eyes open */}
+          {/* Default happy: both eyes open */}
           <ellipse cx="48" cy="58" rx="5.5" ry="6" fill="#1a1208" />
           <ellipse cx="48" cy="58" rx="5" ry="5.5" fill="#2a1e10" />
           <circle cx="49.5" cy="56" r="2.2" fill="#fff" opacity="0.9" />
@@ -261,11 +261,11 @@ export function MozzaMascot({ size = 120, mood = "wink", style }: MozzaMascotPro
 
       {/* === CHEF HAT === */}
       <g>
-        {/* Hat band — sits on head */}
+        {/* Hat band: sits on head */}
         <ellipse cx="60" cy="34" rx="22" ry="6" fill={`url(#${id}-hatBand)`} />
         <ellipse cx="60" cy="34" rx="22" ry="6" fill="none" stroke="#c8c2b8" strokeWidth="0.8" />
 
-        {/* Hat body — three tall puffy lobes */}
+        {/* Hat body: three tall puffy lobes */}
         <path
           d="M40 34Q35 18 46 12Q50 3 60 6Q70 3 74 12Q85 18 80 34Z"
           fill={`url(#${id}-hat)`}
@@ -277,13 +277,13 @@ export function MozzaMascot({ size = 120, mood = "wink", style }: MozzaMascotPro
           strokeWidth="0.8"
         />
 
-        {/* Hat fold lines — adds dimension */}
+        {/* Hat fold lines: adds dimension */}
         <path d="M48 14Q54 10 60 12" stroke="#e8e4dc" strokeWidth="1" strokeLinecap="round" fill="none" opacity="0.5" />
         <path d="M60 12Q66 10 72 14" stroke="#e8e4dc" strokeWidth="1" strokeLinecap="round" fill="none" opacity="0.4" />
 
-        {/* Hat shine — left lobe */}
+        {/* Hat shine: left lobe */}
         <path d="M43 22Q46 14 52 13" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" opacity="0.5" />
-        {/* Hat shine — right lobe */}
+        {/* Hat shine: right lobe */}
         <path d="M68 13Q74 14 77 22" fill="none" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" opacity="0.35" />
 
         {/* Hat band accent stripe */}
@@ -291,7 +291,7 @@ export function MozzaMascot({ size = 120, mood = "wink", style }: MozzaMascotPro
       </g>
 
       {/* === TINY MOZZARELLA STRETCH DETAIL === */}
-      {/* A little cheese string hanging off one side — adds character */}
+      {/* A little cheese string hanging off one side, for character */}
       <path
         d="M86 68Q90 72 88 80Q87 84 85 82Q86 78 84 74"
         stroke="#e8ddd0"

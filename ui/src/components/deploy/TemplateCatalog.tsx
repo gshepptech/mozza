@@ -47,7 +47,7 @@ export default function TemplateCatalog({ selected, onSelect }: TemplateCatalogP
   return (
     <div className="space-y-5">
       <p className="text-xs text-muted-foreground/60 mb-4">
-        Not sure what to pick? <strong>Uptime Kuma</strong> is great for beginners — it monitors whether your websites are up.
+        Not sure what to pick? <strong>Uptime Kuma</strong> is great for beginners: it monitors whether your websites are up.
       </p>
 
       {/* Category tabs */}

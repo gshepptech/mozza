@@ -82,7 +82,7 @@ export default function EnvironmentsPage() {
         const deploysRes = await listDeployments("", 100);
         allMozzaDeploys = deploysRes.deployments || [];
       } catch {
-        // Deployments may not be available — non-blocking.
+        // Deployments may not be available; non-blocking.
       }
       const enriched: NamespaceData[] = nsList.map(ns => {
         const nsPods = allPods.filter(p => p.namespace === ns.name);
