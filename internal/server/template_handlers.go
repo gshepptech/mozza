@@ -151,7 +151,7 @@ func (s *Server) handleDeployTemplate() http.HandlerFunc {
 		}
 
 		// Launch async deployment.
-		go s.runDeployWith(deployer, dep.ID, rendered, req.Target, env)
+		go s.runDeployWith(deployer, dep.ID, rendered, req.Target, env) //nolint:gosec // G118: the deploy outlives the request that started it
 
 		JSON(w, http.StatusAccepted, toDeploymentResponse(dep))
 	}

@@ -268,7 +268,7 @@ func (s *Server) handleTriggerDeploy() http.HandlerFunc {
 		}
 
 		// Launch async deployment; return 202 immediately.
-		go s.runDeployWith(deployer, dep.ID, rec.Source, req.Target, req.Environment)
+		go s.runDeployWith(deployer, dep.ID, rec.Source, req.Target, req.Environment) //nolint:gosec // G118: the deploy outlives the request that started it
 
 		JSON(w, http.StatusAccepted, toDeploymentResponse(dep))
 	}
@@ -371,18 +371,22 @@ func (s *Server) runDeployWith(deployer deploy.Deployer, deployID, source, targe
 		}
 	}
 
-	if result.Status == deploy.StatusFailed {
+	switch result.Status {
+	case deploy.StatusFailed:
 		status = "failed"
-	} else if result.Status == deploy.StatusRolledBack {
+	case deploy.StatusRolledBack:
 		status = "rolled_back"
+	case deploy.StatusInProgress, deploy.StatusSuccess, deploy.StatusPartial:
+		// Keep the status from the health wait above.
 	}
 
 	elapsed := time.Since(start).Truncate(time.Millisecond)
-	if status == "succeeded" {
+	switch status {
+	case "succeeded":
 		logMsg(fmt.Sprintf("\u2713 Deploy complete in %s.", elapsed))
-	} else if status == "partial" {
+	case "partial":
 		logMsg(fmt.Sprintf("\u2713 Deploy applied in %s (pods not yet healthy).", elapsed))
-	} else {
+	default:
 		logMsg(fmt.Sprintf("\u2717 Deploy failed: status %s (after %s)", status, elapsed))
 	}
 
@@ -574,7 +578,7 @@ func (s *Server) handleDeploymentLogs() http.HandlerFunc {
 
 		// If deployment is finished, send done event and close.
 		if deploy.FinishedAt != nil {
-			fmt.Fprintf(w, "event: done\ndata: %s\n\n", deploy.Status)
+			fmt.Fprintf(w, "event: done\ndata: %s\n\n", deploy.Status) //nolint:gosec // G705: text/event-stream, status is a fixed enum from the store
 			flusher.Flush()
 			return
 		}
@@ -597,7 +601,7 @@ func (s *Server) handleDeploymentLogs() http.HandlerFunc {
 					lastLen = len(updated.Log)
 				}
 				if updated.FinishedAt != nil {
-					fmt.Fprintf(w, "event: done\ndata: %s\n\n", updated.Status)
+					fmt.Fprintf(w, "event: done\ndata: %s\n\n", updated.Status) //nolint:gosec // G705: text/event-stream, status is a fixed enum from the store
 					flusher.Flush()
 					return
 				}

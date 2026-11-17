@@ -71,7 +71,8 @@ func (p *Parser) parseBefore(slice *Slice) {
 		}
 		// "wait Ns" or "run CMD"
 		next := p.current()
-		if next.Type == TokenWait {
+		switch next.Type {
+		case TokenWait:
 			p.advance()
 			valTok := p.current()
 			if valTok.Type == TokenNumber || valTok.Type == TokenIdent {
@@ -86,7 +87,7 @@ func (p *Parser) parseBefore(slice *Slice) {
 					p.advance()
 				}
 			}
-		} else if next.Type == TokenRun {
+		case TokenRun:
 			p.advance() // consume 'run'
 			cmdTok := p.current()
 			if cmdTok.Type == TokenString {
@@ -96,7 +97,7 @@ func (p *Parser) parseBefore(slice *Slice) {
 				slice.Lifecycle.PreStopCommand = cmdTok.Value
 				p.advance()
 			}
-		} else {
+		default:
 			p.addErrorf(next.Line, next.Col, "expected 'wait' or 'run' after 'before stopping'")
 			p.recoverDirective()
 		}

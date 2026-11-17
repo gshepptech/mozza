@@ -139,10 +139,10 @@ func (l *Lexer) scanToken(line string, lineNum, pos int) (Token, int, error) {
 	ch := line[pos]
 	col := pos + 1
 
-	switch {
-	case ch == ',':
+	switch ch {
+	case ',':
 		return Token{Type: TokenComma, Value: ",", Line: lineNum, Col: col}, pos + 1, nil
-	case ch == '"':
+	case '"':
 		return l.scanString(line, lineNum, pos)
 	default:
 		return l.scanWord(line, lineNum, pos)

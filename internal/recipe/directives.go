@@ -268,7 +268,8 @@ func (p *Parser) parseRunOnceModifiers(slice *Slice) {
 
 	for !p.atEnd() && !p.matchType(TokenNewline) {
 		tok := p.current()
-		if tok.Type == TokenWith {
+		switch tok.Type {
+		case TokenWith:
 			// "with N parallel"
 			p.advance()
 			if numTok := p.current(); numTok.Type == TokenNumber {
@@ -283,7 +284,7 @@ func (p *Parser) parseRunOnceModifiers(slice *Slice) {
 			if p.matchType(TokenParallel) {
 				p.advance()
 			}
-		} else if tok.Type == TokenRetry {
+		case TokenRetry:
 			// "retry up to N times"
 			p.advance() // consume 'retry'
 			// consume optional "up"
@@ -307,8 +308,8 @@ func (p *Parser) parseRunOnceModifiers(slice *Slice) {
 			if p.matchIdent("times") {
 				p.advance()
 			}
-		} else {
-			break
+		default:
+			return
 		}
 		if p.matchType(TokenComma) {
 			p.advance()
@@ -428,13 +429,14 @@ func (p *Parser) parseDatabaseShorthand(slice *Slice) {
 		p.advance() // consume comma
 
 		tok := p.current()
-		if tok.Type == TokenDaily {
+		switch tok.Type {
+		case TokenDaily:
 			p.advance()
 			if p.matchType(TokenBackups) {
 				p.advance()
 			}
 			slice.Backups = "daily"
-		} else if tok.Type == TokenIdent || tok.Type == TokenNumber {
+		case TokenIdent, TokenNumber:
 			// Size value like "20Gi".
 			slice.Storage = tok.Value
 			p.advance()

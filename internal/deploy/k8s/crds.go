@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"log/slog"
@@ -11,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	"k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -90,9 +91,9 @@ func ApplyCRDs(ctx context.Context, urls []string, progress func(string)) error 
 				metav1.PatchOptions{FieldManager: "mozza"})
 			if err != nil {
 				// If server-side apply fails (e.g. old cluster), fall back to create-or-update.
-				if errors.IsNotFound(err) || errors.IsMethodNotSupported(err) {
+				if apierrors.IsNotFound(err) || apierrors.IsMethodNotSupported(err) {
 					_, err = dynClient.Resource(gvr).Create(ctx, obj, metav1.CreateOptions{})
-					if errors.IsAlreadyExists(err) {
+					if apierrors.IsAlreadyExists(err) {
 						err = nil // CRD already exists, that's fine
 					}
 				}
@@ -145,7 +146,7 @@ func fetchYAML(ctx context.Context, url string) ([][]byte, error) {
 	for {
 		doc, err := reader.Read()
 		if err != nil {
-			if err == io.EOF {
+			if errors.Is(err, io.EOF) {
 				break
 			}
 			return nil, err

@@ -185,9 +185,10 @@ func (p *Parser) parseScale(slice *Slice) {
 	// cpu or memory
 	metricTok := p.current()
 	isMemory := false
-	if metricTok.Type == TokenCpu {
+	switch metricTok.Type {
+	case TokenCpu:
 		p.advance()
-	} else if metricTok.Type == TokenMemory {
+	case TokenMemory:
 		isMemory = true
 		p.advance()
 	}

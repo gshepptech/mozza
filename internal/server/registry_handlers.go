@@ -35,9 +35,8 @@ func (s *Server) handleScanNamespace() http.HandlerFunc {
 			return
 		}
 
-		// Sanitize: only allow alphanumeric, hyphens, underscores.
 		for _, c := range ns {
-			if !((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '-' || c == '_') {
+			if !isNamespaceChar(c) {
 				Error(w, http.StatusBadRequest, "invalid namespace")
 				return
 			}
@@ -46,13 +45,13 @@ func (s *Server) handleScanNamespace() http.HandlerFunc {
 		// Query Docker Hub V2 API. Cap at 100 to keep responses fast:
 		// orgs with hundreds of images (e.g. bitnami/277) would be slow to load.
 		url := fmt.Sprintf("https://hub.docker.com/v2/namespaces/%s/repositories/?page_size=100&ordering=last_updated", ns)
-		req, err := http.NewRequestWithContext(r.Context(), http.MethodGet, url, nil)
+		req, err := http.NewRequestWithContext(r.Context(), http.MethodGet, url, nil) //nolint:gosec // G704: fixed Docker Hub host; ns is checked by isNamespaceChar
 		if err != nil {
 			Error(w, http.StatusInternalServerError, "failed to create request")
 			return
 		}
 
-		resp, err := client.Do(req)
+		resp, err := client.Do(req) //nolint:gosec // G704: fixed Docker Hub host; ns is checked by isNamespaceChar
 		if err != nil {
 			Error(w, http.StatusBadGateway, "failed to reach Docker Hub")
 			return
@@ -112,4 +111,10 @@ func (s *Server) handleScanNamespace() http.HandlerFunc {
 			Total:     hub.Count,
 		})
 	}
+}
+
+// isNamespaceChar reports whether c may appear in a Docker Hub namespace:
+// letters, digits, hyphens and underscores.
+func isNamespaceChar(c rune) bool {
+	return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '-' || c == '_'
 }

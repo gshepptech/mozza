@@ -11,6 +11,7 @@ import (
 	"github.com/gshepptech/mozza/internal/detect"
 	"github.com/gshepptech/mozza/internal/plan"
 	"github.com/gshepptech/mozza/internal/recipe"
+
 	// Register all framework detectors.
 	_ "github.com/gshepptech/mozza/internal/detect/frameworks"
 )

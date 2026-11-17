@@ -93,7 +93,7 @@ func pollPendingDeployments(
 
 	for _, dep := range pending {
 		if ctx.Err() != nil {
-			return nil
+			return nil //nolint:nilerr // cancellation is a normal shutdown, not a poll failure
 		}
 
 		if err := st.ClaimDeployment(dep.ID); err != nil {
