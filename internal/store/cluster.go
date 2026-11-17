@@ -66,7 +66,22 @@ func (s *Store) CreateCluster(name, kubeconfig string) (*Cluster, error) {
 	return c, nil
 }
 
+// ErrKubeconfigDecrypt means a stored kubeconfig is encrypted but cannot be
+// decrypted with the configured key, usually because MOZZA_ENCRYPTION_KEY
+// changed.
+var ErrKubeconfigDecrypt = errors.New("stored kubeconfig cannot be decrypted with MOZZA_ENCRYPTION_KEY; " +
+	"set the key it was encrypted with or register the cluster again")
+
+// ErrKubeconfigEncrypted means a stored kubeconfig is encrypted but no
+// encryption key is configured.
+var ErrKubeconfigEncrypted = errors.New("stored kubeconfig is encrypted; set MOZZA_ENCRYPTION_KEY to read it")
+
 // ClusterKubeconfig returns the decrypted kubeconfig for a cluster.
+//
+// Encrypted kubeconfigs are stored base64-encoded. A plaintext kubeconfig is
+// YAML, which is never valid base64, so a value that does not decode was
+// written before an encryption key was configured. With a key set, such a
+// value is encrypted in place before it is returned.
 func (s *Store) ClusterKubeconfig(id string) (string, error) {
 	var stored string
 	err := s.db.QueryRow(`SELECT kubeconfig FROM clusters WHERE id = ?`, id).Scan(&stored)
@@ -77,21 +92,41 @@ func (s *Store) ClusterKubeconfig(id string) (string, error) {
 		return "", fmt.Errorf("ClusterKubeconfig: %w", err)
 	}
 
-	if s.encryptionKey == nil {
-		return stored, nil
-	}
+	ciphertext, decodeErr := base64.StdEncoding.DecodeString(stored)
+	encrypted := decodeErr == nil
 
-	ciphertext, err := base64.StdEncoding.DecodeString(stored)
-	if err != nil {
-		return stored, nil //nolint:nilerr // not base64, so a credential stored before encryption was enabled
+	switch {
+	case !encrypted && s.encryptionKey == nil:
+		return stored, nil
+	case !encrypted:
+		if err := s.encryptStoredKubeconfig(id, stored); err != nil {
+			return "", fmt.Errorf("ClusterKubeconfig: %w", err)
+		}
+		return stored, nil
+	case s.encryptionKey == nil:
+		return "", fmt.Errorf("ClusterKubeconfig: %w", ErrKubeconfigEncrypted)
 	}
 
 	plaintext, err := crypto.Decrypt(s.encryptionKey, ciphertext)
 	if err != nil {
-		return stored, nil //nolint:nilerr // not our ciphertext, so treat it as a plaintext credential
+		return "", fmt.Errorf("ClusterKubeconfig: %w: %w", ErrKubeconfigDecrypt, err)
 	}
-
 	return string(plaintext), nil
+}
+
+// encryptStoredKubeconfig replaces a plaintext kubeconfig row with its
+// encrypted form.
+func (s *Store) encryptStoredKubeconfig(id, plaintext string) error {
+	encrypted, err := crypto.Encrypt(s.encryptionKey, []byte(plaintext))
+	if err != nil {
+		return fmt.Errorf("encrypt plaintext kubeconfig: %w", err)
+	}
+	_, err = s.db.Exec(`UPDATE clusters SET kubeconfig = ? WHERE id = ?`,
+		base64.StdEncoding.EncodeToString(encrypted), id)
+	if err != nil {
+		return fmt.Errorf("store encrypted kubeconfig: %w", err)
+	}
+	return nil
 }
 
 // ListClusters returns all clusters without their kubeconfig.
