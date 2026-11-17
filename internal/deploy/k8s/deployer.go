@@ -169,12 +169,15 @@ func (d *Deployer) Deploy(ctx context.Context, p *plan.AppPlan, opts deploy.Depl
 	}
 
 	// Detect and clean up removed slices from previous deploy.
-	removed, _ := DetectRemovedSlices(d.store, p.Name, p.Slices)
-	if len(removed) > 0 {
-		for _, name := range removed {
-			if d.askConfirm(fmt.Sprintf("Slice %q was removed from the recipe. Delete its K8s resources?", name)) {
-				CleanupRemovedSlices(ctx, clientset, namespace, p.Name, []string{name})
-			}
+	removed, err := DetectRemovedSlices(d.store, p.Name, p.Slices)
+	if err != nil {
+		err = fmt.Errorf("Deploy: cannot tell which slices were removed since the last deploy: %w", err)
+		d.completeDeploy(rec.ID, deploy.StatusFailed, err.Error(), time.Since(start))
+		return nil, err
+	}
+	for _, name := range removed {
+		if d.askConfirm(fmt.Sprintf("Slice %q was removed from the recipe. Delete its K8s resources?", name)) {
+			CleanupRemovedSlices(ctx, clientset, namespace, p.Name, []string{name})
 		}
 	}
 

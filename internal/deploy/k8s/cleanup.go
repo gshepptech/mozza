@@ -2,6 +2,7 @@ package k8s
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 
@@ -15,22 +16,24 @@ import (
 )
 
 // DetectRemovedSlices compares the current recipe's slices against the previous
-// deploy's slices and returns the names of slices that were removed.
+// successful deploy's slices and returns the names of slices that were removed.
+// An app with no previous successful deploy has nothing removed.
 func DetectRemovedSlices(s *store.Store, appName string, currentSlices []plan.Slice) ([]string, error) {
 	prev, err := s.LatestSuccessfulDeploy(appName)
+	if errors.Is(err, store.ErrNotFound) {
+		return nil, nil
+	}
 	if err != nil {
-		// No previous deploy, so nothing to clean up.
-		return nil, nil //nolint:nilerr // cleanup is best effort and must not fail the deploy
+		return nil, fmt.Errorf("DetectRemovedSlices: previous deploy: %w", err)
 	}
 
 	if prev.RecipeContent == "" {
 		return nil, nil
 	}
 
-	// Parse the previous recipe to get its slice names.
 	prevRecipe, err := recipe.NewParser(prev.RecipeContent).Parse()
 	if err != nil {
-		return nil, nil //nolint:nilerr // an unparseable old recipe means there is nothing to compare, so skip cleanup
+		return nil, fmt.Errorf("DetectRemovedSlices: parse the recipe of deploy %s: %w", prev.ID, err)
 	}
 
 	prevNames := make(map[string]bool, len(prevRecipe.Slices))
