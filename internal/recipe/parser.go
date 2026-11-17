@@ -108,7 +108,7 @@ func (p *Parser) parseNamespace(recipe *Recipe) {
 	}
 }
 
-// startsAlias reports whether tok begins an `Images:` entry — an alias name is
+// startsAlias reports whether tok begins an `Images:` entry. An alias name is
 // an ident written with a trailing colon.
 func startsAlias(tok Token) bool {
 	return tok.Type == TokenIdent && strings.HasSuffix(tok.Value, ":")
@@ -291,7 +291,7 @@ var directiveTable = map[TokenType]directiveHandler{
 }
 
 // identDirectiveWords mirrors the cases parseIdentDirective handles. TokenIdent
-// is in directiveTable, but only these words begin a directive — every other
+// is in directiveTable, but only these words begin a directive; every other
 // ident reaching the table is an unknown directive.
 var identDirectiveWords = map[string]bool{
 	"only":  true,
@@ -511,7 +511,7 @@ func (p *Parser) matchType(tt TokenType) bool {
 }
 
 // consumeTrailing advances past the words that finish a directive's phrasing,
-// in the order given, skipping any the author left out — "keep at least 2" and
+// in the order given, skipping any the author left out: "keep at least 2" and
 // "keep at least 2 copies running during updates" mean the same thing. It stops
 // at the first token that is not the next word it expects, so anything else on
 // the line reaches the caller's one-per-line check instead of being swallowed.
@@ -540,13 +540,13 @@ func (p *Parser) lastConsumedLine(fallback int) int {
 }
 
 // reportOffLine reports tok when it continues a line an earlier entry already
-// finished, and skips the rest of that line. Every entry — directive, alias,
-// CRDs entry, init step — begins a line of its own; the lexer separates tokens
+// finished, and skips the rest of that line. Every entry (directive, alias,
+// CRDs entry, init step) begins a line of its own; the lexer separates tokens
 // by whitespace, so without this rule a value written into one entry can start
 // the next one no matter who wrote the recipe. what names the kind of entry the
 // caller reads.
 //
-// Which mistake this is turns on startsEntry — whether tok begins an entry of
+// Which mistake this is turns on startsEntry: whether tok begins an entry of
 // the kind the caller reads, which only the caller knows. If it does, the author
 // wrote two entries on one line and the line rule is the fix. If it does not, no
 // line break will help: the word is a misspelling, or an option the entry it

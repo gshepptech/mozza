@@ -241,8 +241,8 @@ func (p *Parser) parseKeep(slice *Slice) {
 }
 
 // parseAllow handles:
-//   - "allow at most N copies down during updates" — disruption budget
-//   - "allow copies to find each other" — peer discovery
+//   - "allow at most N copies down during updates": disruption budget
+//   - "allow copies to find each other": peer discovery
 func (p *Parser) parseAllow(slice *Slice) {
 	p.advance() // consume 'allow'
 
@@ -523,7 +523,7 @@ func (p *Parser) parseNeedsPermission(slice *Slice) {
 			}
 			continue
 		}
-		// Not a verb — must be a resource.
+		// Not a verb, so it must be a resource.
 		break
 	}
 

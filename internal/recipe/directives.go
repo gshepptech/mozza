@@ -168,7 +168,8 @@ func (p *Parser) parseHealthCheck(slice *Slice) {
 		liveness := ProbeSpec{Type: "liveness", HTTPPath: path, Interval: interval, Timeout: timeout, Delay: delay}
 		slice.Probes = append(slice.Probes, readiness, liveness)
 	} else if tok.Type == TokenIdent && strings.ToLower(tok.Value) == "by" {
-		// "health check by running CMD" — shouldn't happen since "health" dispatch
+		// "health check by running CMD" should not reach here, because the "health" dispatch
+		// handles it first.
 		p.addErrorf(tok.Line, tok.Col, "expected health check path")
 		p.recoverDirective()
 	} else {
@@ -178,13 +179,13 @@ func (p *Parser) parseHealthCheck(slice *Slice) {
 }
 
 // parseRun dispatches all "run ..." directives:
-//   - "run N copies" — replicas
-//   - "run once [with N parallel]" — one-shot job
-//   - "run to completion" — one-shot job
-//   - "run every ..." — schedule (cron)
-//   - "run on every node [labeled ...]" — daemon
-//   - "run as user N" / "run as group N" — security
-//   - "run once, retry up to N times" — retries
+//   - "run N copies": replicas
+//   - "run once [with N parallel]": one-shot job
+//   - "run to completion": one-shot job
+//   - "run every ...": schedule (cron)
+//   - "run on every node [labeled ...]": daemon
+//   - "run as user N" / "run as group N": security
+//   - "run once, retry up to N times": retries
 func (p *Parser) parseRun(slice *Slice) {
 	p.advance() // consume 'run'
 
@@ -219,7 +220,7 @@ func (p *Parser) parseRun(slice *Slice) {
 		slice.RunOnce = true
 
 	case TokenEvery:
-		// "run every ..." — schedule
+		// "run every ...": schedule
 		p.advance() // consume 'every'
 		p.parseRunEvery(slice)
 

@@ -178,8 +178,8 @@ func TestParser_FullStack(t *testing.T) {
 func TestParser_MissingBrace(t *testing.T) {
 	t.Parallel()
 
-	// In the new format, there are no braces — this testdata now has a
-	// valid section with directives. It should parse successfully.
+	// The recipe grammar has no braces, so this testdata is an ordinary
+	// section with directives and must parse successfully.
 	input := readTestdata(t, "missing-brace.mozza")
 	parser := NewParser(input)
 	recipe, err := parser.Parse()
@@ -716,7 +716,7 @@ func TestParser_NegativePortFailsTheGrammar(t *testing.T) {
 	t.Parallel()
 
 	// The lexer's isInteger never accepts a leading "-", so a negative port is not
-	// a number token and never reaches the port check — the grammar rejects it
+	// a number token and never reaches the port check: the grammar rejects it
 	// first, which is why the range rule only has to cover 0 and above.
 	input := `App: t
 
@@ -1543,9 +1543,9 @@ Svc:
 }
 
 // A directive begins a line. The lexer separates tokens by whitespace, so
-// without that rule a value written into one entry starts the next one — an
-// imported `restart: "always run 5 copies"` reached `replicas: 5` that way. The
-// same shape existed in every construct that reads one entry per line, so each
+// without that rule a value written into one entry starts the next one: an
+// imported `restart: "always run 5 copies"` would set `replicas: 5`. Every
+// construct that reads one entry per line has the same exposure, so each
 // is refused here, and the injected field is asserted to have stayed zero
 // rather than only that an error came back.
 func TestParser_EntryMustBeginItsOwnLine(t *testing.T) {
@@ -1743,7 +1743,7 @@ func TestParser_DirectivesWithTrailingWordsRefuseASecondDirective(t *testing.T) 
 
 // A leftover word that begins no directive is a different mistake from two
 // directives on one line, and telling its author to use two lines names a cause
-// that is not the cause — every line below stays wrong however it is broken up.
+// that is not the cause: every line below stays wrong however it is broken up.
 func TestParser_LeftoverWordThatStartsNoDirective(t *testing.T) {
 	t.Parallel()
 
@@ -1889,7 +1889,7 @@ func TestParser_MultiTokenEntriesStillParse(t *testing.T) {
 	}
 }
 
-// Aliases and CRDs entries each on their own line stay a clean parse — the
+// Aliases and CRDs entries each on their own line stay a clean parse; the
 // guard has to leave the shape every recipe in the tree already uses alone.
 func TestParser_ImagesAndCRDsOnePerLine(t *testing.T) {
 	t.Parallel()
