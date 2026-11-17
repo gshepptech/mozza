@@ -315,7 +315,7 @@ func (s *Server) ensureNoAuthUser() {
 	if err == nil {
 		return // already exists
 	}
-	// Insert directly — CreateUser hashes a password which we don't need.
+	// Insert directly: CreateUser hashes a password which we don't need.
 	_, err = s.cfg.Store.EnsureUser(noAuthUser.ID, noAuthUser.Email, noAuthUser.Name, noAuthUser.Role)
 	if err != nil {
 		slog.Warn("failed to create no-auth user in database", "error", err)

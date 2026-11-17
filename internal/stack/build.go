@@ -24,7 +24,7 @@ const streamedDockerfile = ".mozza-stack.Dockerfile"
 // buildImage builds one image with docker. A plain build hands docker the
 // context directory and lets it apply the repository's .dockerignore. A build
 // with extra excludes streams the context as a tar instead, filtered by the
-// repository's .dockerignore plus the excludes — the only way to trim a
+// repository's .dockerignore plus the excludes: the only way to trim a
 // context without writing an ignore file into a tree Mozza must not modify.
 func (e *Engine) buildImage(ctx context.Context, img Image) error {
 	b := img.Build

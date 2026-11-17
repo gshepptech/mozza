@@ -28,7 +28,7 @@ Api:
 
 // TestExecuteDeployment_LogsWarningsOnce covers the operator path. The operator
 // writes the same deployments.log the dashboard reads, so a local deploy picked
-// up here has to report the gaps the CLI reports — and report each one once.
+// up here has to report the gaps the CLI reports, and report each one once.
 func TestExecuteDeployment_LogsWarningsOnce(t *testing.T) {
 	t.Parallel()
 

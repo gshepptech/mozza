@@ -46,7 +46,7 @@ func (d *goDetector) Detect(dir string) *detect.Result {
 		}
 	}
 
-	// Check for CGO usage — if found, cannot use static linking.
+	// Check for CGO usage; if found, cannot use static linking.
 	usesCGO := false
 	goFiles := findGoFiles(dir)
 	for _, f := range goFiles {

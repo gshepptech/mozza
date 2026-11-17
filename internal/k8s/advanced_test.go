@@ -662,7 +662,7 @@ func TestCompiler_NetworkPolicyDenyAll(t *testing.T) {
 	if ok && ingress != nil {
 		assert.Len(t, ingress.([]any), 0, "deny-all should have empty ingress rules")
 	}
-	// If ingress key is absent or nil, that also means deny-all — pass.
+	// If ingress key is absent or nil, that also means deny-all, so pass.
 }
 
 func TestCompiler_ServiceAccountInPodSpec(t *testing.T) {

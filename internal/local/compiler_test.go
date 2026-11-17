@@ -1465,7 +1465,7 @@ func TestCompile_ResourceLimitConversion(t *testing.T) {
 		wantMemory      string
 		wantNoResources bool
 	}{
-		// Unchanged by this conversion — the values recipes actually carry.
+		// Unchanged by this conversion: the values recipes actually carry.
 		{name: "mebibytes keep their size", memory: "256Mi", wantMemory: "256M"}, // 268435456
 		{name: "gibibytes keep their size", memory: "1Gi", wantMemory: "1G"},     // 1073741824
 		{name: "kibibytes keep their size", memory: "1Ki", wantMemory: "1K"},     // 1024
@@ -1496,7 +1496,7 @@ func TestCompile_ResourceLimitConversion(t *testing.T) {
 		{name: "zero stays a bare zero", memory: "0", wantMemory: "0"},
 		{name: "negative falls through to bytes", memory: "-1Gi", wantMemory: "-1073741824"},
 
-		// Both limits empty is not "two empty strings" — addDeploy omits the
+		// Both limits empty is not "two empty strings": addDeploy omits the
 		// resources block altogether, so there is nothing for the converters to
 		// be asked about.
 		{name: "empty limits emit no resources block", cpu: "", memory: "", wantNoResources: true},

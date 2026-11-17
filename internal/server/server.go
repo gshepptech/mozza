@@ -95,8 +95,8 @@ type Config struct {
 	// targets.DefaultRegistry() so every built-in target works out of the box.
 	//
 	// The rest of this struct uses "when nil, the endpoint returns 503" because
-	// those dependencies reach outside the process. Compiling does not — it is a
-	// pure function of the recipe — so there is nothing to degrade to.
+	// those dependencies reach outside the process. Compiling does not (it is a
+	// pure function of the recipe), so there is nothing to degrade to.
 	Targets *compile.Registry
 }
 

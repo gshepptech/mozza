@@ -4,8 +4,8 @@
 //
 // It reads what the tree declares and nothing else: Chart.yaml, values files
 // and the comments on their keys, chart templates, Dockerfiles, playbooks.
-// Whatever it cannot settle from those — which of two charts is the app, an
-// image no Dockerfile builds, a value the chart fails without — becomes a
+// Whatever it cannot settle from those (which of two charts is the app, an
+// image no Dockerfile builds, a value the chart fails without) becomes a
 // review note at the top of the draft rather than a guess in its body. The
 // draft always parses as a stack; whether the app comes up is learned by
 // running it.

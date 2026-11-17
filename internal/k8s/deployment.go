@@ -213,7 +213,7 @@ func buildProbe(ps plan.ProbeSpec, slicePort int) *corev1.Probe {
 }
 
 // addVolumes adds PVC-backed volumes and mounts for database and cache slices.
-// Skipped for StatefulSet kinds — those use volumeClaimTemplates instead.
+// Skipped for StatefulSet kinds: those use volumeClaimTemplates instead.
 func addVolumes(ps *corev1.PodSpec, s plan.Slice) {
 	if s.Kind == plan.SliceKindDatabase || s.Kind == plan.SliceKindStateful {
 		return

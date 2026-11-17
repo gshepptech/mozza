@@ -60,7 +60,7 @@ func (m *InformerManager) Start() error {
 	m.registerHandlers(cs)
 	m.factory.Start(m.stopCh)
 
-	// Wait up to 5 seconds for initial sync — don't block forever.
+	// Wait up to 5 seconds for initial sync; don't block forever.
 	syncCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	syncDone := make(chan struct{})
@@ -392,7 +392,7 @@ func (m *InformerManager) syncMetrics() {
 		case corev1.PodFailed:
 			failed++
 		default:
-			// PodSucceeded, PodUnknown — not counted
+			// PodSucceeded, PodUnknown: not counted
 		}
 	}
 

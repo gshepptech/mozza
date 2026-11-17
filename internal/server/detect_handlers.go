@@ -185,7 +185,7 @@ func validateGenerateRequest(req generateRequest) string {
 	}
 
 	// framework and language land inside a # comment, where a comment is the
-	// whole of its line and so only a line terminator escapes the position —
+	// whole of its line and so only a line terminator escapes the position,
 	// the same rule as importer.structuralInComment (recipesafe.go).
 	for _, field := range []struct{ name, value string }{
 		{"framework", req.Framework},

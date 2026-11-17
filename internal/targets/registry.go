@@ -4,7 +4,7 @@
 // imports internal/compile to return a *compile.Result. That means
 // internal/compile cannot import the backends to assemble a default registry.
 //
-// This package sits above both — it imports internal/compile and every backend,
+// This package sits above both: it imports internal/compile and every backend,
 // and hands out an assembled registry. Callers that need to compile
 // (internal/cli, internal/server) import this package rather than reaching for a
 // concrete backend.
@@ -57,7 +57,7 @@ type Target struct {
 
 // List returns every target in the given registry, sorted by name, paired with
 // its description. A registered target with no description entry gets an empty
-// one rather than being omitted — a missing description is a docs gap, not a
+// one rather than being omitted: a missing description is a docs gap, not a
 // reason to hide a working target.
 func List(reg *compile.Registry) []Target {
 	names := reg.Targets()

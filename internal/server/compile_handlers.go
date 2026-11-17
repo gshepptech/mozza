@@ -29,7 +29,7 @@ type compileRequest struct {
 type compileFileResponse struct {
 	Path string `json:"path"`
 	// Content is the file body as text. compile.OutputFile holds bytes, which
-	// would marshal to base64 — clients want readable YAML.
+	// would marshal to base64, and clients want readable YAML.
 	Content string `json:"content"`
 }
 

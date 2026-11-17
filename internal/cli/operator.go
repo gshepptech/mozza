@@ -166,7 +166,7 @@ func executeDeployment(
 		TriggeredBy:   "operator",
 	})
 
-	// Before the outcome and on both outcomes — see deploy.LogWarnings.
+	// Before the outcome and on both outcomes; see deploy.LogWarnings.
 	deploy.LogWarnings(result, logMsg)
 
 	if err != nil {

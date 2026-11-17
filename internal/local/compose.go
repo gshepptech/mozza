@@ -17,10 +17,10 @@ import (
 // to a Docker Compose cpus float string (e.g., "0.5", "1", "2").
 //
 // Both converters here parse with resource.ParseQuantity rather than reading
-// suffixes off the string, because the validator now admits every quantity
-// Kubernetes does — "2G", "1e3", "500u" and "1Ei" among them — and a converter
-// that recognises only the handful of suffixes an old regex allowed would pass
-// the rest through verbatim into a file Compose then refuses to load.
+// suffixes off the string, because the validator admits every quantity
+// Kubernetes does ("2G", "1e3", "500u" and "1Ei" among them). A converter that
+// recognised only a handful of suffixes would pass the rest through verbatim
+// into a file Compose then refuses to load.
 //
 // A value that will not parse is returned unchanged. That branch is unreachable
 // for a plan that passed Validate and exists only because these compilers are
@@ -61,7 +61,7 @@ func k8sMemToCompose(mem string) string {
 
 	// The b > 0 guard does two jobs, and both matter. It keeps a zero limit as
 	// "0" instead of "0G", and it routes every negative into the byte-count
-	// branch — Compose rejects "-1G" and "-1073741824" alike, so neither form
+	// branch. Compose rejects "-1G" and "-1073741824" alike, so neither form
 	// ships a working file, but only the second reports the number the author
 	// actually wrote. Relaxing this to b >= 0 silently turns 0 into "0G".
 	b := q.Value()
@@ -79,7 +79,7 @@ func k8sMemToCompose(mem string) string {
 }
 
 // Healthcheck timing defaults. They apply only where the recipe states no
-// timing of its own — a probe's own interval, timeout and delay win.
+// timing of its own; a probe's own interval, timeout and delay win.
 const (
 	defaultHealthcheckInterval = "10s"
 	defaultHealthcheckTimeout  = "5s"
@@ -367,7 +367,7 @@ func chooseHealthcheck(s plan.Slice) (*healthcheck, plan.ProbeSpec) {
 	port := s.PrimaryPort()
 
 	// Backward compat: with no probes the legacy single path reads as a
-	// readiness check — the same precedence internal/k8s's buildContainer uses.
+	// readiness check, the same precedence internal/k8s's buildContainer uses.
 	if len(s.Probes) == 0 {
 		legacy := plan.ProbeSpec{Type: "readiness", HTTPPath: s.HealthPath}
 		if hc := probeHealthcheck(legacy, port); hc != nil {
@@ -377,7 +377,7 @@ func chooseHealthcheck(s plan.Slice) (*healthcheck, plan.ProbeSpec) {
 	}
 
 	// Readiness first because Compose's health check is what
-	// `depends_on: condition: service_healthy` gates on — that asks "is this
+	// `depends_on: condition: service_healthy` gates on, and that asks "is this
 	// ready to serve", not "should this be restarted". Compose has no
 	// restart-on-unhealthy at all, so preferring liveness would promise a
 	// restart it never performs.
@@ -403,7 +403,7 @@ func chooseHealthcheck(s plan.Slice) (*healthcheck, plan.ProbeSpec) {
 //
 // Returns nil for a check Compose cannot run. A TCP check is one: the Docker
 // daemon runs a command inside the container and never opens a socket. So is a
-// check with nothing to check, or an HTTP check with no port to reach — the
+// check with nothing to check, or an HTTP check with no port to reach: the
 // cases buildProbe declines for the same reason, and plan.Validate rejects.
 func probeHealthcheck(ps plan.ProbeSpec, slicePort int) *healthcheck {
 	var test []string
@@ -450,7 +450,7 @@ func probeHealthcheck(ps plan.ProbeSpec, slicePort int) *healthcheck {
 }
 
 // describeProbe names a probe the way the recipe directive that declared it
-// reads — "readiness check on /healthz". The parser always sets Type, but a
+// reads: "readiness check on /healthz". The parser always sets Type, but a
 // hand-built ProbeSpec reaching the exported compiler need not, so the fallback
 // still reads as English, following probeSubject in internal/plan.
 func describeProbe(ps plan.ProbeSpec) string {
@@ -520,7 +520,7 @@ func probeWarnings(s plan.Slice) []string {
 		case hc != nil && chosen == nil:
 			// Compose could have run this one; chooseHealthcheck never offered it
 			// the chance, because only the three known kinds are candidates.
-			// Blaming the one-check-per-service limit here would be false — the
+			// Blaming the one-check-per-service limit here would be false: the
 			// service has no health check at all.
 			warnings = append(warnings, fmt.Sprintf(
 				"%s: The %s is not a readiness, liveness or startup check, so it was dropped and nothing is checked locally. Give the check one of those three kinds to have Compose run it.",

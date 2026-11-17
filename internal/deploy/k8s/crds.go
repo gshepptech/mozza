@@ -71,7 +71,7 @@ func ApplyCRDs(ctx context.Context, urls []string, progress func(string)) error 
 				Resource: strings.ToLower(gvk.Kind) + "s",
 			}
 
-			// CRDs are cluster-scoped — use the apiextensions resource path.
+			// CRDs are cluster-scoped, so use the apiextensions resource path.
 			if gvk.Kind == "CustomResourceDefinition" {
 				gvr = schema.GroupVersionResource{
 					Group:    "apiextensions.k8s.io",

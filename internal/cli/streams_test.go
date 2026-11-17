@@ -19,7 +19,7 @@ type cliStreams struct {
 
 // runCLIStreams executes the root command with stdout and stderr bound to
 // SEPARATE buffers. The shared-buffer helper in compile_test.go is deliberately
-// stream-agnostic, which is what makes it useless for asserting the split — so
+// stream-agnostic, which is what makes it useless for asserting the split, so
 // stream tests get their own harness.
 func runCLIStreams(t *testing.T, args ...string) (cliStreams, error) {
 	t.Helper()

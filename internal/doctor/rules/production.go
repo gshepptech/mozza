@@ -137,7 +137,7 @@ func (NoResourceLimits) Evaluate(p *plan.AppPlan, _ *doctor.Signal) []doctor.Fin
 	var findings []doctor.Finding
 
 	for _, s := range p.Slices {
-		// Skip databases and caches — they have their own resource management.
+		// Skip databases and caches: they have their own resource management.
 		if s.Kind == plan.SliceKindDatabase || s.Kind == plan.SliceKindCache {
 			continue
 		}
@@ -215,7 +215,7 @@ func (RunAsRoot) Evaluate(p *plan.AppPlan, _ *doctor.Signal) []doctor.Finding {
 	var findings []doctor.Finding
 
 	for _, s := range p.Slices {
-		// Skip databases and caches — they manage their own users.
+		// Skip databases and caches: they manage their own users.
 		if s.Kind == plan.SliceKindDatabase || s.Kind == plan.SliceKindCache {
 			continue
 		}

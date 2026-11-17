@@ -54,7 +54,7 @@ func TestAutoFix_HealthCheckNeedsPort(t *testing.T) {
 	results := doctor.AutoFix(p, findings)
 
 	// An HTTP health check needs a port to connect to, so only the slice that
-	// exposes one — here through a named port — gets the fix.
+	// exposes one (here through a named port) gets the fix.
 	require.Len(t, results, 1)
 	assert.Equal(t, "api", results[0].SliceName)
 	assert.Empty(t, p.Slices[0].HealthPath, "portless slice should be left alone")

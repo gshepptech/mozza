@@ -88,7 +88,7 @@ func TestResultAndOutputFileTypes(t *testing.T) {
 
 // TestFormatWarnings pins the wording every surface shares. The CLI, the
 // dashboard deploy log and the operator deploy log all render through this
-// function, so a change here changes all three at once — which is the point.
+// function, so a change here changes all three at once, which is the point.
 func TestFormatWarnings(t *testing.T) {
 	t.Parallel()
 

@@ -4,7 +4,7 @@
 // start without, and finally its own Helm charts.
 //
 // A recipe describes one app Mozza writes the manifests for. A stack describes
-// an app that already ships its own charts — the job there is not compiling,
+// an app that already ships its own charts. The job there is not compiling,
 // it is assembling the environment those charts were written against. The two
 // are deliberately separate surfaces: a stack never goes through the recipe
 // compiler, and a recipe never creates a cluster.
@@ -13,7 +13,7 @@
 // source tree, the images, the charts and the values; reusable pieces such as
 // "Calico through the Tigera operator" or "the CloudNativePG operator" are
 // addons in the embedded catalog, referenced by name. The engine knows how to
-// run kind, k3d, docker, helm and kubectl — it knows nothing about any one app.
+// run kind, k3d, docker, helm and kubectl; it knows nothing about any one app.
 //
 // Stacks are local by construction. Clusters bind their API server and every
 // published port to the loopback interface, port-forwards listen on 127.0.0.1,
@@ -58,7 +58,7 @@ type Stack struct {
 	Components []Component `yaml:"components"`
 	// Access lists the services a person opens, forwarded to 127.0.0.1.
 	Access []Access `yaml:"access"`
-	// Notes are printed after a successful `up` — sign-in hints and the like.
+	// Notes are printed after a successful `up`: sign-in hints and the like.
 	Notes []string `yaml:"notes"`
 
 	// fileDir is the directory of the stack file when it was loaded from a
@@ -118,7 +118,7 @@ type Image struct {
 type Build struct {
 	// Context is the build context, relative to the source tree, or a git
 	// URL (https://host/repo.git#ref) for an image whose source is not
-	// checked out — docker clones it itself.
+	// checked out; docker clones it itself.
 	Context string `yaml:"context"`
 	// Dockerfile is relative to the source tree; defaults to <context>/Dockerfile.
 	// With a git context it is relative to the repository root.
@@ -134,7 +134,7 @@ type Build struct {
 	Exclude []string `yaml:"exclude"`
 	// Rewrite applies regular-expression replacements to the Dockerfile as it
 	// is streamed to docker. It is for a Dockerfile that cannot build as
-	// written today — pinned package versions a mirror no longer serves — and
+	// written today (pinned package versions a mirror no longer serves), and
 	// it changes only the copy Mozza sends, never the file in the app's tree.
 	Rewrite []Rewrite `yaml:"rewrite"`
 }
@@ -183,7 +183,7 @@ type Value struct {
 // Component is one installable unit, installed in list order.
 type Component struct {
 	// Use names a catalog addon. When set, every other field except Version
-	// and Values must be empty — the addon defines them.
+	// and Values must be empty: the addon defines them.
 	Use string `yaml:"use"`
 	// Version overrides the addon's default version.
 	Version string `yaml:"version"`

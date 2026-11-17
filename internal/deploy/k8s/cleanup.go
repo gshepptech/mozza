@@ -19,7 +19,7 @@ import (
 func DetectRemovedSlices(s *store.Store, appName string, currentSlices []plan.Slice) ([]string, error) {
 	prev, err := s.LatestSuccessfulDeploy(appName)
 	if err != nil {
-		// No previous deploy — nothing to clean up.
+		// No previous deploy, so nothing to clean up.
 		return nil, nil
 	}
 
@@ -30,7 +30,7 @@ func DetectRemovedSlices(s *store.Store, appName string, currentSlices []plan.Sl
 	// Parse the previous recipe to get its slice names.
 	prevRecipe, err := recipe.NewParser(prev.RecipeContent).Parse()
 	if err != nil {
-		return nil, nil // Can't parse old recipe — skip cleanup.
+		return nil, nil // Can't parse old recipe; skip cleanup.
 	}
 
 	prevNames := make(map[string]bool, len(prevRecipe.Slices))

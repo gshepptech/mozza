@@ -25,7 +25,7 @@ func searchTemplates(templates []template.Template, query, category string, tags
 			continue
 		}
 
-		// Exact tag filter — all requested tags must be present.
+		// Exact tag filter: all requested tags must be present.
 		if len(tags) > 0 && !hasAllTags(t.Tags, tags) {
 			continue
 		}

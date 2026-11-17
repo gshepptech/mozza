@@ -269,7 +269,7 @@ func TestCompiler_Compile(t *testing.T) {
 			// frontend: deployment + service + ingress = 3
 			// backend:  deployment + service = 2
 			// worker:   deployment = 1
-			// db:       statefulset + headless service = 2 (no PVC — uses volumeClaimTemplates)
+			// db:       statefulset + headless service = 2 (no PVC; uses volumeClaimTemplates)
 			// cache:    pvc + deployment + service = 3
 			// total: 11
 			wantFiles: 11,

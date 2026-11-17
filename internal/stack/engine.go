@@ -30,8 +30,8 @@ type Engine struct {
 	DryRun bool
 	// Rebuild builds images even when docker already has them.
 	Rebuild bool
-	// ImageOverrides maps a stack image ref to an image to use in its place —
-	// local or pullable — instead of building. It covers the source tree that
+	// ImageOverrides maps a stack image ref to an image to use in its place
+	// (local or pullable) instead of building. It covers the source tree that
 	// will not build today, and testing an image someone else built.
 	ImageOverrides map[string]string
 
@@ -531,8 +531,8 @@ func withStdin(c Cmd, b []byte) Cmd {
 }
 
 // wait checks one readiness condition. kubectl wait fails at once when the
-// object does not exist yet — a CRD an operator has not registered, a
-// Deployment a controller has not created — so the object is first polled
+// object does not exist yet (a CRD an operator has not registered, a
+// Deployment a controller has not created), so the object is first polled
 // into existence and only then waited on.
 func (e *Engine) wait(ctx context.Context, w Wait) error {
 	timeout := 5 * time.Minute
@@ -658,7 +658,7 @@ func (e *Engine) Secrets() ([]ShownSecret, error) {
 	return store.shown(e.stack.Secrets), nil
 }
 
-// Down deletes the stack's cluster — only if Mozza created it — and, with
+// Down deletes the stack's cluster (only if Mozza created it) and, with
 // purge, the stack's state including generated secrets.
 func (e *Engine) Down(ctx context.Context, purge bool) error {
 	p, err := newProvider(e)

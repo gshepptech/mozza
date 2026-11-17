@@ -305,7 +305,7 @@ func TestMigrationIdempotent(t *testing.T) {
 	require.NoError(t, err)
 	s1.Close()
 
-	// Open again — migrations should be idempotent.
+	// Open again: migrations should be idempotent.
 	s2, err := store.Open(path)
 	require.NoError(t, err)
 	s2.Close()

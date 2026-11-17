@@ -61,7 +61,7 @@ func (svc *Service) Register(email, name, password string) (*store.User, *store.
 	}
 
 	// Promote to admin if this is the only user in the system.
-	// Checking AFTER insert avoids TOCTOU race — only one user can be "the only one."
+	// Checking AFTER insert avoids a TOCTOU race: only one user can be "the only one."
 	users, listErr := svc.store.ListUsers()
 	if listErr == nil && len(users) == 1 && users[0].ID == user.ID {
 		if updateErr := svc.store.UpdateUser(user.ID, user.Name, "admin"); updateErr == nil {

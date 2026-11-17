@@ -52,8 +52,8 @@ func (rr *responseRecorder) WriteHeader(code int) {
 // Flush forwards to the wrapped writer so streaming handlers keep working
 // through requestLogger.
 //
-// Embedding http.ResponseWriter promotes only that interface's method set —
-// Header, Write, WriteHeader — so Flush is *not* inherited from whatever
+// Embedding http.ResponseWriter promotes only that interface's method set
+// (Header, Write, WriteHeader), so Flush is *not* inherited from whatever
 // concrete writer is underneath. Without this method every SSE handler's
 // w.(http.Flusher) assertion fails and the endpoint answers 500 instead of
 // streaming.

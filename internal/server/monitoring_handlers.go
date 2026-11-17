@@ -11,7 +11,7 @@ import (
 )
 
 // handleAppMetrics returns metrics for a specific app over a time period.
-// Query params: period (1h|6h|24h|7d), metric (cpu|memory|network) — metric is
+// Query params: period (1h|6h|24h|7d), metric (cpu|memory|network). Metric is
 // informational only; all metric types are always returned.
 func (s *Server) handleAppMetrics() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {

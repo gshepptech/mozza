@@ -62,7 +62,7 @@ func BuildStatefulSet(s plan.Slice, namespace string, appName string) *appsv1.St
 		storageSize = s.Database.Storage
 	}
 	if storageSize != "" {
-		// Mount path for the volume — use database-specific path if available.
+		// Mount path for the volume: use the database-specific path if available.
 		mountPath := "/data"
 		if s.Database != nil && s.Database.MountPath != "" {
 			mountPath = s.Database.MountPath

@@ -43,7 +43,7 @@ func (s *Server) handleScanNamespace() http.HandlerFunc {
 			}
 		}
 
-		// Query Docker Hub V2 API. Cap at 100 to keep responses fast —
+		// Query Docker Hub V2 API. Cap at 100 to keep responses fast:
 		// orgs with hundreds of images (e.g. bitnami/277) would be slow to load.
 		url := fmt.Sprintf("https://hub.docker.com/v2/namespaces/%s/repositories/?page_size=100&ordering=last_updated", ns)
 		req, err := http.NewRequestWithContext(r.Context(), http.MethodGet, url, nil)

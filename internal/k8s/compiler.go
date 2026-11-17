@@ -84,7 +84,7 @@ func (c *Compiler) CompileObjects(p *plan.AppPlan) ([]runtime.Object, error) {
 			configMaps = append(configMaps, cm)
 		}
 
-		// PVC for slices with database/cache storage (not StatefulSet — those use volumeClaimTemplates).
+		// PVC for slices with database/cache storage (not StatefulSet: those use volumeClaimTemplates).
 		if !isStatefulKind(s.Kind) {
 			if pvc := BuildPVC(s, namespace, p.Name); pvc != nil {
 				pvcs = append(pvcs, pvc)
@@ -187,7 +187,7 @@ func buildWorkload(s plan.Slice, namespace string, appName string) runtime.Objec
 	case plan.SliceKindWeb, plan.SliceKindWorker, plan.SliceKindAPI, plan.SliceKindCache, plan.SliceKindGateway:
 		return BuildDeployment(s, namespace, appName)
 	}
-	// Unknown kind — fall back to Deployment.
+	// Unknown kind: fall back to Deployment.
 	return BuildDeployment(s, namespace, appName)
 }
 

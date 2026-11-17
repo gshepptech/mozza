@@ -35,9 +35,9 @@ func New() *cobra.Command {
 
 	// Cobra's Print* helpers resolve through OutOrStderr, which walks the
 	// command tree for a writer set by SetOut and only falls back to os.Stderr
-	// when it finds none. Nothing set one, so every Print* in the tree landed on
-	// stderr and stdout was always empty — `mozza targets | grep local` matched
-	// nothing and `mozza compile > out.txt` wrote an empty file. Setting the
+	// when it finds none. With no writer set, every Print* in the tree would land
+	// on stderr and leave stdout empty: `mozza targets | grep local` would match
+	// nothing and `mozza compile > out.txt` would write an empty file. Setting the
 	// writer once on the root reaches every subcommand through that same walk.
 	//
 	// Progress and diagnostics deliberately stay on stderr via PrintErr*: for a

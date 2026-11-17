@@ -157,8 +157,8 @@ func (s *Server) handleDeployPreview() http.HandlerFunc {
 		}
 		summary.Total = len(p.Slices)
 
-		// Compile to K8s manifests for preview. The target is fixed here — this
-		// endpoint's contract is a manifest string — but it resolves through the
+		// Compile to K8s manifests for preview. The target is fixed here (this
+		// endpoint's contract is a manifest string), but it resolves through the
 		// registry so the server holds no direct reference to a backend.
 		// A missing target is treated like a compile failure: preview omits the
 		// manifests rather than failing the whole response.
@@ -607,7 +607,7 @@ func (s *Server) handleDeploymentLogs() http.HandlerFunc {
 }
 
 // isSSELineTerminator reports whether r ends a line under the SSE grammar, which
-// terminates on CR, LF or CRLF — not LF alone.
+// terminates on CR, LF or CRLF, not LF alone.
 func isSSELineTerminator(r rune) bool {
 	return r == '\n' || r == '\r'
 }
@@ -621,8 +621,8 @@ func isSSELineTerminator(r rune) bool {
 // list rendered one row per entry, so packing several lines into one event would
 // collapse them into a single run-on row instead.
 //
-// Framing must break on CR as well as LF. Log text is not trusted — it
-// interpolates user-supplied values such as the deployment environment — and a
+// Framing must break on CR as well as LF. Log text is not trusted (it
+// interpolates user-supplied values such as the deployment environment), and a
 // bare CR would otherwise carry the rest of the line past the "data: " prefix,
 // where a reader parses it as further SSE fields. An injected "event: done" ends
 // the stream early for whoever is watching, which is how a forged completion or a

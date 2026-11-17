@@ -150,7 +150,7 @@ func TestAllTemplatesParseAfterRender(t *testing.T) {
 }
 
 // TestAllRecipesCompileClean walks every embedded recipe file the way
-// `mozza recipe install` does — RenderDefaults, then parse, build and validate —
+// `mozza recipe install` does (RenderDefaults, then parse, build and validate),
 // so a bundled recipe that cannot be compiled fails the build rather than the
 // user's first deploy. Globbing the filesystem rather than the catalog also
 // catches a .mozza file that was added without a catalog entry.
