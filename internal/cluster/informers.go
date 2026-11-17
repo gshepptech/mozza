@@ -57,7 +57,7 @@ func (m *InformerManager) Start() error {
 	}
 
 	m.factory = informers.NewSharedInformerFactory(cs, defaultResyncPeriod)
-	m.registerHandlers(cs)
+	m.registerHandlers()
 	m.factory.Start(m.stopCh)
 
 	// Wait up to 5 seconds for initial sync; don't block forever.
@@ -93,7 +93,7 @@ func (m *InformerManager) Stop() {
 }
 
 // registerHandlers wires up event handlers for each resource type.
-func (m *InformerManager) registerHandlers(cs kubernetes.Interface) {
+func (m *InformerManager) registerHandlers() {
 	// Pods
 	podInformer := m.factory.Core().V1().Pods().Informer()
 	handler := cache.ResourceEventHandlerFuncs{

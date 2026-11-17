@@ -528,7 +528,7 @@ func validateDependencies(slices []Slice) []error {
 	var errs []error
 
 	errs = append(errs, validateNeedsRefs(slices, names)...)
-	errs = append(errs, validateNoCycles(slices, names)...)
+	errs = append(errs, validateNoCycles(slices)...)
 
 	return errs
 }
@@ -551,7 +551,7 @@ func validateNeedsRefs(slices []Slice, names map[string]bool) []error {
 
 // validateNoCycles detects circular dependencies among slices using
 // depth-first search with a visited-state map.
-func validateNoCycles(slices []Slice, names map[string]bool) []error {
+func validateNoCycles(slices []Slice) []error {
 	adj := sliceAdjacency(slices)
 
 	// States: 0 = unvisited, 1 = in-progress, 2 = done.

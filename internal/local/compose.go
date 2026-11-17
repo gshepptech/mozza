@@ -180,10 +180,7 @@ func BuildComposeFileWithWarnings(p *plan.AppPlan) (*buildResult, error) {
 	cf.Networks[netName] = network{Driver: "bridge"}
 
 	for _, s := range p.Slices {
-		svc, err := buildService(s, netName)
-		if err != nil {
-			return nil, fmt.Errorf("BuildComposeFileWithWarnings: slice %q: %w", s.Name, err)
-		}
+		svc := buildService(s, netName)
 		addFileMounts(cf, &svc, s)
 		cf.Services[s.Name] = svc
 		addVolumes(cf, s)
@@ -192,7 +189,7 @@ func BuildComposeFileWithWarnings(p *plan.AppPlan) (*buildResult, error) {
 		addInitServices(cf, s, netName)
 
 		// Generate sidecar services.
-		addSidecarServices(cf, s, netName)
+		addSidecarServices(cf, s)
 
 		// Add stateful volumes.
 		addStatefulVolumes(cf, s)
@@ -205,7 +202,7 @@ func BuildComposeFileWithWarnings(p *plan.AppPlan) (*buildResult, error) {
 }
 
 // buildService converts a single Slice into a compose service definition.
-func buildService(s plan.Slice, netName string) (service, error) {
+func buildService(s plan.Slice, netName string) service {
 	svc := service{
 		Image:    s.Image,
 		Networks: []string{netName},
@@ -239,7 +236,7 @@ func buildService(s plan.Slice, netName string) (service, error) {
 	addGracefulShutdown(&svc, s)
 	addInitDependsOn(&svc, s)
 
-	return svc, nil
+	return svc
 }
 
 // applyKindDefaults sets kind-specific defaults for restart policy and labels.
@@ -750,7 +747,7 @@ func addInitServices(cf *composeFile, s plan.Slice, netName string) {
 }
 
 // addSidecarServices creates separate sidecar services with network_mode.
-func addSidecarServices(cf *composeFile, s plan.Slice, netName string) {
+func addSidecarServices(cf *composeFile, s plan.Slice) {
 	for _, sc := range s.Sidecars {
 		sidecarName := s.Name + "-" + sc.Name
 		sidecarSvc := service{

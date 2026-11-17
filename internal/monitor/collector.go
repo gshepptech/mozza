@@ -257,7 +257,7 @@ func dockerInspectStats(ctx context.Context, containerName string) (*dockerStats
 }
 
 // parseDockerCLIStats converts CLI docker stats JSON into our internal format.
-func parseDockerCLIStats(raw dockerStats) (*dockerStatsAPI, error) {
+func parseDockerCLIStats(raw dockerStats) (*dockerStatsAPI, error) { //nolint:unparam // matches the caller's (stats, error) return so it can be returned directly
 	stats := &dockerStatsAPI{}
 
 	// Parse CPU percentage (e.g., "0.50%" -> 0.5).

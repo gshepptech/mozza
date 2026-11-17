@@ -465,19 +465,15 @@ func addSecurityContext(ps *corev1.PodSpec, c *corev1.Container, s plan.Slice) {
 		ps.SecurityContext = podSC
 	}
 
-	// Container-level security context.
-	csc := &corev1.SecurityContext{}
-	hasCSC := false
+	// Container-level security context. Privilege escalation is always
+	// disabled, so every container gets one.
+	noEscalate := false
+	csc := &corev1.SecurityContext{AllowPrivilegeEscalation: &noEscalate}
 
 	if s.Security.ReadOnlyRoot {
 		ro := true
 		csc.ReadOnlyRootFilesystem = &ro
-		hasCSC = true
 	}
-
-	noEscalate := false
-	csc.AllowPrivilegeEscalation = &noEscalate
-	hasCSC = true
 
 	if len(s.Security.DropCapabilities) > 0 || len(s.Security.AddCapabilities) > 0 {
 		caps := &corev1.Capabilities{}
@@ -488,12 +484,9 @@ func addSecurityContext(ps *corev1.PodSpec, c *corev1.Container, s plan.Slice) {
 			caps.Add = append(caps.Add, corev1.Capability(cap))
 		}
 		csc.Capabilities = caps
-		hasCSC = true
 	}
 
-	if hasCSC {
-		c.SecurityContext = csc
-	}
+	c.SecurityContext = csc
 }
 
 // addScheduling applies node affinity, pod anti-affinity, and topology spread constraints.
