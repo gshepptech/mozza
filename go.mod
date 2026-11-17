@@ -5,6 +5,7 @@ go 1.25.0
 require (
 	filippo.io/age v1.3.1
 	github.com/caddyserver/certmagic v0.25.2
+	github.com/coder/websocket v1.8.15
 	github.com/go-chi/chi/v5 v5.2.5
 	github.com/google/uuid v1.6.0
 	github.com/jackc/pgx/v5 v5.8.0
@@ -20,7 +21,6 @@ require (
 	k8s.io/apimachinery v0.35.2
 	k8s.io/client-go v0.35.2
 	modernc.org/sqlite v1.45.0
-	nhooyr.io/websocket v1.8.17
 )
 
 require (

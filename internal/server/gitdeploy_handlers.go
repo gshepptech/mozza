@@ -10,9 +10,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/coder/websocket"
+	"github.com/coder/websocket/wsjson"
 	"github.com/go-chi/chi/v5"
-	"nhooyr.io/websocket"
-	"nhooyr.io/websocket/wsjson"
 
 	"github.com/gshepptech/mozza/internal/gitdeploy"
 	"github.com/gshepptech/mozza/internal/store"
