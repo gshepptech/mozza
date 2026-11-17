@@ -93,7 +93,7 @@ func pollPendingDeployments(
 
 	for _, dep := range pending {
 		if ctx.Err() != nil {
-			return nil
+			return nil //nolint:nilerr // cancellation is a normal shutdown, not a poll failure
 		}
 
 		if err := st.ClaimDeployment(dep.ID); err != nil {
@@ -166,7 +166,7 @@ func executeDeployment(
 		TriggeredBy:   "operator",
 	})
 
-	// Before the outcome and on both outcomes — see deploy.LogWarnings.
+	// Before the outcome and on both outcomes; see deploy.LogWarnings.
 	deploy.LogWarnings(result, logMsg)
 
 	if err != nil {

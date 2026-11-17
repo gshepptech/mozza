@@ -70,7 +70,7 @@ func TestList_KeepsTargetsWithoutDescriptions(t *testing.T) {
 	t.Parallel()
 
 	// A missing description is a docs gap, not a reason to hide a working
-	// target — this is the behavior third-party/future backends depend on
+	// target. This is the behavior third-party and future backends depend on
 	// before their description lands.
 	reg := compile.NewRegistry()
 	reg.Register("undocumented", &stubCompiler{name: "undocumented"})
@@ -89,7 +89,7 @@ func TestList_EmptyRegistry(t *testing.T) {
 }
 
 // stubCompiler is a minimal compile.Compiler for registry tests. It is never
-// invoked — only registered and looked up.
+// invoked, only registered and looked up.
 type stubCompiler struct {
 	name string
 }

@@ -475,7 +475,7 @@ func TestLexer_EnvLimitsExample(t *testing.T) {
 
 	typeSequence := filterSignificant(tokens)
 
-	// Verify key token types from Phase 2 extensions are present.
+	// Verify the extended directive keywords lex to their own token types.
 	assert.Contains(t, typeSequence, TokenSet)
 	assert.Contains(t, typeSequence, TokenLimit)
 	assert.Contains(t, typeSequence, TokenRestart)

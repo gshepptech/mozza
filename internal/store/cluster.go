@@ -83,12 +83,12 @@ func (s *Store) ClusterKubeconfig(id string) (string, error) {
 
 	ciphertext, err := base64.StdEncoding.DecodeString(stored)
 	if err != nil {
-		return stored, nil // Not encrypted, return as-is
+		return stored, nil //nolint:nilerr // not base64, so a credential stored before encryption was enabled
 	}
 
 	plaintext, err := crypto.Decrypt(s.encryptionKey, ciphertext)
 	if err != nil {
-		return stored, nil // Decryption failed, might be plaintext
+		return stored, nil //nolint:nilerr // not our ciphertext, so treat it as a plaintext credential
 	}
 
 	return string(plaintext), nil

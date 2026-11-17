@@ -10,8 +10,8 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// yaml reports a shape it could not read in Go's own terms — "cannot unmarshal
-// !!str `web` into map[string]importer.composeService" — naming a type and a tag
+// yaml reports a shape it could not read in Go's own terms ("cannot unmarshal
+// !!str `web` into map[string]importer.composeService"), naming a type and a tag
 // that appear nowhere in a compose file. Compose's own validator reports the
 // same fault as "services must be a mapping", so that is the shape used below:
 // the field named by the dotted path compose itself prints, and the value named
@@ -38,8 +38,8 @@ var composeTypes = map[string]string{ //nolint:gochecknoglobals // immutable loo
 }
 
 // composeReadError restates yaml's own complaints in compose's vocabulary.
-// Anything it has no quarrel with — a syntax error, or one of the unmarshalers'
-// messages — is already in the reader's language and passes through untouched.
+// Anything it has no quarrel with (a syntax error, or one of the unmarshalers'
+// messages) is already in the reader's language and passes through untouched.
 func composeReadError(content []byte, err error) error {
 	// One of the unmarshalers knows the value it balked at but not the path to it,
 	// so the field is named here, where the document is in hand.
@@ -79,7 +79,7 @@ func composeReadError(content []byte, err error) error {
 }
 
 // composeNamedShapeError names the field one of the unmarshalers balked at the
-// way compose's own validator names it — services.web.ports — by finding the node
+// way compose's own validator names it (services.web.ports), by finding the node
 // it reported in the document it came from.
 //
 // The node is the field's own value, so anything sharing its line from further in
@@ -177,13 +177,13 @@ func composeDuplicateMessage(doc *yaml.Node, line int, spec string) string {
 }
 
 // composeShapeOf describes a type composeTypes has no words for, from its shape
-// alone — vague is survivable, a field name mozza guessed at is not — and
+// alone (vague is survivable, a field name mozza guessed at is not), and
 // reports whether that shape holds other values.
 //
 // The second answer settles which node a message is about when several share a
 // line, as flow style allows and as a block mapping's first entry does
 // routinely. Reading into a collection, the node yaml balked at is the field's
-// own value — the outermost match, because anything deeper belongs to a
+// own value: the outermost match, because anything deeper belongs to a
 // structure mozza never looked inside. Reading into a single value, the node is
 // a collection standing where a scalar belongs, and every block around it is a
 // field mozza read quite happily, so there the innermost match is the one.
@@ -248,14 +248,14 @@ func (t composeTarget) matches(n *yaml.Node) bool {
 }
 
 // composeField names the field at a line the way compose's own validator names
-// it — services.web.image — by finding the node yaml reported in the document it
+// it (services.web.image), by finding the node yaml reported in the document it
 // was reading. It returns that node too, because the node holds the value in
 // full where the message holds only the start of it.
 //
 // A mapping's key is tried only after the whole of its own value, because block
 // style puts a key on its value's line, so the key is the answer only when
 // nothing else on that line is. A document or a sequence names no field of its
-// own, so a match inside one answers to the field its parent gave it — and a
+// own, so a match inside one answers to the field its parent gave it, and a
 // match directly inside the document answers to no field at all.
 func composeField(n *yaml.Node, want composeTarget, prefix string) (string, *yaml.Node) {
 	if n.Kind != yaml.MappingNode {
@@ -285,7 +285,7 @@ func composeField(n *yaml.Node, want composeTarget, prefix string) (string, *yam
 }
 
 // composeJoin adds one mapping key to a dotted field path. A key that is not a
-// name — a list or a mapping standing where compose expects one — names no field
+// name (a list or a mapping standing where compose expects one) names no field
 // of its own, so the path stays the one its parent gave it rather than trailing a
 // dot with nothing after it.
 func composeJoin(prefix string, key *yaml.Node) string {

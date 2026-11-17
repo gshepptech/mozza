@@ -1,4 +1,4 @@
-// glossary.ts — Plain-English definitions for every technical term in the deploy wizard.
+// glossary.ts: plain-English definitions for every technical term in the deploy wizard.
 // Used by HelpTooltip and InlineHelp components.
 // Rules: plain text must be understandable by a 14-year-old, under 200 chars,
 // and must not reference other unexplained terms.
@@ -12,7 +12,7 @@ export interface GlossaryEntry {
 export const glossary: Record<string, GlossaryEntry> = {
   "container-image": {
     term: "App package",
-    plain: "A packaged version of your app that's ready to run — like a zip file with your app and everything it needs inside.",
+    plain: "A packaged version of your app that's ready to run, like a zip file with your app and everything it needs inside.",
     example: "ghcr.io/mycompany/my-api:v1.2.0",
   },
   port: {
@@ -30,7 +30,7 @@ export const glossary: Record<string, GlossaryEntry> = {
   },
   pod: {
     term: "Running instance",
-    plain: "One running copy of your app on the server. You don't need to manage these directly — Mozza handles it.",
+    plain: "One running copy of your app on the server. You don't need to manage these directly; Mozza handles it.",
   },
   "environment-variable": {
     term: "App setting",
@@ -65,7 +65,7 @@ export const glossary: Record<string, GlossaryEntry> = {
   },
   "database-url": {
     term: "Database address",
-    plain: "The address your app uses to connect to the database. Mozza generates this automatically — you usually don't need to change it.",
+    plain: "The address your app uses to connect to the database. Mozza generates this automatically, and you usually don't need to change it.",
     example: "postgres://myapp-db:5432/myapp",
   },
   "cache-redis": {
@@ -99,7 +99,7 @@ export const glossary: Record<string, GlossaryEntry> = {
   },
   namespace: {
     term: "Environment",
-    plain: "A separate space on your server for different purposes — like development, staging, or production.",
+    plain: "A separate space on your server for different purposes, like development, staging, or production.",
     example: "development, staging, production",
   },
   node: {
@@ -138,6 +138,6 @@ export const glossary: Record<string, GlossaryEntry> = {
   },
   "workload-type": {
     term: "How to run it",
-    plain: "Tells Mozza how your app should behave — as identical copies, with its own storage, on every server, or on a schedule.",
+    plain: "Tells Mozza how your app should behave: as identical copies, with its own storage, on every server, or on a schedule.",
   },
 };

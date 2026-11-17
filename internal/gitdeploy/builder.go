@@ -242,15 +242,15 @@ CMD ["sh"]
 	}
 
 	var sb strings.Builder
-	sb.WriteString(fmt.Sprintf("FROM %s\n", result.BaseImage))
+	fmt.Fprintf(&sb, "FROM %s\n", result.BaseImage)
 	sb.WriteString("WORKDIR /app\n")
 	sb.WriteString("COPY . .\n")
 	if result.BuildCmd != "" {
-		sb.WriteString(fmt.Sprintf("RUN %s\n", result.BuildCmd))
+		fmt.Fprintf(&sb, "RUN %s\n", result.BuildCmd)
 	}
-	sb.WriteString(fmt.Sprintf("EXPOSE %d\n", result.Port))
+	fmt.Fprintf(&sb, "EXPOSE %d\n", result.Port)
 	if result.StartCmd != "" {
-		sb.WriteString(fmt.Sprintf("CMD %s\n", result.StartCmd))
+		fmt.Fprintf(&sb, "CMD %s\n", result.StartCmd)
 	}
 	return sb.String()
 }

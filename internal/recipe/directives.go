@@ -168,7 +168,8 @@ func (p *Parser) parseHealthCheck(slice *Slice) {
 		liveness := ProbeSpec{Type: "liveness", HTTPPath: path, Interval: interval, Timeout: timeout, Delay: delay}
 		slice.Probes = append(slice.Probes, readiness, liveness)
 	} else if tok.Type == TokenIdent && strings.ToLower(tok.Value) == "by" {
-		// "health check by running CMD" — shouldn't happen since "health" dispatch
+		// "health check by running CMD" should not reach here, because the "health" dispatch
+		// handles it first.
 		p.addErrorf(tok.Line, tok.Col, "expected health check path")
 		p.recoverDirective()
 	} else {
@@ -178,13 +179,13 @@ func (p *Parser) parseHealthCheck(slice *Slice) {
 }
 
 // parseRun dispatches all "run ..." directives:
-//   - "run N copies" — replicas
-//   - "run once [with N parallel]" — one-shot job
-//   - "run to completion" — one-shot job
-//   - "run every ..." — schedule (cron)
-//   - "run on every node [labeled ...]" — daemon
-//   - "run as user N" / "run as group N" — security
-//   - "run once, retry up to N times" — retries
+//   - "run N copies": replicas
+//   - "run once [with N parallel]": one-shot job
+//   - "run to completion": one-shot job
+//   - "run every ...": schedule (cron)
+//   - "run on every node [labeled ...]": daemon
+//   - "run as user N" / "run as group N": security
+//   - "run once, retry up to N times": retries
 func (p *Parser) parseRun(slice *Slice) {
 	p.advance() // consume 'run'
 
@@ -219,7 +220,7 @@ func (p *Parser) parseRun(slice *Slice) {
 		slice.RunOnce = true
 
 	case TokenEvery:
-		// "run every ..." — schedule
+		// "run every ...": schedule
 		p.advance() // consume 'every'
 		p.parseRunEvery(slice)
 
@@ -267,7 +268,8 @@ func (p *Parser) parseRunOnceModifiers(slice *Slice) {
 
 	for !p.atEnd() && !p.matchType(TokenNewline) {
 		tok := p.current()
-		if tok.Type == TokenWith {
+		switch tok.Type {
+		case TokenWith:
 			// "with N parallel"
 			p.advance()
 			if numTok := p.current(); numTok.Type == TokenNumber {
@@ -282,7 +284,7 @@ func (p *Parser) parseRunOnceModifiers(slice *Slice) {
 			if p.matchType(TokenParallel) {
 				p.advance()
 			}
-		} else if tok.Type == TokenRetry {
+		case TokenRetry:
 			// "retry up to N times"
 			p.advance() // consume 'retry'
 			// consume optional "up"
@@ -306,8 +308,8 @@ func (p *Parser) parseRunOnceModifiers(slice *Slice) {
 			if p.matchIdent("times") {
 				p.advance()
 			}
-		} else {
-			break
+		default:
+			return
 		}
 		if p.matchType(TokenComma) {
 			p.advance()
@@ -427,13 +429,14 @@ func (p *Parser) parseDatabaseShorthand(slice *Slice) {
 		p.advance() // consume comma
 
 		tok := p.current()
-		if tok.Type == TokenDaily {
+		switch tok.Type {
+		case TokenDaily:
 			p.advance()
 			if p.matchType(TokenBackups) {
 				p.advance()
 			}
 			slice.Backups = "daily"
-		} else if tok.Type == TokenIdent || tok.Type == TokenNumber {
+		case TokenIdent, TokenNumber:
 			// Size value like "20Gi".
 			slice.Storage = tok.Value
 			p.advance()

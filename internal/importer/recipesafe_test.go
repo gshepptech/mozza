@@ -10,9 +10,9 @@ import (
 	"github.com/gshepptech/mozza/internal/recipe"
 )
 
-// The tests below assert the property each predicate exists to guarantee —
-// that an accepted value still occupies exactly the one position it was written
-// into — by lexing the emitted line with the real lexer. Asserting the property
+// The tests below assert the property each predicate exists to guarantee
+// (that an accepted value still occupies exactly the one position it was written
+// into) by lexing the emitted line with the real lexer. Asserting the property
 // rather than the character set is what keeps these honest: a set restated in a
 // test drifts away from the grammar the moment the grammar moves, and passes
 // while it drifts.
@@ -33,8 +33,8 @@ func significantTokens(t *testing.T, source string) []recipe.Token {
 // --- bare word ---
 
 // wordsAcceptedInRecipes are values a bare-word site must keep accepting. Each
-// is adversarial in some way the grammar does not care about — a colon, a hash,
-// a single quote — and each is a shape a real compose file holds.
+// is adversarial in some way the grammar does not care about (a colon, a hash,
+// a single quote), and each is a shape a real compose file holds.
 var wordsAcceptedInRecipes = []string{
 	"nginx",
 	"nginx:1.25",
@@ -103,7 +103,7 @@ func TestRecipeSafeWordRejectsEveryByteTheLexerBreaksAWordOn(t *testing.T) {
 // TestRecipeSafeWordRejectsCarriageReturnAheadOfTheLexer records the one place
 // the predicate is deliberately stricter than today's grammar. The lexer splits
 // on "\n" alone and isDelimiter omits '\r', so a bare CR survives a round trip
-// right now — but a CRLF-authored recipe does not parse at all, so normalising
+// right now. But a CRLF-authored recipe does not parse at all, so normalising
 // line endings is an ordinary future fix, and it would make '\r' structural at
 // every site at once.
 func TestRecipeSafeWordRejectsCarriageReturnAheadOfTheLexer(t *testing.T) {
@@ -117,7 +117,7 @@ func TestRecipeSafeWordRejectsCarriageReturnAheadOfTheLexer(t *testing.T) {
 
 // stringsAcceptedInRecipes are values a quoted site must keep accepting. Spaces,
 // tabs and commas are inert inside a string, and an env value holding a sentence
-// is ordinary — `MESSAGE: "hello world from mozza"` works today and has to keep
+// is ordinary: `MESSAGE: "hello world from mozza"` works today and has to keep
 // working.
 var stringsAcceptedInRecipes = []string{
 	"hello world from mozza",
@@ -148,7 +148,7 @@ func TestRecipeSafeStringAcceptsValuesThatLexToOneString(t *testing.T) {
 
 // TestRecipeSafeStringRejectsEveryByteThatEndsAString sweeps the string position
 // the same way the bare-word sweep does. It is a separate sweep because the
-// string position accepts bytes the bare-word position cannot — that difference
+// string position accepts bytes the bare-word position cannot. That difference
 // is the reason the predicate is position-aware at all, and a test that shared
 // one sweep would not notice if it stopped being true.
 func TestRecipeSafeStringRejectsEveryByteThatEndsAString(t *testing.T) {
@@ -212,8 +212,8 @@ func TestRecipeSafeCommentAcceptsValuesThatStayInOneComment(t *testing.T) {
 }
 
 // TestRecipeSafeCommentRejectsEveryByteThatEndsAComment sweeps the comment
-// position. It is the loosest of the three — only a line ending escapes a
-// comment — so it is also where a position-blind predicate does the most damage.
+// position. It is the loosest of the three (only a line ending escapes a
+// comment), so it is also where a position-blind predicate does the most damage.
 func TestRecipeSafeCommentRejectsEveryByteThatEndsAComment(t *testing.T) {
 	for b := range 256 {
 		value := "x" + string([]byte{byte(b)}) + "y"

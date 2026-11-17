@@ -83,7 +83,7 @@ func runInitDetect(cmd *cobra.Command, appName, framework string, genDockerfile 
 	var result *detect.Result
 
 	if framework != "" {
-		// User specified a framework — find it in scan results.
+		// User specified a framework; find it in scan results.
 		results, scanErr := detect.Scan(dir)
 		if scanErr != nil {
 			return fmt.Errorf("runInitDetect: %w", scanErr)

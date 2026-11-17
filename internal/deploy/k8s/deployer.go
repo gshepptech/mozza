@@ -136,7 +136,7 @@ func (d *Deployer) Deploy(ctx context.Context, p *plan.AppPlan, opts deploy.Depl
 	// Ensure namespace exists.
 	created, err := EnsureNamespace(ctx, clientset, namespace)
 	if err != nil {
-		// Namespace doesn't exist and we can't create it — check if user wants to create.
+		// Namespace doesn't exist and we can't create it; check if user wants to create.
 		if !created {
 			if !d.askConfirm(fmt.Sprintf("Namespace %q does not exist. Create it?", namespace)) {
 				d.completeDeploy(rec.ID, deploy.StatusFailed, "namespace creation declined", time.Since(start))
@@ -619,7 +619,7 @@ func rollbackResources(ctx context.Context, cs kubernetes.Interface, resources [
 		case "PersistentVolumeClaim":
 			err = cs.CoreV1().PersistentVolumeClaims(r.Namespace).Delete(ctx, r.Name, metav1.DeleteOptions{})
 		case "Namespace":
-			// Don't delete namespaces during rollback — too destructive.
+			// Don't delete namespaces during rollback: too destructive.
 			continue
 		}
 

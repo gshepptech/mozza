@@ -7,8 +7,8 @@ import (
 )
 
 // A value read from an imported artifact is written into recipe text at one of
-// three kinds of position — as a bare word, inside a quoted string, or inside a
-// comment — and what can end the value differs at each. The recipe grammar
+// three kinds of position (as a bare word, inside a quoted string, or inside a
+// comment), and what can end the value differs at each. The recipe grammar
 // offers no escape sequence in any of them: recipe.Lexer.scanString reads to the
 // next quote with no way to write one, and a newline ends a line everywhere. So
 // a value carrying a byte that is structural where it lands cannot be encoded,
@@ -19,7 +19,7 @@ import (
 // that a directive begins a line does not make it redundant. That rule stops a
 // value from starting a second directive; it cannot see one widening the
 // directive it is already inside, because the extra tokens land in that same
-// directive's argument list on the same line — `depends_on: "db and cache"`
+// directive's argument list on the same line: `depends_on: "db and cache"`
 // writes `needs db and cache`, which parses clean as two dependencies. A plain
 // space in a bare word is therefore still as structural as a newline. A newline
 // in a comment still ends the comment and leaves what follows on a live line,
@@ -32,12 +32,12 @@ const (
 
 	// structuralInString is what ends a quoted string. scanString searches for
 	// its closing quote within one line only, so a string cannot be ended by
-	// anything else — spaces, tabs and commas keep their literal selves inside
+	// anything else. Spaces, tabs and commas keep their literal selves inside
 	// one, which is what lets an env value hold a sentence.
 	structuralInString = "\"\n\r"
 
 	// structuralInComment is what ends a comment. A comment is the whole of its
-	// line, so nothing short of a line terminator escapes one — a mount path may
+	// line, so nothing short of a line terminator escapes one; a mount path may
 	// hold spaces and quotes and still be reported verbatim.
 	structuralInComment = "\n\r"
 )
@@ -54,8 +54,8 @@ var structuralByteNames = map[byte]string{ //nolint:gochecknoglobals // immutabl
 	'\r': "a carriage return",
 }
 
-// A carriage return is inert in today's lexer — it splits on "\n" alone and
-// isDelimiter omits '\r' — so every set above rejects one byte more than the
+// A carriage return is inert in today's lexer (it splits on "\n" alone and
+// isDelimiter omits '\r'), so every set above rejects one byte more than the
 // grammar currently requires. It is refused anyway because nothing is holding it
 // inert: a CRLF-authored recipe does not parse today, so normalising line
 // endings, or adding '\r' to isDelimiter, is an ordinary future fix and either

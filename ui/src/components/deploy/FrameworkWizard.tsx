@@ -37,7 +37,7 @@ function getQuestionsForFramework(detection: DetectResult): FrameworkQuestion[] 
           type: "select",
           options: [
             { value: "none", label: "No database", description: "My app doesn't need one" },
-            { value: "postgres", label: "PostgreSQL", description: "Most popular — great for everything" },
+            { value: "postgres", label: "PostgreSQL", description: "Most popular, great for everything" },
             { value: "mysql", label: "MySQL", description: "Classic relational database" },
             { value: "mongodb", label: "MongoDB", description: "Document store for flexible schemas" },
           ],
@@ -590,7 +590,7 @@ export default function FrameworkWizard({
 
   const handleNext = useCallback(async () => {
     if (currentStep === questions.length - 1) {
-      // Moving to preview — generate recipe.
+      // Moving to preview: generate the recipe.
       await generatePreview();
       setCurrentStep((s) => s + 1);
     } else if (isPreviewStep) {
@@ -760,7 +760,7 @@ export default function FrameworkWizard({
             }}
           >
             <CheckCircle style={{ width: 14, height: 14 }} />
-            Looks good — deploy!
+            Looks good, deploy!
           </button>
         ) : (
           <button

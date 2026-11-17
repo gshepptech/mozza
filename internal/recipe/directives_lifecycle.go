@@ -47,9 +47,9 @@ func (p *Parser) parseEach(slice *Slice) {
 }
 
 // parseBefore handles:
-//   - "before starting:" — init block
-//   - "before stopping, wait Ns" — lifecycle pre-stop wait
-//   - "before stopping, run CMD" — lifecycle pre-stop command
+//   - "before starting:": init block
+//   - "before stopping, wait Ns": lifecycle pre-stop wait
+//   - "before stopping, run CMD": lifecycle pre-stop command
 func (p *Parser) parseBefore(slice *Slice) {
 	p.advance() // consume 'before'
 
@@ -60,7 +60,7 @@ func (p *Parser) parseBefore(slice *Slice) {
 		(tok.Type == TokenIdent && strings.ToLower(strings.TrimSuffix(tok.Value, ":")) == "stopping")
 
 	if isStarting {
-		// "before starting:" — init block mode
+		// "before starting:": init block mode
 		p.advance() // consume 'starting' or 'starting:'
 		p.parseInitBlock(slice)
 	} else if isStopping {
@@ -71,7 +71,8 @@ func (p *Parser) parseBefore(slice *Slice) {
 		}
 		// "wait Ns" or "run CMD"
 		next := p.current()
-		if next.Type == TokenWait {
+		switch next.Type {
+		case TokenWait:
 			p.advance()
 			valTok := p.current()
 			if valTok.Type == TokenNumber || valTok.Type == TokenIdent {
@@ -86,7 +87,7 @@ func (p *Parser) parseBefore(slice *Slice) {
 					p.advance()
 				}
 			}
-		} else if next.Type == TokenRun {
+		case TokenRun:
 			p.advance() // consume 'run'
 			cmdTok := p.current()
 			if cmdTok.Type == TokenString {
@@ -96,7 +97,7 @@ func (p *Parser) parseBefore(slice *Slice) {
 				slice.Lifecycle.PreStopCommand = cmdTok.Value
 				p.advance()
 			}
-		} else {
+		default:
 			p.addErrorf(next.Line, next.Col, "expected 'wait' or 'run' after 'before stopping'")
 			p.recoverDirective()
 		}
@@ -136,8 +137,8 @@ func (p *Parser) parseInitBlock(slice *Slice) {
 
 		// Expect "image".
 		if !p.matchType(TokenImage) {
-			// Not an init step line, put back by breaking.
-			// We already consumed 'run' — this is a problem. Let's rewind.
+			// Not an init step line. Step back over 'run' so the caller sees
+			// the line from its first token.
 			p.pos-- // unconsume 'run'
 			break
 		}

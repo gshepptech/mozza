@@ -75,7 +75,7 @@ func runImport(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("resolving output path: %w", err)
 	}
 
-	if err := os.WriteFile(absOut, []byte(recipeText), 0o644); err != nil {
+	if err := os.WriteFile(absOut, []byte(recipeText), 0o644); err != nil { //nolint:gosec // G703: the user chooses the output path
 		return fmt.Errorf("writing recipe: %w", err)
 	}
 

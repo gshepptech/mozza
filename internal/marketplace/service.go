@@ -51,7 +51,7 @@ type ListResult struct {
 func (s *Service) Search(ctx context.Context, params ListParams) (*ListResult, error) {
 	params = normalizeParams(params)
 
-	all := s.allTemplates(ctx)
+	all := s.allTemplates()
 	results := searchTemplates(all, params.Query, params.Category, params.Tags)
 
 	total := len(results)
@@ -87,7 +87,7 @@ func (s *Service) Search(ctx context.Context, params ListParams) (*ListResult, e
 
 // Get returns a single recipe by name (case-insensitive).
 func (s *Service) Get(ctx context.Context, name string) (*template.Template, error) {
-	all := s.allTemplates(ctx)
+	all := s.allTemplates()
 	for _, t := range all {
 		if t.ID == name || t.Name == name {
 			return &t, nil
@@ -117,7 +117,7 @@ func (s *Service) Install(ctx context.Context, name string) (string, error) {
 
 // Categories returns all unique category names across all sources.
 func (s *Service) Categories(ctx context.Context) []string {
-	all := s.allTemplates(ctx)
+	all := s.allTemplates()
 	seen := make(map[string]bool)
 	for _, t := range all {
 		if t.Category != "" {
@@ -153,7 +153,7 @@ func (s *Service) Refresh(ctx context.Context) error {
 
 // allTemplates merges embedded catalog templates with remote index entries.
 // Embedded templates take precedence over remote entries with the same ID.
-func (s *Service) allTemplates(ctx context.Context) []template.Template {
+func (s *Service) allTemplates() []template.Template {
 	var all []template.Template
 	seen := make(map[string]bool)
 

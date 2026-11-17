@@ -17,8 +17,8 @@ import (
 // It takes the result rather than the warnings because the nil handling is the
 // contract, not a convenience: Deploy returns a nil result when it fails before
 // the plan compiles and a populated one when it fails afterwards, so every caller
-// needs the same guard. Stating it once keeps the two deploy-log surfaces —
-// the dashboard and the operator — from drifting on it.
+// needs the same guard. Stating it once keeps the two deploy-log surfaces
+// (the dashboard and the operator) from drifting on it.
 func LogWarnings(result *DeployResult, log func(string)) {
 	if result == nil {
 		return
@@ -67,8 +67,8 @@ type DeployResult struct {
 	// Status is the final outcome.
 	Status DeployStatus
 	// Warnings lists what the target could not carry from the recipe. The
-	// deployer cannot report these itself — it has no handle on the caller's
-	// deployment log — so they ride back here for the caller to surface.
+	// deployer cannot report these itself (it has no handle on the caller's
+	// deployment log), so they ride back here for the caller to surface.
 	Warnings []string
 }
 

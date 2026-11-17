@@ -152,13 +152,13 @@ func validateOneSlice(idx int, s Slice, seen, allNames map[string]bool) []error 
 // Service port the API server refuses.
 //
 // The second result reports whether one of the rejected ports was a carrier
-// PrimaryPort reads — Slice.Port or an entry in Slice.Ports. That is what lets
+// PrimaryPort reads (Slice.Port or an entry in Slice.Ports). That is what lets
 // validateProbeTargets tell a slice that declares no port from one whose declared
 // port was thrown out, and say only the latter. A rejected sidecar or probe port
 // is deliberately not counted: neither is what a health check would have aimed at.
 //
 // Zero is legal on Slice.Port and ProbeSpec.TCPPort and an error everywhere else,
-// because those two fields use zero to mean "not set" — plan.go documents
+// because those two fields use zero to mean "not set": plan.go documents
 // Slice.Port's zero as "no port" and TCPPort's as "inherit the slice's primary
 // port". Three tests depend on it: a worker slice built with Port: 0 must still
 // compile to a Deployment with no Service (internal/k8s/compiler_test.go:213,
@@ -167,7 +167,7 @@ func validateOneSlice(idx int, s Slice, seen, allNames map[string]bool) []error 
 // A PortSpec entry carries no such meaning: it exists only because a port was
 // declared, so zero there is always a mistake.
 //
-// That leaves the one case this function cannot judge — an author writing the
+// That leaves the one case this function cannot judge: an author writing the
 // literal 0 for a slice or probe port. By the time a plan exists that is
 // indistinguishable from writing nothing, so the parser rejects it while it can
 // still tell the difference and name the line.
@@ -238,8 +238,8 @@ func probeSubject(ps ProbeSpec) string {
 // to check. Compilers would otherwise have to invent a target or drop the check,
 // and both hide the mistake until the rollout hangs.
 //
-// One "health check <path>" directive lands in three places — HealthPath, plus a
-// readiness and a liveness ProbeSpec carrying the same path — so the no-port
+// One "health check <path>" directive lands in three places (HealthPath, plus a
+// readiness and a liveness ProbeSpec carrying the same path), so the no-port
 // complaint is collected and reported once per slice rather than once per copy.
 //
 // primaryUnusable says the slice did declare a port and validatePortRanges
@@ -312,7 +312,7 @@ func envKeyProblem(key string) string {
 // instead of a sentence.
 //
 // An empty value is skipped rather than rejected: the storage fields use "" to
-// mean "no volume" — pvc.go and statefulset.go both read it that way — so every
+// mean "no volume" (pvc.go and statefulset.go both read it that way), so every
 // storage-free recipe depends on empty staying valid.
 func validateQuantities(idx int, s Slice) []error {
 	var errs []error
@@ -363,7 +363,7 @@ func validateQuantities(idx int, s Slice) []error {
 //
 // A leftover template placeholder is reported before the syntax rule. It is not
 // a quantity either, but telling an author that "{{STORAGE_SIZE}}" fails a
-// number format sends them to fix the wrong thing — the value was never meant to
+// number format sends them to fix the wrong thing: the value was never meant to
 // survive rendering.
 func quantityProblem(value string) string {
 	if unrenderedPlaceholder(value) {
@@ -388,7 +388,7 @@ func quantityProblem(value string) string {
 // unrenderedPlaceholder reports whether value still carries a template variable
 // the renderer was meant to substitute. RenderRecipe replaces the literal
 // "{{"+key+"}}", so that pair is exactly the shape a leftover takes, and no
-// Kubernetes quantity can contain a brace — there is no false positive to weigh.
+// Kubernetes quantity can contain a brace, so there is no false positive to weigh.
 func unrenderedPlaceholder(value string) bool {
 	_, rest, ok := strings.Cut(value, "{{")
 
@@ -528,7 +528,7 @@ func validateDependencies(slices []Slice) []error {
 	var errs []error
 
 	errs = append(errs, validateNeedsRefs(slices, names)...)
-	errs = append(errs, validateNoCycles(slices, names)...)
+	errs = append(errs, validateNoCycles(slices)...)
 
 	return errs
 }
@@ -551,7 +551,7 @@ func validateNeedsRefs(slices []Slice, names map[string]bool) []error {
 
 // validateNoCycles detects circular dependencies among slices using
 // depth-first search with a visited-state map.
-func validateNoCycles(slices []Slice, names map[string]bool) []error {
+func validateNoCycles(slices []Slice) []error {
 	adj := sliceAdjacency(slices)
 
 	// States: 0 = unvisited, 1 = in-progress, 2 = done.

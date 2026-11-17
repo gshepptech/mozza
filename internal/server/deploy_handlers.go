@@ -157,8 +157,8 @@ func (s *Server) handleDeployPreview() http.HandlerFunc {
 		}
 		summary.Total = len(p.Slices)
 
-		// Compile to K8s manifests for preview. The target is fixed here — this
-		// endpoint's contract is a manifest string — but it resolves through the
+		// Compile to K8s manifests for preview. The target is fixed here (this
+		// endpoint's contract is a manifest string), but it resolves through the
 		// registry so the server holds no direct reference to a backend.
 		// A missing target is treated like a compile failure: preview omits the
 		// manifests rather than failing the whole response.
@@ -268,7 +268,7 @@ func (s *Server) handleTriggerDeploy() http.HandlerFunc {
 		}
 
 		// Launch async deployment; return 202 immediately.
-		go s.runDeployWith(deployer, dep.ID, rec.Source, req.Target, req.Environment)
+		go s.runDeployWith(deployer, dep.ID, rec.Source, req.Target, req.Environment) //nolint:gosec // G118: the deploy outlives the request that started it
 
 		JSON(w, http.StatusAccepted, toDeploymentResponse(dep))
 	}
@@ -371,18 +371,22 @@ func (s *Server) runDeployWith(deployer deploy.Deployer, deployID, source, targe
 		}
 	}
 
-	if result.Status == deploy.StatusFailed {
+	switch result.Status {
+	case deploy.StatusFailed:
 		status = "failed"
-	} else if result.Status == deploy.StatusRolledBack {
+	case deploy.StatusRolledBack:
 		status = "rolled_back"
+	case deploy.StatusInProgress, deploy.StatusSuccess, deploy.StatusPartial:
+		// Keep the status from the health wait above.
 	}
 
 	elapsed := time.Since(start).Truncate(time.Millisecond)
-	if status == "succeeded" {
+	switch status {
+	case "succeeded":
 		logMsg(fmt.Sprintf("\u2713 Deploy complete in %s.", elapsed))
-	} else if status == "partial" {
+	case "partial":
 		logMsg(fmt.Sprintf("\u2713 Deploy applied in %s (pods not yet healthy).", elapsed))
-	} else {
+	default:
 		logMsg(fmt.Sprintf("\u2717 Deploy failed: status %s (after %s)", status, elapsed))
 	}
 
@@ -574,7 +578,7 @@ func (s *Server) handleDeploymentLogs() http.HandlerFunc {
 
 		// If deployment is finished, send done event and close.
 		if deploy.FinishedAt != nil {
-			fmt.Fprintf(w, "event: done\ndata: %s\n\n", deploy.Status)
+			fmt.Fprintf(w, "event: done\ndata: %s\n\n", deploy.Status) //nolint:gosec // G705: text/event-stream, status is a fixed enum from the store
 			flusher.Flush()
 			return
 		}
@@ -597,7 +601,7 @@ func (s *Server) handleDeploymentLogs() http.HandlerFunc {
 					lastLen = len(updated.Log)
 				}
 				if updated.FinishedAt != nil {
-					fmt.Fprintf(w, "event: done\ndata: %s\n\n", updated.Status)
+					fmt.Fprintf(w, "event: done\ndata: %s\n\n", updated.Status) //nolint:gosec // G705: text/event-stream, status is a fixed enum from the store
 					flusher.Flush()
 					return
 				}
@@ -607,7 +611,7 @@ func (s *Server) handleDeploymentLogs() http.HandlerFunc {
 }
 
 // isSSELineTerminator reports whether r ends a line under the SSE grammar, which
-// terminates on CR, LF or CRLF — not LF alone.
+// terminates on CR, LF or CRLF, not LF alone.
 func isSSELineTerminator(r rune) bool {
 	return r == '\n' || r == '\r'
 }
@@ -621,8 +625,8 @@ func isSSELineTerminator(r rune) bool {
 // list rendered one row per entry, so packing several lines into one event would
 // collapse them into a single run-on row instead.
 //
-// Framing must break on CR as well as LF. Log text is not trusted — it
-// interpolates user-supplied values such as the deployment environment — and a
+// Framing must break on CR as well as LF. Log text is not trusted (it
+// interpolates user-supplied values such as the deployment environment), and a
 // bare CR would otherwise carry the rest of the line past the "data: " prefix,
 // where a reader parses it as further SSE fields. An injected "event: done" ends
 // the stream early for whoever is watching, which is how a forged completion or a

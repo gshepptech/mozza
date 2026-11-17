@@ -1,4 +1,4 @@
-// Mozza brand icon — mozzarella ball for the internal UI.
+// Mozza brand icon: a mozzarella ball for the internal UI.
 // Tailwind-compatible. Use instead of lucide Pizza icon or emoji.
 
 interface MozzaLogoProps {
@@ -48,7 +48,7 @@ export function MozzaLogo({ className = "", size = 20 }: MozzaLogoProps) {
       <path d="M10 10Q8 5 12 4Q14 1 16 3Q18 1 20 4Q24 5 22 10Z" fill="url(#mz-hat)" />
       <path d="M10 10Q8 5 12 4Q14 1 16 3Q18 1 20 4Q24 5 22 10" fill="none" stroke="#d8d4cc" strokeWidth="0.4" />
       <path d="M11.5 7Q13 4.5 15 4" fill="none" stroke="#fff" strokeWidth="0.8" strokeLinecap="round" opacity="0.5" />
-      {/* Band accent — uses currentColor so it picks up text-brand */}
+      {/* Band accent: uses currentColor so it picks up text-brand */}
       <path d="M11 11Q16 12.5 21 11" fill="none" stroke="currentColor" strokeWidth="0.6" opacity="0.4" />
     </svg>
   );
@@ -111,7 +111,7 @@ export function MozzaLogoLarge({ className = "", size = 80 }: MozzaLogoProps) {
       <path d="M38 56Q42 54 46 56" stroke="#e8e0d4" strokeWidth="1" strokeLinecap="round" fill="none" opacity="0.5" />
       <path d="M64 72Q70 70 76 73" stroke="#e8e0d4" strokeWidth="0.8" strokeLinecap="round" fill="none" opacity="0.4" />
 
-      {/* Arms — friendly open */}
+      {/* Arms: friendly open */}
       <path d="M28 62Q14 60 8 64" stroke="#e8ddd0" strokeWidth="5" strokeLinecap="round" />
       <path d="M28 62Q14 60 8 64" stroke="#f5f0e8" strokeWidth="3.5" strokeLinecap="round" />
       <circle cx="6" cy="63" r="5" fill="#f5f0e8" stroke="#d8d0c4" strokeWidth="0.8" />

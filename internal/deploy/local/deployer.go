@@ -81,10 +81,10 @@ func (d *Deployer) Deploy(ctx context.Context, p *plan.AppPlan, opts deploy.Depl
 
 // failedResult carries the compile-time warnings back alongside a deploy error.
 //
-// A recipe's capability gaps are just as real when the containers fail to start —
-// a bad image tag or a port clash — and the deployment log is the only place the
-// dashboard reports them. Returning nil here is what made a failed local deploy
-// silent about warnings that "mozza up" printed for the same recipe.
+// A recipe's capability gaps are just as real when the containers fail to start
+// (a bad image tag or a port clash), and the deployment log is the only place the
+// dashboard reports them. Returning nil here would leave a failed local deploy
+// silent about warnings that "mozza up" prints for the same recipe.
 func failedResult(deployID string, start time.Time, warnings []string) *deploy.DeployResult {
 	return &deploy.DeployResult{
 		DeployID: deployID,

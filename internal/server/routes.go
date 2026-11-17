@@ -35,7 +35,7 @@ func (s *Server) registerRoutes() {
 			r.Post("/auth/logout", s.handleLogout())
 		})
 
-		// Webhook endpoint (public, called by GitHub — signature-validated internally).
+		// Webhook endpoint (public, called by GitHub, signature-validated internally).
 		r.Post("/webhooks/github", s.handleGitHubWebhook())
 
 		// Protected endpoints (require session cookie).
@@ -45,7 +45,7 @@ func (s *Server) registerRoutes() {
 			r.Get("/auth/me", s.handleMe())
 			r.Put("/auth/me", s.handleUpdateMe())
 
-			// Read-only endpoints — all authenticated users can access.
+			// Read-only endpoints: all authenticated users can access.
 			r.Get("/plan", s.handlePlan())
 			r.Get("/plan/slices", s.handleSlices())
 			r.Get("/plan/slices/{name}", s.handleSlice())
@@ -75,30 +75,30 @@ func (s *Server) registerRoutes() {
 			r.Get("/builds/{id}", s.handleGetBuild())
 			r.Get("/builds/{id}/logs", s.handleBuildLogs())
 
-			// Preview deploy endpoints — list and manage branch previews.
+			// Preview deploy endpoints: list and manage branch previews.
 			r.Get("/apps/{id}/previews", s.handleListPreviews())
 
-			// Monitoring endpoints — app metrics and health.
+			// Monitoring endpoints: app metrics and health.
 			r.Get("/apps/{id}/metrics", s.handleAppMetrics())
 			r.Get("/apps/{id}/health", s.handleAppHealth())
 			r.Get("/apps/{id}/timeseries", s.handleTimeSeries())
 			r.Get("/monitoring/summary", s.handleMonitoringSummary())
 
-			// Registry scanning — discover images in a Docker Hub namespace.
+			// Registry scanning: discover images in a Docker Hub namespace.
 			r.Get("/registry/scan", s.handleScanNamespace())
 
 			// Compile targets. POST /compile is mutation-shaped but mutates
-			// nothing — it writes no store rows and contacts no cluster — so it
+			// nothing (it writes no store rows and contacts no cluster), so it
 			// deliberately sits with the read-only routes rather than behind
 			// requireRole("deployer","admin"). A viewer can compile.
 			r.Get("/targets", s.handleTargets())
 			r.Post("/compile", s.handleCompile())
 
-			// Proxy endpoints — routing table and certificate status.
+			// Proxy endpoints: routing table and certificate status.
 			r.Get("/proxy/routes", s.handleProxyRoutes())
 			r.Get("/proxy/certificates", s.handleProxyCertificates())
 
-			// Cluster (real K8s data) — read-only, wrapped with recovery + timeout.
+			// Cluster (real K8s data): read-only, wrapped with recovery + timeout.
 			r.Route("/cluster", func(r chi.Router) {
 				r.Use(recoveryMiddleware)
 				r.Use(timeoutMiddleware(10 * time.Second))
@@ -114,7 +114,7 @@ func (s *Server) registerRoutes() {
 				r.Post("/namespaces/{ns}/deployments/{name}/restart", s.handleRestartDeployment())
 			})
 
-			// Mutation endpoints — deployer or admin role required, rate-limited.
+			// Mutation endpoints: deployer or admin role required, rate-limited.
 			r.Group(func(r chi.Router) {
 				r.Use(requireRole("deployer", "admin"))
 				r.Use(rateLimit(30))
@@ -145,7 +145,7 @@ func (s *Server) registerRoutes() {
 				r.Delete("/apps/{id}/previews/{branch}", s.handleDeletePreview())
 			})
 
-			// Admin endpoints — admin role required.
+			// Admin endpoints: admin role required.
 			r.Group(func(r chi.Router) {
 				r.Use(requireRole("admin"))
 
@@ -184,7 +184,7 @@ func (s *Server) handleUI() http.Handler {
 
 		// For non-root paths, check if the file exists in the embedded FS.
 		// Missing files fall back to "/" so the file server serves index.html
-		// (SPA routing). Root "/" is left alone — http.FileServer serves
+		// (SPA routing). Root "/" is left alone: http.FileServer serves
 		// index.html for directory requests automatically.
 		if urlPath != "/" {
 			_, err := fs.Stat(s.cfg.UI, strings.TrimPrefix(urlPath, "/"))

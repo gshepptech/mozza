@@ -21,7 +21,7 @@ export function ClusterBanner({ message }: ClusterBannerProps) {
   if (loading) return null;
   if (status.reachable && !status.stale) return null;
 
-  // For fully unreachable, render nothing — let the page show its own setup UX
+  // For fully unreachable, render nothing and let the page show its own setup UX
   if (!status.reachable) return null;
 
   // Stale data warning
@@ -44,7 +44,7 @@ export function ClusterBanner({ message }: ClusterBannerProps) {
     >
       <Clock style={{ width: 16, height: 16, color: "#facc15", flexShrink: 0 }} />
       <span style={{ flex: 1, fontSize: 13, color: "#facc15" }}>
-        {message || "Stale data"} — {age}
+        {message || "Stale data"}. {age}
       </span>
       <button
         onClick={refresh}

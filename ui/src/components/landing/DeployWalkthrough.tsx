@@ -479,7 +479,7 @@ export function DeployWalkthrough() {
               transition: "opacity 0.6s ease 0.1s, transform 0.6s ease 0.1s",
             }}
           >
-            Walk through a deploy — no account needed. Click to experience the flow.
+            Walk through a deploy, no account needed. Click to experience the flow.
           </p>
         </div>
 
@@ -670,7 +670,7 @@ export function DeployWalkthrough() {
                 {currentStep.label}
                 {selectedRecipe && step >= 1 && (
                   <span style={{ fontSize: 14, fontWeight: 400, color: COLORS.textMuted, marginLeft: 8 }}>
-                    — {selectedRecipe}
+                    ({selectedRecipe})
                   </span>
                 )}
               </h3>

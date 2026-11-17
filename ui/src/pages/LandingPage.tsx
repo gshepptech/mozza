@@ -182,7 +182,7 @@ function Footer() {
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <MozzaMascotInline size={20} />
           <span style={{ fontSize: 14, color: COLORS.textMuted }}>
-            Mozza — Deploy like you order pizza.
+            Mozza. Deploy like you order pizza.
           </span>
         </div>
         <div style={{ fontSize: 13, color: COLORS.textDim }}>

@@ -267,7 +267,7 @@ export default function DeployProgress({ deploymentId, onComplete, usePizzaMetap
             </h3>
             <p className="text-sm text-muted-foreground mt-1">
               {usePizzaMetaphor
-                ? `Your app is served — cooked in ${formatTime(elapsedSeconds)}`
+                ? `Your app is served, cooked in ${formatTime(elapsedSeconds)}`
                 : `All services are healthy in ${formatTime(elapsedSeconds)}`}
             </p>
             {accessUrl ? (
@@ -295,7 +295,7 @@ export default function DeployProgress({ deploymentId, onComplete, usePizzaMetap
               </div>
             ) : (
               <p className="text-xs text-muted-foreground/60 mt-3">
-                Internal service — accessible within the cluster
+                Internal service: accessible within the cluster
               </p>
             )}
           </CardContent>
@@ -371,7 +371,7 @@ export default function DeployProgress({ deploymentId, onComplete, usePizzaMetap
         );
       })()}
 
-      {/* Raw log output — collapsible */}
+      {/* Raw log output, collapsible */}
       <div>
         <button
           type="button"

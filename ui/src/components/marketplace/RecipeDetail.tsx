@@ -180,7 +180,7 @@ export default function RecipeDetail({ template, onClose }: RecipeDetailProps) {
           </button>
         </div>
 
-        {/* Body — scrollable */}
+        {/* Body, scrollable */}
         <div style={{ flex: 1, overflowY: "auto", padding: 24 }}>
           {/* Meta row */}
           <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 16 }}>

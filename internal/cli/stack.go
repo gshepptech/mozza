@@ -14,7 +14,7 @@ import (
 )
 
 // newStackCmd creates "mozza stack", which brings up an app that ships its own
-// Helm charts — and everything those charts assume — on a local cluster.
+// Helm charts, and everything those charts assume, on a local cluster.
 func newStackCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "stack",

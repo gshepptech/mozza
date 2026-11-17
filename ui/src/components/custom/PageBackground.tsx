@@ -1,7 +1,7 @@
 import { useLocation } from "react-router-dom";
 
 // Subtle SVG background illustrations per page section.
-// Rendered as a fixed overlay behind page content — purely decorative.
+// Rendered as a fixed overlay behind page content. Purely decorative.
 
 const ACCENT = "rgba(255, 107, 53, 0.04)";
 const ACCENT_MED = "rgba(255, 107, 53, 0.06)";
@@ -9,7 +9,7 @@ const BLUE = "rgba(96, 165, 250, 0.03)";
 const GREEN = "rgba(74, 222, 128, 0.03)";
 
 function getSceneForPath(path: string): React.ReactNode {
-  // Deploy pages — kitchen/oven warmth
+  // Deploy pages: kitchen/oven warmth
   if (path.includes("/deploy")) {
     return (
       <svg width="100%" height="100%" viewBox="0 0 1200 800" preserveAspectRatio="xMaxYMax slice" fill="none" opacity="0.6">
@@ -26,7 +26,7 @@ function getSceneForPath(path: string): React.ReactNode {
     );
   }
 
-  // Monitoring — heartbeat/pulse
+  // Monitoring: heartbeat/pulse
   if (path.includes("/monitoring")) {
     return (
       <svg width="100%" height="100%" viewBox="0 0 1200 800" preserveAspectRatio="xMaxYMax slice" fill="none" opacity="0.5">
@@ -44,7 +44,7 @@ function getSceneForPath(path: string): React.ReactNode {
     );
   }
 
-  // Environments — layers/clouds
+  // Environments: layers/clouds
   if (path.includes("/environments")) {
     return (
       <svg width="100%" height="100%" viewBox="0 0 1200 800" preserveAspectRatio="xMaxYMax slice" fill="none" opacity="0.5">
@@ -57,7 +57,7 @@ function getSceneForPath(path: string): React.ReactNode {
     );
   }
 
-  // Recipes / Marketplace — recipe cards floating
+  // Recipes / Marketplace: recipe cards floating
   if (path.includes("/recipes") || path.includes("/marketplace")) {
     return (
       <svg width="100%" height="100%" viewBox="0 0 1200 800" preserveAspectRatio="xMaxYMax slice" fill="none" opacity="0.5">
@@ -70,7 +70,7 @@ function getSceneForPath(path: string): React.ReactNode {
     );
   }
 
-  // Doctor — stethoscope/heartbeat
+  // Doctor: stethoscope/heartbeat
   if (path.includes("/doctor")) {
     return (
       <svg width="100%" height="100%" viewBox="0 0 1200 800" preserveAspectRatio="xMaxYMax slice" fill="none" opacity="0.5">
@@ -82,7 +82,7 @@ function getSceneForPath(path: string): React.ReactNode {
     );
   }
 
-  // Overview / default — warm corner glow
+  // Overview / default: warm corner glow
   return (
     <svg width="100%" height="100%" viewBox="0 0 1200 800" preserveAspectRatio="xMaxYMax slice" fill="none" opacity="0.5">
       <circle cx="1100" cy="100" r="350" fill={ACCENT} />

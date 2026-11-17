@@ -30,7 +30,7 @@ export default function ComposeImport({ onRecipeReady }: ComposeImportProps) {
     const file = e.target.files?.[0];
     if (!file) return;
     if (file.size > 1024 * 1024) {
-      setError("File too large — max 1MB");
+      setError("File too large (max 1MB)");
       return;
     }
     if (!file.name.match(/\.(ya?ml)$/i)) {
@@ -61,9 +61,9 @@ export default function ComposeImport({ onRecipeReady }: ComposeImportProps) {
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Failed to parse compose file";
       const friendly = msg.includes("no services found")
-        ? "No services found — make sure your file has a 'services:' section."
+        ? "No services found. Make sure your file has a 'services:' section."
         : msg.includes("parsing compose YAML")
-          ? "Invalid YAML syntax — check for indentation or formatting errors."
+          ? "Invalid YAML syntax. Check for indentation or formatting errors."
           : msg;
       setError(friendly);
       setPhase("input");

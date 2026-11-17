@@ -10,7 +10,7 @@ import (
 
 type scanRepoRequest struct {
 	URL   string `json:"url"`
-	Token string `json:"token,omitempty"` // optional GitHub token for private repos — never stored or logged
+	Token string `json:"token,omitempty"` // optional GitHub token for private repos; never stored or logged
 }
 
 type deployImportRequest struct {

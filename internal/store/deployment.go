@@ -247,7 +247,7 @@ const maxSnapshotSize = 5 * 1024 * 1024
 
 // SetDeploymentPreviousState stores a namespace snapshot on a deployment record
 // so it can be used for rollback later. Snapshots exceeding 5MB are truncated
-// with a warning — rollback will be unavailable for that deployment.
+// with a warning, and rollback will be unavailable for that deployment.
 func (s *Store) SetDeploymentPreviousState(id, previousState string) error {
 	if len(previousState) > maxSnapshotSize {
 		slog.Warn("snapshot too large for rollback, skipping",

@@ -68,7 +68,7 @@ func ComposeToRecipeAST(yamlContent []byte) (*recipe.Recipe, []Warning, error) {
 
 	// Warn about top-level configs. Nothing maps a config to anything: no
 	// environment reference and no mount reach the recipe, and a service's own
-	// configs are not read at all — so this is the only thing standing between a
+	// configs are not read at all. So this is the only thing standing between a
 	// declared config and its silent disappearance, and it has to say that rather
 	// than describe a mapping that never happened.
 	for cname := range cf.Configs {
@@ -206,7 +206,7 @@ func ComposeToRecipe(composeYAML string) (string, error) {
 // checkComposeValues refuses a compose file holding a value that cannot be
 // written into recipe text without changing what the recipe says.
 //
-// It runs once, over the whole file, before a line is written — several of the
+// It runs once, over the whole file, before a line is written: several of the
 // emitters below take a bare *strings.Builder, and threading an error back out
 // of each of them buys the same guarantee for a much larger change. Every value
 // is checked in the shape it will be emitted in, through the same derivation
@@ -244,7 +244,7 @@ type recipeValueCheck struct {
 // values names the one that would have gone wrong first.
 func checkComposeService(name string, svc composeService, namedVolumes map[string]bool) error {
 	// The name is checked before the rest because it is both a value in its own
-	// right — it becomes the App line and the section header — and the prefix
+	// right (it becomes the App line and the section header) and the prefix
 	// every field path below is built from, which a newline in it would corrupt.
 	if err := recipeSafeWord("services", name); err != nil {
 		return err
@@ -263,7 +263,7 @@ func checkComposeService(name string, svc composeService, namedVolumes map[strin
 	if svc.Healthcheck != nil {
 		// The path is written as a bare word when the check is kept and into a
 		// comment when it is dropped, and which of those happens turns on the
-		// service's ports rather than on the path — so it answers to the
+		// service's ports rather than on the path, so it answers to the
 		// stricter of the two positions either way.
 		path, _ := extractHealthCheck(svc.Healthcheck)
 		checks = append(checks, recipeValueCheck{recipeSafeWord, field + ".healthcheck.test", path})
@@ -303,7 +303,7 @@ func checkComposeService(name string, svc composeService, namedVolumes map[strin
 
 // composeVolumeChecks returns the checks for a service's mounts. Only a named
 // volume is checked, because writeVolumes writes nothing at all for any other
-// kind of mount — a bind mount's host path never reaches the recipe, and
+// kind of mount: a bind mount's host path never reaches the recipe, and
 // rejecting a space in one would fail imports that work today.
 func composeVolumeChecks(field string, volumes []string, namedVolumes map[string]bool) []recipeValueCheck {
 	checks := make([]recipeValueCheck, 0, len(volumes)*2)
@@ -371,7 +371,7 @@ func convertService(
 	// Health check. The healthcheck URL carries the port the service really
 	// listens on, so it can supply one when no published port did. Without a port
 	// the check cannot be aimed, and importing it anyway would write a recipe that
-	// mozza validate rejects — so the check is dropped and the user told why.
+	// mozza validate rejects, so the check is dropped and the user told why.
 	if svc.Healthcheck != nil {
 		path, urlPort := extractHealthCheck(svc.Healthcheck)
 		if slice.Port == 0 {
@@ -379,7 +379,7 @@ func convertService(
 		}
 		switch {
 		case path == "":
-			// Not an HTTP health check — there is nothing to carry into the recipe.
+			// Not an HTTP health check: there is nothing to carry into the recipe.
 		case slice.Port == 0:
 			warnings = append(warnings, Warning{
 				Feature: "healthcheck",
@@ -407,15 +407,15 @@ func convertService(
 	slice.Needs = parseDependsOn(svc.DependsOn)
 
 	// Named volumes. The size a volume implies is already on the engine shorthand
-	// (storageFor, above), the only storage form the importer emits — so an
+	// (storageFor, above), the only storage form the importer emits, so an
 	// imported service gets one volume at most, at its engine's own path, and
 	// everything compose declared beyond that is said aloud rather than left to be
 	// found as missing persistence in a running cluster. The engine-less warning
 	// below names the per-copy storage directive a reader can add by hand.
 	//
 	// No Mounts entry goes with any of it. A recipe's mounts name an object that
-	// already exists — a pvc mount compiles to a claimName taken unchanged from the
-	// source (k8s/deployment.go addMounts) — and mozza creates no claim under a
+	// already exists (a pvc mount compiles to a claimName taken unchanged from the
+	// source, see k8s/deployment.go addMounts), and mozza creates no claim under a
 	// compose volume's name, so the pod would wait on one that is never made. That
 	// is why the text builder writes a comment here and why this path must leave
 	// the same nothing behind it: the two are one import, and a mount on one of
@@ -527,11 +527,11 @@ func parsePortNumber(s string) int {
 	return port
 }
 
-// splitVolume splits one compose short-syntax volume — [SOURCE:]TARGET[:MODE] —
+// splitVolume splits one compose short-syntax volume ([SOURCE:]TARGET[:MODE])
 // into its source and the container path it asks for.
 //
 // Splitting on every colon and keeping the first two fields leaves the MODE
-// behind. A mode — "ro", "z", "cached", or a comma-separated run of them — says
+// behind. A mode ("ro", "z", "cached", or a comma-separated run of them) says
 // how the container sees the volume, never where; read as part of the path it
 // would put "/var/lib/mysql:rw" in front of a reader as though it were a
 // directory, and have the importer call the mount uncarried for not matching
@@ -540,7 +540,7 @@ func parsePortNumber(s string) int {
 // A Windows source keeps its drive letter, so a bind mount from a Windows host
 // is not read as a volume named "C".
 //
-// An anonymous volume that carries a mode and no source — "/data:ro" — reads as
+// An anonymous volume that carries a mode and no source, such as "/data:ro", reads as
 // a source of "/data" and a target of "ro". No caller acts on it: a compose
 // volume name cannot contain "/", so that source matches no declared volume.
 func splitVolume(v string) (string, string) {
@@ -557,7 +557,7 @@ func splitVolume(v string) (string, string) {
 }
 
 // storageFor reports the size a service's engine shorthand should carry, or ""
-// when it should carry none. The shorthand — "postgres 16, 10Gi" — is the only
+// when it should carry none. The shorthand ("postgres 16, 10Gi") is the only
 // storage form the importer emits; the grammar's other one, "each copy needs its
 // own storage of 10Gi", is left for the reader to add, which is what a dropped
 // volume's warning asks them to do. Both import paths take their size from this
@@ -581,7 +581,7 @@ func storageFor(engine string, volumes []string, namedVolumes map[string]bool) s
 // engineMountPaths is where the compiler really mounts an engine slice's volume,
 // mirroring the mount path plan.Build reads out of its own engine defaults. It
 // takes no notice of the path compose asked for, so the two agree only by
-// coincidence — TestEngineMountPathsMatchWhereTheCompilerMounts holds this table
+// coincidence. TestEngineMountPathsMatchWhereTheCompilerMounts holds this table
 // against the plan the compiler actually builds.
 var engineMountPaths = map[string]string{ //nolint:gochecknoglobals // immutable lookup table
 	"postgres": "/var/lib/postgresql/data",
@@ -591,8 +591,8 @@ var engineMountPaths = map[string]string{ //nolint:gochecknoglobals // immutable
 
 // mountIsCarried reports whether the compiler will really mount a volume at the
 // path compose named. A slice's storage is one PVC at the engine's own path, so
-// a compose mount anywhere else — or on a slice with no engine to supply a path
-// — is not carried, however plainly the compose file asked for it.
+// a compose mount anywhere else, or on a slice with no engine to supply a path,
+// is not carried, however plainly the compose file asked for it.
 func mountIsCarried(engine, mountPath string) bool {
 	canonical, known := engineMountPaths[engine]
 
@@ -602,7 +602,7 @@ func mountIsCarried(engine, mountPath string) bool {
 // statefulLanding names where "each copy needs its own storage" puts a volume,
 // and the compose path it displaces. A slice with no engine has no engine path
 // for the compiler to use, so that volume lands at /data whatever compose asked
-// for — advice that did not say so would leave the app writing to a directory
+// for. Advice that did not say so would leave the app writing to a directory
 // nothing is mounted on.
 func statefulLanding(composePath string) string {
 	if composePath == "" || composePath == "/data" {
@@ -613,10 +613,10 @@ func statefulLanding(composePath string) string {
 }
 
 // writeVolumes writes what a service's named volumes can carry into the recipe.
-// A slice carries one volume at most — an engine slice's rides on its shorthand's
+// A slice carries one volume at most: an engine slice's rides on its shorthand's
 // size and lands at the engine's own path, and a slice with no engine has no
 // shorthand for the importer to write a size on, only the per-copy directive the
-// warning below asks the reader to add — so everything compose declared beyond
+// warning below asks the reader to add. So everything compose declared beyond
 // that is named as uncarried instead of vanishing between the compose file and
 // the cluster.
 func writeVolumes(b *strings.Builder, engine string, volumes []string, namedVolumes map[string]bool) {
@@ -751,7 +751,7 @@ func writeHealthcheck(b *strings.Builder, hc *composeHealthcheck, publishedPort 
 //
 // The port matters as much as the path: a recipe's health check inherits the
 // slice's port, so a check imported without one cannot be aimed and `mozza
-// validate` rejects it. A zero port means the URL named none — callers decide what
+// validate` rejects it. A zero port means the URL named none; callers decide what
 // to do about it, because the importer will not invent one.
 func extractHealthCheck(hc *composeHealthcheck) (string, int) {
 	for _, part := range hc.Test {

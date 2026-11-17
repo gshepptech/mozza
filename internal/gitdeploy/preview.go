@@ -104,7 +104,7 @@ func (pm *PreviewManager) Create(ctx context.Context, appID int64, branch, appDo
 		// Re-fetch for updated timestamp.
 		updated, fetchErr := pm.store.GetPreviewDeploy(ctx, existing.ID)
 		if fetchErr != nil {
-			return existing, nil
+			return existing, nil //nolint:nilerr // the update succeeded; only the refreshed timestamp is missing
 		}
 		return updated, nil
 	}

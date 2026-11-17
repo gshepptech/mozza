@@ -98,12 +98,12 @@ func TestScanWithToken(t *testing.T) {
 	cleanup := fakeGitHub(t, dockerfileOnlyMux("secret-token-123", false))
 	defer cleanup()
 
-	// Without token — should fail with auth error.
+	// Without a token the scan fails with an auth error.
 	_, err := Scan("https://github.com/testowner/testrepo", nil)
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "authentication failed")
 
-	// With correct token — should succeed.
+	// With the correct token it succeeds.
 	result, err := Scan("https://github.com/testowner/testrepo", &ScanOptions{Token: "secret-token-123"})
 	require.NoError(t, err)
 	assert.Equal(t, "testrepo", result.RepoName)
@@ -112,7 +112,7 @@ func TestScanWithToken(t *testing.T) {
 }
 
 func TestScanWithoutToken(t *testing.T) {
-	// Public repo — no auth required.
+	// Public repo: no auth required.
 	cleanup := fakeGitHub(t, dockerfileOnlyMux("", false))
 	defer cleanup()
 

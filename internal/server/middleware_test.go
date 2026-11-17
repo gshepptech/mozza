@@ -54,7 +54,7 @@ func TestSecurityHeaders(t *testing.T) {
 func TestRecoverer_PanicDoesNotCrash(t *testing.T) {
 	t.Parallel()
 	// The recoverer middleware is applied globally. We can verify the server
-	// stays alive after handling requests — if the middleware were missing,
+	// stays alive after handling requests. If the middleware were missing,
 	// any panic in a handler would kill the test server.
 	ts := testServer(t)
 	defer ts.Close()

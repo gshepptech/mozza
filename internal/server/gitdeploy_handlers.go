@@ -10,9 +10,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/coder/websocket"
+	"github.com/coder/websocket/wsjson"
 	"github.com/go-chi/chi/v5"
-	"nhooyr.io/websocket"
-	"nhooyr.io/websocket/wsjson"
 
 	"github.com/gshepptech/mozza/internal/gitdeploy"
 	"github.com/gshepptech/mozza/internal/store"
@@ -287,7 +287,7 @@ func (s *Server) streamBuildLogs(ctx context.Context, conn *websocket.Conn, buil
 		return
 	}
 
-	// Build is in progress — poll and stream.
+	// Build is in progress: poll and stream.
 	s.pollBuildLogs(ctx, conn, buildID)
 }
 

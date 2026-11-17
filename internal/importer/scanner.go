@@ -86,32 +86,32 @@ func detectSources(result *ScanResult, files []string) {
 		name := strings.TrimSuffix(f, "/")
 		lower := strings.ToLower(name)
 
-		switch {
-		case lower == "docker-compose.yml" || lower == "docker-compose.yaml":
+		switch lower {
+		case "docker-compose.yml", "docker-compose.yaml":
 			result.Sources = append(result.Sources, DetectedSource{
 				Type:     "compose",
 				Path:     name,
 				Priority: 1,
 			})
-		case lower == "chart.yaml":
+		case "chart.yaml":
 			result.Sources = append(result.Sources, DetectedSource{
 				Type:     "helm",
 				Path:     name,
 				Priority: 2,
 			})
-		case lower == "charts" || lower == "chart":
+		case "charts", "chart":
 			result.Sources = append(result.Sources, DetectedSource{
 				Type:     "helm",
 				Path:     name + "/",
 				Priority: 2,
 			})
-		case lower == "k8s" || lower == "manifests" || lower == "deploy":
+		case "k8s", "manifests", "deploy":
 			result.Sources = append(result.Sources, DetectedSource{
 				Type:     "k8s-manifests",
 				Path:     name + "/",
 				Priority: 3,
 			})
-		case lower == "dockerfile":
+		case "dockerfile":
 			result.Sources = append(result.Sources, DetectedSource{
 				Type:     "dockerfile",
 				Path:     name,
@@ -190,7 +190,7 @@ func generateFromHelm(result *ScanResult, owner, repo, path, token string) error
 			Editable: true,
 		}
 		result.Warnings = append(result.Warnings, "Could not read values.yaml — generated basic recipe")
-		return nil
+		return nil //nolint:nilerr // the fetch error becomes a warning and a basic recipe
 	}
 
 	recipe, err := HelmToRecipe(content, repo)

@@ -21,7 +21,7 @@ var builtin embed.FS
 
 // Addon is a reusable component definition: a component plus the version its
 // URLs and chart default to. Inside an addon, ${version} expands to the
-// version in force — the addon's own, or the one the stack pinned with use.
+// version in force: the addon's own, or the one the stack pinned with use.
 type Addon struct {
 	Component   `yaml:",inline"`
 	Description string `yaml:"description"`
@@ -148,7 +148,7 @@ func (c Catalog) read(kind, name string) ([]byte, error) {
 
 // Load resolves ref to a stack. A ref that names an existing file is read from
 // disk; anything else is looked up by name in the catalog. The stack is
-// validated but not yet resolved — see Resolve.
+// validated but not yet resolved; see Resolve.
 func (c Catalog) Load(ref string) (*Stack, error) {
 	st, statErr := os.Stat(ref)
 	if statErr != nil || st.IsDir() {

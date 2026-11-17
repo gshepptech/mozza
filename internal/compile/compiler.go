@@ -40,7 +40,7 @@ type OutputFile struct {
 // line followed by one indented entry per warning. It returns nil when there is
 // nothing to report, so silence keeps meaning nothing was lost.
 //
-// Every surface that reports capability gaps renders them through here — the CLI
+// Every surface that reports capability gaps renders them through here: the CLI
 // on stderr, the dashboard and operator deployment logs. The wording is a
 // user-facing contract that must not drift between them, so it lives in one
 // place rather than being reimplemented per surface. A caller that has already

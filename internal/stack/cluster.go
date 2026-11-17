@@ -68,7 +68,7 @@ func (p *kindProvider) exists(ctx context.Context) (bool, error) {
 }
 
 // kindConfig renders the cluster config. The API server address is pinned to
-// loopback explicitly — it is kind's default, but this file is the contract
+// loopback explicitly. It is kind's default, but this file is the contract
 // that nothing in a stack listens beyond this machine, so it says so.
 func (p *kindProvider) kindConfig() ([]byte, error) {
 	cl := p.e.stack.Cluster
@@ -192,7 +192,7 @@ func (p *k3dProvider) server() string {
 
 // k3d edits whatever kubeconfig $KUBECONFIG names when it creates or deletes
 // a cluster, flags or not. Pointing it at the stack's own file keeps the
-// user's kubeconfig — and any read-only one $KUBECONFIG names — untouched.
+// user's kubeconfig, and any read-only one $KUBECONFIG names, untouched.
 func (p *k3dProvider) cmd(args ...string) Cmd {
 	return Cmd{Name: "k3d", Args: args, Env: []string{"KUBECONFIG=" + p.e.kubeconfigPath()}}
 }

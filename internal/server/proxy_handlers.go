@@ -81,7 +81,7 @@ func (s *Server) handleProxyCertificates() http.HandlerFunc {
 
 // SetProxy attaches a running proxy server to the API server so that
 // proxy status endpoints can query it. This allows the proxy to be
-// optional — the server works without it.
+// optional: the server works without it.
 func (s *Server) SetProxy(p *proxy.Server) {
 	s.cfg.Proxy = p
 }

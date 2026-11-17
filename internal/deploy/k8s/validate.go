@@ -38,7 +38,7 @@ func ValidateImages(ctx context.Context, p *plan.AppPlan) error {
 		}
 		if err := checkImage(ctx, s.Image, creds); err != nil {
 			msg := err.Error()
-			// Arch mismatches are warnings, not hard failures — the image
+			// Arch mismatches are warnings, not hard failures: the image
 			// exists but will run under QEMU emulation.
 			if strings.Contains(msg, "emulation") || strings.Contains(msg, "no linux/") {
 				slog.Warn("architecture mismatch", "slice", s.Name, "image", s.Image, "detail", msg)
@@ -85,7 +85,7 @@ func checkImage(ctx context.Context, image string, creds map[string]registryAuth
 	}
 	defer resp.Body.Close()
 
-	// Docker Hub returns 401 for public images — fetch bearer token and retry.
+	// Docker Hub returns 401 for public images; fetch a bearer token and retry.
 	if resp.StatusCode == http.StatusUnauthorized {
 		authHeader := resp.Header.Get("Www-Authenticate")
 		token := fetchBearerToken(ctx, authHeader)
@@ -99,7 +99,7 @@ func checkImage(ctx context.Context, image string, creds map[string]registryAuth
 		if err2 != nil {
 			return fmt.Errorf("registry unreachable on retry: %w", err2)
 		}
-		resp.Body.Close()
+		defer resp2.Body.Close()
 		resp = resp2
 	}
 
@@ -127,7 +127,7 @@ func checkArchCompat(resp *http.Response, registry string) error {
 	// (Docker Desktop and K8s run Linux VMs under the hood).
 	hostOS := "linux"
 
-	// Fat manifest (manifest list) — check if our arch is in the list.
+	// Fat manifest (manifest list): check if our arch is in the list.
 	if strings.Contains(ct, "manifest.list") || strings.Contains(ct, "image.index") {
 		var index struct {
 			Manifests []struct {
@@ -155,7 +155,7 @@ func checkArchCompat(resp *http.Response, registry string) error {
 		return fmt.Errorf("no %s/%s image available (found: %s)", hostOS, hostArch, strings.Join(archs, ", "))
 	}
 
-	// Single manifest — check config for architecture.
+	// Single manifest: check config for architecture.
 	if strings.Contains(ct, "manifest.v2") || strings.Contains(ct, "image.manifest") {
 		var manifest struct {
 			Config struct {

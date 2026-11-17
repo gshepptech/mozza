@@ -38,9 +38,9 @@ Api:
 // grammar treats every line after the first as an unknown field and drops it.
 //
 // Second, framing on "\n" alone is incomplete: SSE terminates a line on
-// CR, LF or CRLF, so a bare CR in log text escaped the "data: " prefix and the
-// remainder was parsed as arbitrary SSE fields. That is reachable — the log
-// interpolates the unvalidated deployment environment — and an injected
+// CR, LF or CRLF, so a bare CR in log text would escape the "data: " prefix and
+// the remainder would be parsed as arbitrary SSE fields. That is reachable (the
+// log interpolates the unvalidated deployment environment), and an injected
 // "event: done" makes the client close the stream before the warnings arrive.
 func TestWriteLogEvents(t *testing.T) {
 	t.Parallel()
@@ -121,13 +121,13 @@ func TestWriteLogEvents(t *testing.T) {
 			// escaped the prefix would be parsed as an SSE field name, which is
 			// exactly how an injected "event: done" would close a client's stream.
 			//
-			// The split must use the reader's notion of a line — CR, LF or CRLF —
+			// The split must use the reader's notion of a line (CR, LF or CRLF),
 			// and the predicate is spelled out here rather than reusing the
 			// production isSSELineTerminator on purpose. Splitting on "\n" alone
-			// made this check blind to the very defect it exists to catch: a
+			// would make this check blind to the very defect it exists to catch: a
 			// CR-escaped field stays inside one LF-delimited segment that still
 			// begins with "data: ". Sharing the production predicate would let the
-			// check inherit that mistake again if the predicate itself were wrong.
+			// check inherit any mistake in the predicate itself.
 			for line := range strings.FieldsFuncSeq(body, func(r rune) bool {
 				return r == '\n' || r == '\r'
 			}) {
@@ -140,7 +140,7 @@ func TestWriteLogEvents(t *testing.T) {
 
 // TestRequestLogger_PreservesOptionalInterfaces guards the transport underneath
 // every streaming endpoint. requestLogger wraps each request in a
-// *responseRecorder, which embeds the http.ResponseWriter *interface* — so only
+// *responseRecorder, which embeds the http.ResponseWriter *interface*, so only
 // Header/Write/WriteHeader are promoted and any optional interface a handler
 // type-asserts for is silently lost.
 //
@@ -203,7 +203,7 @@ var errNotHijackable = errors.New("hijack not supported in tests")
 
 // TestRunDeployWith_LogsWarningsOnce covers the dashboard path. runDeployWith is
 // the sole chokepoint for all five server deploy routes, so proving it here
-// proves them all. Each warning must appear exactly once — the deploy log is the
+// proves them all. Each warning must appear exactly once: the deploy log is the
 // only place the dashboard reports them, and a second render would read as two
 // separate gaps.
 func TestRunDeployWith_LogsWarningsOnce(t *testing.T) {

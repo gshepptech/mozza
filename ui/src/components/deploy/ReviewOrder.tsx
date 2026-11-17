@@ -111,7 +111,7 @@ export default function ReviewOrder({ preview, recipeName, recipeSource, onConfi
         </CardContent>
       </Card>
 
-      {/* Compiled manifests — collapsible */}
+      {/* Compiled manifests, collapsible */}
       {preview.manifests && (
         <div>
           <button
@@ -134,7 +134,7 @@ export default function ReviewOrder({ preview, recipeName, recipeSource, onConfi
         </div>
       )}
 
-      {/* Recipe source — collapsible */}
+      {/* Recipe source, collapsible */}
       {!preview.manifests && (
         <div>
           <button

@@ -45,8 +45,8 @@ export default function GitHubImport({ onRecipeReady }: GitHubImportProps) {
     } catch (err) {
       const raw = err instanceof Error ? err.message : "";
       const msg = raw.includes("not a GitHub URL") ? "That doesn't look like a GitHub URL. Try something like https://github.com/owner/repo"
-        : raw.includes("authentication failed") ? "Authentication failed — check your token has 'repo' scope."
-        : raw.includes("404") ? "Repository not found — check the URL and make sure it's public (or provide a token)."
+        : raw.includes("authentication failed") ? "Authentication failed. Check your token has 'repo' scope."
+        : raw.includes("404") ? "Repository not found. Check the URL and make sure it's public (or provide a token)."
         : raw.includes("rate limit") ? "GitHub API rate limit reached. Try again in a minute, or provide a token."
         : raw || "Failed to scan repository";
       setScanError(msg);
@@ -285,7 +285,7 @@ export default function GitHubImport({ onRecipeReady }: GitHubImportProps) {
                           setScanResult(fresh);
                           if (fresh.generated?.source) setEditedSource(fresh.generated.source);
                         } catch {
-                          // non-critical — keep current result
+                          // non-critical: keep current result
                         } finally {
                           setCheckingGhcr(false);
                         }

@@ -99,7 +99,7 @@ export default function FrameworkDetect({
               Could not detect a framework
             </p>
             <p style={{ fontSize: 12, color: "var(--muted-foreground)", margin: "2px 0 0" }}>
-              No worries — you can set everything up manually
+              No worries, you can set everything up manually
             </p>
           </div>
         </div>

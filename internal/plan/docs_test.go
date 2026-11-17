@@ -38,8 +38,8 @@ type fencedBlock struct {
 // through the same Parse → Build → Validate pipeline loadPlan uses, so a doc
 // example the grammar rejects fails the build rather than the reader's first
 // deploy. A fenced block counts as a recipe when its body declares an App:.
-// Blocks that are deliberately illustrative — fragments, grammar metasyntax, an
-// HTTP request that happens to carry a recipe body — opt out with an `ignore`
+// Blocks that are deliberately illustrative (fragments, grammar metasyntax, an
+// HTTP request that happens to carry a recipe body) opt out with an `ignore`
 // field on the fence itself, as in ```mozza ignore. The marker travels on the
 // fence so it cannot drift away from the block it marks.
 //
@@ -122,7 +122,7 @@ func compileDocRecipe(t *testing.T, where, body string) {
 // fencedBlocks returns every fenced code block in src along with its opening
 // fence's info string. Leading whitespace is trimmed before matching, so an
 // indented fence is scanned rather than silently passed over, and the body is
-// dedented by the opening fence's own indentation — an indented recipe handed
+// dedented by the opening fence's own indentation. An indented recipe handed
 // to the parser with its leading spaces intact would fail to parse and be
 // reported as broken documentation when it is nothing of the kind.
 func fencedBlocks(src string) []fencedBlock {

@@ -33,7 +33,7 @@ func HumanError(err error, context string) string {
 	}
 
 	if apierrors.IsServiceUnavailable(err) {
-		return fmt.Sprintf("Kubernetes API is unavailable. Check your cluster connection.")
+		return "Kubernetes API is unavailable. Check your cluster connection."
 	}
 
 	if apierrors.IsUnauthorized(err) {

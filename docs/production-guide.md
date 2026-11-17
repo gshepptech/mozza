@@ -67,7 +67,7 @@ The `X-Forwarded-Proto: https` header ensures session cookies are set with the
 
 ### SQLite (Development / Small Deployments)
 
-Default — no configuration needed:
+Default, no configuration needed:
 
 ```bash
 mozza serve  # Uses ./mozza.db
@@ -103,9 +103,9 @@ Migrations run automatically on startup for both SQLite and PostgreSQL.
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `MOZZA_DATABASE_URL` | Database connection string (postgres:// or file path) | `mozza.db` |
-| `MOZZA_ENCRYPTION_KEY` | Base64-encoded AES-256 key for encrypting cluster kubeconfigs at rest | (none — kubeconfigs stored in plaintext) |
-| `MOZZA_TLS_CERT` | Path to TLS certificate PEM file | (none — HTTP mode) |
-| `MOZZA_TLS_KEY` | Path to TLS private key PEM file | (none — HTTP mode) |
+| `MOZZA_ENCRYPTION_KEY` | Base64-encoded AES-256 key for encrypting cluster kubeconfigs at rest | (none: kubeconfigs stored in plaintext) |
+| `MOZZA_TLS_CERT` | Path to TLS certificate PEM file | (none: HTTP mode) |
+| `MOZZA_TLS_KEY` | Path to TLS private key PEM file | (none: HTTP mode) |
 | `MOZZA_METRICS` | Set to `true` to enable Prometheus /metrics endpoint | `false` |
 
 ## CLI Flags

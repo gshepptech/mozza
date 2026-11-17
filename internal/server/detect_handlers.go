@@ -185,7 +185,7 @@ func validateGenerateRequest(req generateRequest) string {
 	}
 
 	// framework and language land inside a # comment, where a comment is the
-	// whole of its line and so only a line terminator escapes the position —
+	// whole of its line and so only a line terminator escapes the position,
 	// the same rule as importer.structuralInComment (recipesafe.go).
 	for _, field := range []struct{ name, value string }{
 		{"framework", req.Framework},
@@ -206,13 +206,13 @@ func buildRecipeFromChoices(
 	choices map[string]string,
 ) string {
 	var sb strings.Builder
-	sb.WriteString(fmt.Sprintf("App: %s\n\n", appName))
-	sb.WriteString(fmt.Sprintf("# Framework: %s (%s)\n\n", framework, language))
+	fmt.Fprintf(&sb, "App: %s\n\n", appName)
+	fmt.Fprintf(&sb, "# Framework: %s (%s)\n\n", framework, language)
 
 	// Main app slice.
 	sb.WriteString("Web:\n")
-	sb.WriteString(fmt.Sprintf("  from image %s:latest\n", appName))
-	sb.WriteString(fmt.Sprintf("  open to the public on port %d\n", port))
+	fmt.Fprintf(&sb, "  from image %s:latest\n", appName)
+	fmt.Fprintf(&sb, "  open to the public on port %d\n", port)
 	sb.WriteString("  health check /health\n")
 	sb.WriteString("  run 1 copy\n")
 	sb.WriteString("  limit cpu to \"500m\"\n")
@@ -232,8 +232,8 @@ func buildRecipeFromChoices(
 			dbImage = "mongo:7"
 		}
 		sb.WriteString("Database:\n")
-		sb.WriteString(fmt.Sprintf("  from image %s\n", dbImage))
-		sb.WriteString(fmt.Sprintf("  on port %d\n", dbPort))
+		fmt.Fprintf(&sb, "  from image %s\n", dbImage)
+		fmt.Fprintf(&sb, "  on port %d\n", dbPort)
 		sb.WriteString("  each copy needs its own storage of 10Gi\n")
 		sb.WriteString("\n")
 	}
@@ -244,9 +244,9 @@ func buildRecipeFromChoices(
 		if wn, ok := choices["worker_name"]; ok && wn != "" {
 			workerName = wn
 		}
-		sb.WriteString(fmt.Sprintf("%s:\n",
-			strings.ToUpper(workerName[:1])+workerName[1:]))
-		sb.WriteString(fmt.Sprintf("  from image %s:latest\n", appName))
+		fmt.Fprintf(&sb, "%s:\n",
+			strings.ToUpper(workerName[:1])+workerName[1:])
+		fmt.Fprintf(&sb, "  from image %s:latest\n", appName)
 		sb.WriteString("  run 1 copy\n")
 		sb.WriteString("  limit cpu to \"250m\"\n")
 		sb.WriteString("  limit memory to \"128Mi\"\n")

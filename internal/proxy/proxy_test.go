@@ -301,7 +301,7 @@ func TestRateLimitUnlimited(t *testing.T) {
 
 	handler := srv.proxyHandler()
 
-	// Send multiple requests rapidly — none should be rate limited.
+	// Send multiple requests rapidly; none should be rate limited.
 	for i := 0; i < 10; i++ {
 		req := httptest.NewRequest(http.MethodGet, "/", nil)
 		req.Host = "unlimited.test"

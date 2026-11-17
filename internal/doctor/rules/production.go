@@ -68,7 +68,7 @@ func (NoHealthCheck) Evaluate(p *plan.AppPlan, _ *doctor.Signal) []doctor.Findin
 			Message:     fmt.Sprintf("slice %q (%s) has no health check configured", s.Name, s.Kind),
 			Explanation: "Without a health check, Kubernetes cannot detect when your app is broken and will keep sending traffic to unhealthy pods. This means users see errors instead of being routed to healthy instances.",
 			Fix:         fmt.Sprintf("add 'health check /healthz' to the %q section", s.Name),
-			RecipeLine:  fmt.Sprintf("  health check /healthz"),
+			RecipeLine:  "  health check /healthz",
 			Fixable:     true,
 		})
 	}
@@ -111,7 +111,7 @@ func (SingleReplicaProduction) Evaluate(p *plan.AppPlan, _ *doctor.Signal) []doc
 			Message:     fmt.Sprintf("slice %q has %d replica(s) in production — consider running at least 2 for high availability", s.Name, s.Replicas),
 			Explanation: "Running a single replica in production means any pod restart (deploy, crash, node drain) causes downtime. With 2+ replicas, Kubernetes can route traffic to healthy pods during updates.",
 			Fix:         fmt.Sprintf("add 'run 2 copies' (or more) to the %q section", s.Name),
-			RecipeLine:  fmt.Sprintf("  run 2 copies"),
+			RecipeLine:  "  run 2 copies",
 		})
 	}
 
@@ -137,7 +137,7 @@ func (NoResourceLimits) Evaluate(p *plan.AppPlan, _ *doctor.Signal) []doctor.Fin
 	var findings []doctor.Finding
 
 	for _, s := range p.Slices {
-		// Skip databases and caches — they have their own resource management.
+		// Skip databases and caches: they have their own resource management.
 		if s.Kind == plan.SliceKindDatabase || s.Kind == plan.SliceKindCache {
 			continue
 		}
@@ -150,7 +150,7 @@ func (NoResourceLimits) Evaluate(p *plan.AppPlan, _ *doctor.Signal) []doctor.Fin
 			Message:     fmt.Sprintf("slice %q has no CPU or memory limits — this may cause resource contention", s.Name),
 			Explanation: "Without resource limits, a single misbehaving container can consume all the CPU and memory on a node, starving other workloads and potentially crashing the entire node.",
 			Fix:         fmt.Sprintf("add 'limit cpu 500m memory 256Mi' to the %q section", s.Name),
-			RecipeLine:  fmt.Sprintf("  limit cpu 500m memory 256Mi"),
+			RecipeLine:  "  limit cpu 500m memory 256Mi",
 			Fixable:     true,
 		})
 	}
@@ -215,7 +215,7 @@ func (RunAsRoot) Evaluate(p *plan.AppPlan, _ *doctor.Signal) []doctor.Finding {
 	var findings []doctor.Finding
 
 	for _, s := range p.Slices {
-		// Skip databases and caches — they manage their own users.
+		// Skip databases and caches: they manage their own users.
 		if s.Kind == plan.SliceKindDatabase || s.Kind == plan.SliceKindCache {
 			continue
 		}
@@ -228,7 +228,7 @@ func (RunAsRoot) Evaluate(p *plan.AppPlan, _ *doctor.Signal) []doctor.Finding {
 			Message:     fmt.Sprintf("slice %q may run as root — this is a security risk", s.Name),
 			Explanation: "Running as root inside a container means if an attacker exploits your app, they have full control over the container and may be able to escape to the host. Running as a non-root user limits the blast radius.",
 			Fix:         fmt.Sprintf("add 'run as user 1000' to the %q section", s.Name),
-			RecipeLine:  fmt.Sprintf("  run as user 1000"),
+			RecipeLine:  "  run as user 1000",
 		})
 	}
 
@@ -269,7 +269,7 @@ func (NoGracefulShutdown) Evaluate(p *plan.AppPlan, _ *doctor.Signal) []doctor.F
 			Message:     fmt.Sprintf("slice %q has %d replicas but no graceful shutdown — in-flight requests may be dropped during deploys", s.Name, s.Replicas),
 			Explanation: "Without a graceful shutdown period, Kubernetes kills your pods immediately during deployments. Any requests being processed at that moment get dropped, causing errors for your users.",
 			Fix:         fmt.Sprintf("add 'graceful shutdown 30s' to the %q section", s.Name),
-			RecipeLine:  fmt.Sprintf("  graceful shutdown 30s"),
+			RecipeLine:  "  graceful shutdown 30s",
 		})
 	}
 

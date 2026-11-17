@@ -8,8 +8,8 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// Compose documents more than one shape for most of the fields below — a port is
-// a string or a mapping, a replica count is a number or a string — and a file
+// Compose documents more than one shape for most of the fields below (a port is
+// a string or a mapping, a replica count is a number or a string), and a file
 // using any of them is a file `docker compose` accepts. Each such field is
 // normalised here, as it is unmarshalled, into the single shape the conversion
 // functions in compose.go read: a long-form port becomes the short syntax
@@ -18,9 +18,9 @@ import (
 // because a field with two representations is a field whose two readers can come
 // to different answers about the same compose file.
 //
-// The scalar fields — Replicas, Internal — decode the way they always did first
-// and reach the string form only when that fails, so a file that parses today
-// provably takes the path it took before.
+// The scalar fields (Replicas, Internal) are decoded as their native type first
+// and reach the string form only when that fails, so a value the native decoder
+// accepts never takes the string path.
 
 // The tags yaml resolves a value to, as they are spelled in its own messages.
 // nullTag earns its keep twice over: yaml's sequence decoder drops a null
@@ -37,7 +37,7 @@ const (
 // yaml resolves an alias itself when it decodes into a typed field, but a
 // yaml.Node field captures the alias node as it stands, and so does a walk over a
 // sequence's own Content. Read off one of those, .Kind describes a reference
-// rather than a value and .Value is the anchor's name — so an anchor named "off"
+// rather than a value and .Value is the anchor's name, so an anchor named "off"
 // or "5" reads as the value "off" or "5". Sharing config through an x- anchor is
 // how compose files avoid repeating themselves, so this is ordinary input rather
 // than an edge. yaml rejects an anchor on an alias, so the chain is never longer
@@ -54,7 +54,7 @@ func resolveAlias(n *yaml.Node) *yaml.Node {
 // node at fault, and what mozza expected in its place.
 //
 // It carries the node rather than a field path because yaml offers an unmarshaler
-// no path — from inside one, "ports" is reachable and "services.web.ports" is not,
+// no path: from inside one, "ports" is reachable and "services.web.ports" is not,
 // and there is no service name to be had. composeReadError names the field from
 // the document, where the whole path is in hand. The name kept here is what a
 // message falls back to when the node cannot be found there, so it says "service
@@ -96,8 +96,8 @@ func composeMirrorError(n *yaml.Node, err error, field, want string) error {
 //
 // Top-level configs and secrets carry no values: only the config names are read
 // (to warn that they are dropped), secrets are not read at all, and an empty
-// struct accepts every shape an entry takes — file, content, environment, name,
-// `external: true` and the legacy `external: {name: real}` — instead of failing
+// struct accepts every shape an entry takes (file, content, environment, name,
+// `external: true` and the legacy `external: {name: real}`) instead of failing
 // the whole parse over a field nothing consults.
 type composeFile struct {
 	Services map[string]composeService       `yaml:"services"`
@@ -153,13 +153,13 @@ type composeDeploy struct {
 // documented as `replicas: 3`, and a file using it is one `docker compose config`
 // renders without complaint.
 //
-// The number is decoded first, by the same decoder as before, and the string form
-// is reached only when that fails — which is what keeps `3` and the equally valid
-// `3.0` on the path they already took. ${VAR} is not expanded anywhere in the
+// The number is decoded first, as a plain number, and the string form is
+// reached only when that fails. That is what keeps `3` and the equally valid
+// `3.0` on the numeric path. ${VAR} is not expanded anywhere in the
 // importer, so it is named in the error rather than guessed at.
 func (d *composeDeploy) UnmarshalYAML(n *yaml.Node) error {
-	// Every other deploy key — resources, placement, update_config — goes on
-	// being ignored rather than rejected.
+	// Every other deploy key (resources, placement, update_config) is
+	// ignored rather than rejected.
 	var mirror struct {
 		Replicas yaml.Node `yaml:"replicas"`
 	}
@@ -207,9 +207,9 @@ type composeHealthcheck struct {
 }
 
 // composeTest is a health check's test command. Compose accepts a bare string as
-// the shell form and normalises it to ["CMD-SHELL", s] — literally what `docker
-// compose config` prints for it — so that is what it becomes here, leaving
-// extractHealthCheck reading the list it has always read.
+// the shell form and normalises it to ["CMD-SHELL", s], literally what `docker
+// compose config` prints for it. So that is what it becomes here, and
+// extractHealthCheck only ever reads a list.
 type composeTest []string
 
 func (t *composeTest) UnmarshalYAML(n *yaml.Node) error {
@@ -256,9 +256,9 @@ type composeNetworkConfig struct {
 // names the network to join. All three render as `external: true` under
 // `docker compose config`.
 //
-// Each boolean is decoded first, by the same decoder as before, which is what
-// keeps yaml's own vocabulary — including bare yes/no/on/off, and TRUE in any
-// case — working byte for byte. Only when that fails is the value read as a
+// Each boolean is decoded first as a plain yaml bool, which is what keeps
+// yaml's own vocabulary (including bare yes/no/on/off, and TRUE in any case)
+// working byte for byte. Only when that fails is the value read as a
 // string, and then only compose's own vocabulary is honoured: it accepts these
 // twelve spellings and rejects "0", "1" and anything else, so mozza saying so
 // out loud is the same answer compose gives.
@@ -379,7 +379,7 @@ func (s *composeSecretRef) UnmarshalYAML(n *yaml.Node) error {
 // parsePort and writePort already read.
 //
 // protocol, mode and host_ip are dropped. parsePort drops the protocol from short
-// syntax too, and a recipe has nowhere to name a host interface — so a long-form
+// syntax too, and a recipe has nowhere to name a host interface, so a long-form
 // port publishing on 127.0.0.1 imports as the port it publishes, which is the
 // answer the short form ought to give and does not yet.
 type composePorts []string
@@ -439,7 +439,7 @@ func portSpec(item *yaml.Node) (string, bool) {
 
 	// A long-form port with no target names no container port, and compose refuses
 	// the file for it ("is missing a target port"). Carrying it anyway would put
-	// "8080:" in front of writePort, which writes the port after the colon — an
+	// "8080:" in front of writePort, which writes the port after the colon: an
 	// "open to the public on port" line with no number, in a recipe that then
 	// validates. Failing here is the same answer compose gives.
 	if long.Target == "" {

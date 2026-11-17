@@ -209,7 +209,7 @@
   animation: border-glow 3s ease-in-out infinite;
 }
 
-/* Subtle ambient background — static radial glow, no animation */
+/* Subtle ambient background: static radial glow, no animation */
 .grain-overlay::after {
   content: '';
   position: fixed;
@@ -229,7 +229,7 @@
   border-right: 1px solid rgba(255, 255, 255, 0.06);
 }
 
-/* Page background scenes — subtle illustrated elements per route */
+/* Page background scenes: subtle illustrated elements per route */
 .page-bg {
   position: relative;
 }
@@ -283,7 +283,7 @@
   animation: shimmer 2s linear infinite;
 }
 
-/* Landing page — steam/heat rising */
+/* Landing page: steam/heat rising */
 @keyframes steam-rise {
   0% { transform: translateY(0) scaleX(1); opacity: 0; }
   20% { opacity: 0.6; }
@@ -291,7 +291,7 @@
   100% { transform: translateY(-60px) scaleX(0.8); opacity: 0; }
 }
 
-/* Landing page — neon pulse on hero */
+/* Landing page: neon pulse on hero */
 @keyframes neon-pulse {
   0%, 100% {
     text-shadow:
@@ -307,7 +307,7 @@
   }
 }
 
-/* Landing page — tab content fade in */
+/* Landing page: tab content fade in */
 @keyframes tab-fade-in {
   from { opacity: 0; transform: translateY(12px); }
   to { opacity: 1; transform: translateY(0); }
@@ -317,14 +317,14 @@
   animation: tab-fade-in 0.35s ease-out;
 }
 
-/* Landing page — slow float for decorative elements */
+/* Landing page: slow float for decorative elements */
 @keyframes float-slow {
   0%, 100% { transform: translateY(0) rotate(0deg); }
   33% { transform: translateY(-6px) rotate(2deg); }
   66% { transform: translateY(3px) rotate(-1deg); }
 }
 
-/* Landing page — Mozza column glow in comparison table */
+/* Landing page: Mozza column glow in comparison table */
 .mozza-col-glow {
   position: relative;
   background: rgba(255, 107, 53, 0.04);
@@ -340,7 +340,7 @@
   pointer-events: none;
 }
 
-/* Landing page — pain point auto-rotate progress bar */
+/* Landing page: pain point auto-rotate progress bar */
 @keyframes progress-fill {
   from { width: 0%; }
   to { width: 100%; }
@@ -350,13 +350,13 @@
   animation: progress-fill 5s linear;
 }
 
-/* Landing page — pizza cutter blade spin */
+/* Landing page: pizza cutter blade spin */
 @keyframes blade-spin {
   from { transform: translate(-50%, -50%) rotate(0deg); }
   to { transform: translate(-50%, -50%) rotate(360deg); }
 }
 
-/* Landing page — feature card hover lift */
+/* Landing page: feature card hover lift */
 .feature-card {
   transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
 }
