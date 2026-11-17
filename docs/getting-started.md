@@ -11,15 +11,15 @@ Those are the two paths, and you can stop at either one:
 | 🛵 **Get it delivered** | `mozza up` / `mozza deploy` | A running app | Docker, or a cluster |
 
 This guide covers both. If you have no cluster and no Docker, start at
-[Compile Only](#compile-only-pick-it-up) — it works offline.
+[Compile Only](#compile-only-pick-it-up); it works offline.
 
 ## Prerequisites
 
 - **Nothing** for `mozza compile`, `mozza validate`, and `mozza targets`. No Docker, no cluster,
   no config file, no login, no network.
-- **Docker** installed and running — only for `mozza up` (local deployment).
-- **kubectl** and a cluster — only for `mozza deploy`.
-- **Go 1.25+** — only for building from source.
+- **Docker** installed and running, only for `mozza up` (local deployment).
+- **kubectl** and a cluster, only for `mozza deploy`.
+- **Go 1.25+**, only for building from source.
 
 ## Installation
 
@@ -457,7 +457,7 @@ Both paths are available through the API, so the dashboard and your own tooling 
 compiler as the CLI. Both endpoints require a session cookie, but neither requires the `deployer`
 or `admin` role. Compiling changes nothing, so a `viewer` can do it.
 
-**`GET /api/v1/targets`** — the same list `mozza targets` prints:
+**`GET /api/v1/targets`** returns the same list `mozza targets` prints:
 
 ```json
 {
@@ -477,7 +477,7 @@ or `admin` role. Compiling changes nothing, so a `viewer` can do it.
 }
 ```
 
-**`POST /api/v1/compile`** — compile recipe source and get the files back. It applies nothing.
+**`POST /api/v1/compile`** compiles recipe source and returns the files. It applies nothing.
 
 Request body: `source` is the recipe text and is required; `target` is optional and defaults to
 `kubernetes`.

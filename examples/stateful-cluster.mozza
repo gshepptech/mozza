@@ -1,4 +1,4 @@
-# Kafka Cluster — StatefulSet with peer discovery and ordered startup
+# Kafka Cluster: StatefulSet with peer discovery and ordered startup
 
 App: kafka-cluster
 

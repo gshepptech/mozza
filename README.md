@@ -50,7 +50,7 @@ go build -o bin/mozza ./cmd/mozza
 `examples/full-stack.mozza` describes a frontend, an API, PostgreSQL and Redis:
 
 ```mozza
-# Full Stack — web frontend, API backend, database, and cache
+# Full Stack: web frontend, API backend, database, and cache
 
 App: full-stack
 
