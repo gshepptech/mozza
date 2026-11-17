@@ -99,7 +99,7 @@ func checkImage(ctx context.Context, image string, creds map[string]registryAuth
 		if err2 != nil {
 			return fmt.Errorf("registry unreachable on retry: %w", err2)
 		}
-		resp.Body.Close()
+		defer resp2.Body.Close()
 		resp = resp2
 	}
 
