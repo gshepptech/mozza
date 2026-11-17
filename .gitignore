@@ -27,3 +27,5 @@ ui/playwright-report/
 *.swp
 *.swo
 .DS_Store
+
+*.tsbuildinfo
