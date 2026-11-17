@@ -156,7 +156,7 @@ func TestRegister_ValidData_Returns201(t *testing.T) {
 func TestProtectedEndpoint_NoSession_Returns401(t *testing.T) {
 	t.Parallel()
 	ts, _, _ := testServerWithAuth(t)
-	defer ts.Close()
+	t.Cleanup(ts.Close)
 
 	endpoints := []string{
 		"/api/v1/auth/me",
@@ -168,6 +168,7 @@ func TestProtectedEndpoint_NoSession_Returns401(t *testing.T) {
 
 	for _, ep := range endpoints {
 		t.Run(ep, func(t *testing.T) {
+			t.Parallel()
 			resp, err := http.Get(ts.URL + ep)
 			require.NoError(t, err)
 			defer resp.Body.Close()

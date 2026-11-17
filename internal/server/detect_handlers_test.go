@@ -69,7 +69,7 @@ func sliceNames(p *plan.AppPlan) []string {
 func TestDetectGenerate_EveryBranchYieldsAUsableRecipe(t *testing.T) {
 	t.Parallel()
 	ts, _, _ := testServerWithAuth(t)
-	defer ts.Close()
+	t.Cleanup(ts.Close)
 
 	cookie := registerUser(t, ts, "detect-branches@example.com", "Test", "password123")
 
@@ -134,6 +134,7 @@ func TestDetectGenerate_EveryBranchYieldsAUsableRecipe(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			status, body := postDetectGenerate(t, ts, cookie, map[string]any{
 				"framework":    "nextjs",
 				"language":     "javascript",
@@ -161,7 +162,7 @@ func TestDetectGenerate_EveryBranchYieldsAUsableRecipe(t *testing.T) {
 func TestDetectGenerate_RejectsValuesThatCarryRecipeStructure(t *testing.T) {
 	t.Parallel()
 	ts, _, _ := testServerWithAuth(t)
-	defer ts.Close()
+	t.Cleanup(ts.Close)
 
 	cookie := registerUser(t, ts, "detect-inject@example.com", "Test", "password123")
 
@@ -285,6 +286,7 @@ func TestDetectGenerate_RejectsValuesThatCarryRecipeStructure(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			status, body := postDetectGenerate(t, ts, cookie, tt.payload)
 			require.Equal(t, http.StatusBadRequest, status,
 				"expected 400, got recipe:\n%s", body["recipe"])
