@@ -20,7 +20,7 @@ func HelmToRecipe(valuesYAML string, chartName string) (string, error) {
 	}
 
 	// Every value below is written into the recipe unquoted, and values.yaml is
-	// as much someone else's file as the chart name is someone else's URL — the
+	// as much someone else's file as the chart name is someone else's URL: the
 	// port especially, which is formatted from whatever YAML node was found
 	// there rather than from a number.
 	imageRepo, imageTag := extractHelmImage(values)

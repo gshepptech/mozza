@@ -16,7 +16,7 @@ var httpClient = &http.Client{Timeout: 15 * time.Second}
 
 const userAgent = "mozza-importer/1.0"
 
-// URL builders — package-level vars so tests can override them.
+// URL builders: package-level vars so tests can override them.
 var fetchRepoMetaURL = func(owner, repo string) string {
 	return fmt.Sprintf("https://api.github.com/repos/%s/%s", owner, repo)
 }
@@ -63,8 +63,8 @@ func ParseGitHubURL(rawURL string) (owner, repo string, err error) {
 	owner = parts[0]
 	repo = strings.TrimSuffix(parts[1], ".git")
 
-	// Both are written into recipe text unquoted — as the App line, the section
-	// header, and the image the fallback and the ghcr splice name — and
+	// Both are written into recipe text unquoted (as the App line, the section
+	// header, and the image the fallback and the ghcr splice name), and
 	// url.Parse percent-decodes the path on the way here, so "%0A" in a URL
 	// arrives as a real newline. Refusing here rather than at each of those
 	// sites is what makes this the only place they have to be checked.
@@ -221,7 +221,7 @@ func FetchFile(owner, repo, path, token string) (string, error) {
 
 // CheckGHCR checks whether a container image exists on ghcr.io for the given
 // owner/repo. Returns true if the image is available, false otherwise. This is
-// a best-effort check — network errors or unexpected responses return false
+// a best-effort check: network errors or unexpected responses return false
 // without an error so callers can fall back to build instructions.
 func CheckGHCR(owner, repo string) bool {
 	checkURL := checkGHCRURL(owner, repo)

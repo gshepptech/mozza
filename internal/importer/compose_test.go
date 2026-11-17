@@ -664,11 +664,11 @@ secrets:
 // TestImportedHealthCheckAlwaysHasAPort pins the port dimension of the import
 // invariant: an imported health check always has a port to check, so mozza import
 // never writes an unaimed one for mozza validate to reject. Both authoring paths
-// are checked because `mozza import` uses both — ComposeToRecipe writes the file,
+// are checked because `mozza import` uses both: ComposeToRecipe writes the file,
 // and ComposeToRecipeAST supplies the warnings printed alongside it.
 //
 // It is deliberately not a claim that every compose file imports to a valid
-// recipe. Two inputs still do not, both identically so before this change and for
+// recipe. Two inputs do not, for
 // reasons that have nothing to do with ports: a build-context-only service imports
 // to a comment with no kind to infer, and a health check URL carrying a query
 // string imports a path the health path format rule rejects.
@@ -729,8 +729,8 @@ services:
       test: ["CMD", "curl", "-f", "http://localhost/health"]
 `,
 			contains: []string{`# WARNING: health check /health dropped`, `add "on port <n>", then restore "health check /health"`},
-			// Anchored to a directive line, so the comment's own wording — which
-			// quotes the check it dropped — cannot satisfy it.
+			// Anchored to a directive line, so the comment's own wording (which
+			// quotes the check it dropped) cannot satisfy it.
 			absent: []string{"\n  health check /health"},
 			check: func(t *testing.T, s recipe.Slice, w []Warning) {
 				t.Helper()
@@ -797,8 +797,8 @@ services:
 }
 
 // TestImportedStorageIsAlwaysAFormTheParserAccepts pins the storage dimension of
-// the same import invariant. A recipe states storage in exactly one place — the
-// engine shorthand's size argument, "postgres 16, 10Gi" — so that is the only
+// the same import invariant. A recipe states storage in exactly one place (the
+// engine shorthand's size argument, "postgres 16, 10Gi"), so that is the only
 // form the importer may write, and a compose volume that cannot be expressed
 // there is announced rather than dropped in silence. `mozza import` uses both
 // authoring paths, so both are checked, and they are checked against each other:
@@ -1170,8 +1170,8 @@ func TestEngineMountPathsMatchWhereTheCompilerMounts(t *testing.T) {
 
 // TestTheStatefulRemedyMountsWhereItSaysItDoes follows the advice the importer
 // writes into a recipe, exactly as a user would, and then reads where the volume
-// really lands. A recipe cannot name a mount path for it — parseMount carries
-// only file, secret and config — so the volume goes where the compiler puts it,
+// really lands. A recipe cannot name a mount path for it (parseMount carries
+// only file, secret and config), so the volume goes where the compiler puts it,
 // and advice that named the compose path instead would hand back a clean recipe,
 // a provisioned volume, and an app still writing where nothing is mounted.
 func TestTheStatefulRemedyMountsWhereItSaysItDoes(t *testing.T) {
@@ -1224,10 +1224,11 @@ volumes:
 // TestEveryDocumentedComposeShapeImports pins the import on-ramp: a compose file
 // that `docker compose config` accepts is one mozza reads. Every row below was
 // put through Docker Compose v5.1.2 to establish that compose really accepts the
-// shape before it was asked of the importer, and every row marked as a tolerated
-// shape aborted the parse with a raw YAML type error before this change.
+// shape before it was asked of the importer. Every row marked as a tolerated
+// shape is one a decoder reading only the short syntax would abort on with a raw
+// YAML type error.
 //
-// Both authoring paths are driven, because `mozza import` drives both — the text
+// Both authoring paths are driven, because `mozza import` drives both: the text
 // path writes the file and the AST path supplies the warnings printed beside it.
 // Where a shape has a short-syntax equivalent the two must import to the same
 // recipe, which is the assertion that keeps the tolerated shapes from becoming a
@@ -1323,7 +1324,7 @@ services:
 		{
 			// No equivalence assertion here, and deliberately so. writePort splits
 			// a short spec on its first colon only, so "127.0.0.1:8080:80" imports
-			// today as the port "8080:80" — the long form is right and the short
+			// as the port "8080:80". The long form is right and the short
 			// form is wrong, and that short-form defect is filed on its own rather
 			// than inherited here to keep the two agreeing.
 			name: "a long-form port with a host interface publishes the container port",
@@ -1743,7 +1744,7 @@ configs:
 		// mainstream input rather than an edge. They are also the rows that catch a
 		// normaliser reading a node's own .Kind and .Value: an alias node's .Value
 		// is the *anchor's name*, so anything that reads it without following the
-		// alias first reads the label instead of the value — silently, when the
+		// alias first reads the label instead of the value, silently when the
 		// label happens to parse.
 		{
 			name: "an aliased long-form port publishes what its anchor publishes",
@@ -1799,7 +1800,7 @@ volumes:
 		},
 		{
 			// The anchor is named "5" and holds "3". Compose renders replicas: 3.
-			// Reading the alias node's own .Value yields "5", which Atoi accepts —
+			// Reading the alias node's own .Value yields "5", which Atoi accepts,
 			// so this imports as a wrong number rather than as an error, and only a
 			// value whose anchor name also parses can catch that.
 			name: "an aliased replica count is the count its anchor holds, not the anchor's name",
@@ -1856,9 +1857,9 @@ networks:
 			},
 		},
 
-		// The rows below already parsed before this change. They are the ones a
-		// careless fix regresses — each is a value the first decoder handles and a
-		// string-first decoder would mangle — so they are asserted, not assumed.
+		// The rows below are values the native decoder handles and a string-first
+		// decoder would mangle. A careless change to the decoding order regresses
+		// them, so they are asserted, not assumed.
 		{
 			name: "an unquoted replica count still takes the number path",
 			input: `
@@ -1940,9 +1941,8 @@ networks:
 			},
 		},
 		{
-			// An aliased short-syntax port imported before this change, because a
-			// plain []string field went through yaml's own sequence decoder, which
-			// follows aliases. Walking a sequence's Content by hand does not, so
+			// A plain []string field would import an aliased short-syntax port,
+			// because yaml's own sequence decoder follows aliases. Walking a sequence's Content by hand does not, so
 			// this is the row that fails if the hand-rolled loop forgets them.
 			name: "an aliased short-syntax port still imports",
 			input: `
@@ -1992,7 +1992,7 @@ volumes:
 		},
 		{
 			// An alias to a null is still a null, so it is dropped like a literal
-			// one — which is only true if the alias is followed before the tag is
+			// one. That holds only if the alias is followed before the tag is
 			// read, not after.
 			name: "an aliased null port entry is still dropped rather than written empty",
 			input: `
@@ -2065,7 +2065,7 @@ services:
 			require.NoError(t, plan.Validate(astPlan), "the imported AST must validate too")
 
 			// A tolerated shape that imported to anything other than what its short
-			// form imports to would be a second conversion path, free to drift —
+			// form imports to would be a second conversion path, free to drift,
 			// so both authoring paths are held against the short form, not just one.
 			if tt.equivalent != "" {
 				shortText, shortErr := ComposeToRecipe(tt.equivalent)
@@ -2089,21 +2089,21 @@ services:
 // boundary that was not carried.
 //
 // The two vocabularies do not line up. A compose network is an undirected broadcast
-// domain — everyone on it reaches everyone else — while a recipe's `only accept
+// domain (everyone on it reaches everyone else), while a recipe's `only accept
 // traffic from` is a directed ingress allow-list whose *presence* is a deny. So a
 // derived policy is right only when its list is every source compose already allows,
 // and membership read off the `networks:` keys is a lower bound rather than that set.
 // `extends`, `include`, `network_mode`, `external_links`, an `external:` or
 // `attachable:` network, an exotic driver, a network's `name:`, an unexpanded
 // `${VAR}` and an override file compose loads without being asked all put a service
-// on a network no key records — and the last two cannot be closed at all, because
+// on a network no key records, and the last two cannot be closed at all, because
 // mozza expands nothing anywhere and the server entry point is handed content with no
 // path to look beside. Every one missed is a policy that silently black-holes a
 // service while the deploy reports success.
 //
-// So the boundary is named instead. Every row asserts the same two things — that
+// So the boundary is named instead. Every row asserts the same two things (that
 // neither path writes a directive, and that the warning is exactly what the file
-// declares — and the shapes are all kept, because a warning that names the wrong
+// declares), and the shapes are all kept, because a warning that names the wrong
 // thing is the failure that remains once no policy can be written.
 //
 // A row's warnings come in two kinds, and the split is the point of them. What the
@@ -2178,9 +2178,9 @@ networks:
 			// The row that keeps the self-peer in the remedy honest. Mozza gives a
 			// multi-copy stateful slice a headless service so its pods can find each
 			// other, and a directive that left db off its own list would deny the
-			// replica traffic that service exists to route — so the list mozza
+			// replica traffic that service exists to route. So the list mozza
 			// recommends has to contain db. And no policy is compiled either way,
-			// which is the whole of what this change guarantees.
+			// which is the whole of what the importer guarantees.
 			name: "a service reaching its own replicas is in the list mozza recommends",
 			input: `
 services:
@@ -2236,7 +2236,7 @@ networks:
 		{
 			// web bridges two networks that do not touch, and is a member of both.
 			// Its one directive is the union of the two, because a slice carries one
-			// directive and the presence of that directive is a deny — a list of
+			// directive and the presence of that directive is a deny: a list of
 			// either network's members alone would shut out the other's.
 			name: "a service on several networks gets one directive holding all of them",
 			input: `
@@ -2280,8 +2280,8 @@ networks:
 		{
 			// Compose puts api on the default network, not on backend, so the two
 			// genuinely cannot reach each other. Nothing is derived from the default
-			// network — it is where compose puts a service that asked for no
-			// isolation — and the partition is reported all the same, by the clause
+			// network (it is where compose puts a service that asked for no
+			// isolation), and the partition is reported all the same, by the clause
 			// saying what backend keeps out.
 			name: "a service that omits networks is what the other network keeps out",
 			input: `
@@ -2323,8 +2323,8 @@ services:
 		{
 			// The default network is a real network with real members, and a service
 			// that names one of its own as well is on both. So monitoring's members
-			// are not everything that reaches api — worker is there too, having
-			// declared nothing — and the reader is told before being handed a list
+			// are not everything that reaches api (worker is there too, having
+			// declared nothing), and the reader is told before being handed a list
 			// that leaves worker out.
 			name: "a service also on the default network makes the list a short one",
 			input: `
@@ -2377,7 +2377,7 @@ services:
 		{
 			// A published port makes the slice reachable from outside the cluster,
 			// and the compiler gives it an Ingress. The ingress controller joins no
-			// compose network, so it is in no list read off one — a directive under
+			// compose network, so it is in no list read off one. A directive under
 			// Web would deny it, the pods would stay up and the site would go dark.
 			// So Web is left out of the remedy and told why, rather than the reader
 			// noticing a name missing from it.
@@ -2495,7 +2495,7 @@ networks:
 		},
 		{
 			// A network's `name:` is the network compose actually creates, and a
-			// second key can resolve to the same one — so the key a service is
+			// second key can resolve to the same one, so the key a service is
 			// written under does not settle who else is on the network it names.
 			name: "a network renamed by its `name:` may be reached under another key",
 			input: `
@@ -2609,7 +2609,7 @@ networks:
 		},
 		{
 			// A service taking its network namespace from another reaches whatever
-			// that one reaches, over a network it never joined by name — so it is a
+			// that one reaches, over a network it never joined by name, so it is a
 			// source no `networks:` key in the file records.
 			name: "a service sharing another's network namespace is a source no key names",
 			input: `
@@ -2636,8 +2636,8 @@ networks:
 		},
 		{
 			// `none` is the one value that reaches nothing. Measured against docker
-			// 29.4.0 every other value reaches something — even `bridge` reaches a
-			// service on a user-defined network at its address — so it is the only
+			// 29.4.0 every other value reaches something (even `bridge` reaches a
+			// service on a user-defined network at its address), so it is the only
 			// one that leaves the file's memberships whole.
 			name: "a service with no networking at all leaves the memberships whole",
 			input: `
@@ -2775,7 +2775,7 @@ networks:
 		},
 		{
 			// `docker run --network` may join an attachable network, so its members
-			// are not only this file's services — the same failure as `external:`,
+			// are not only this file's services: the same failure as `external:`,
 			// reached by a different key. Compose accepts the quoted form and
 			// normalises it to the bare flag.
 			name: "an attachable network is one containers outside compose may join",
@@ -2851,8 +2851,8 @@ networks:
 		{
 			// Compose expands ${VAR} before it reads the project and mozza expands
 			// nothing anywhere, so this key is a literal token that may be any of the
-			// networks declared here. No remedy is offered for it — a list drawn from
-			// a network that does not exist is not one to recommend — and the network
+			// networks declared here. No remedy is offered for it (a list drawn from
+			// a network that does not exist is not one to recommend), and the network
 			// it may really be is told that a member of it is unaccounted for.
 			//
 			// This is the shape that ended the derivation: compose resolves all three
@@ -3069,7 +3069,7 @@ func mayBeShort(why string) string {
 }
 
 // networksWarnings picks out what the import said about networks, leaving the
-// warnings a row is not about — a build context, a dropped volume — alone.
+// warnings a row is not about (a build context, a dropped volume) alone.
 func networksWarnings(warnings []Warning) []string {
 	var said []string
 	for _, w := range warnings {
@@ -3082,13 +3082,13 @@ func networksWarnings(warnings []Warning) []string {
 }
 
 // boundaries reads the boundary every slice carries, keyed by the name plan.Build
-// gives the slice. The two paths reach that name differently — the importer
+// gives the slice. The two paths reach that name differently (the importer
 // capitalizes a compose service into a section header, the parser lowercases a
-// header it reads back — and the name an AllowFrom entry is checked against is
+// header it reads back), and the name an AllowFrom entry is checked against is
 // the lowercased one, so that is the key both are held to.
 //
 // A slice carrying no boundary is absent rather than present and empty, because
-// BuildNetworkPolicy turns an empty AllowFrom into `ingress: null` — a deny-all,
+// BuildNetworkPolicy turns an empty AllowFrom into `ingress: null`: a deny-all,
 // and a different answer from no policy at all.
 func boundaries(r *recipe.Recipe) map[string][]string {
 	got := map[string][]string{}
@@ -3148,7 +3148,7 @@ func compiledFor(t *testing.T, p *plan.AppPlan, slice string) compiled {
 // carries no domain to read, so convertService never sets the field, and the second
 // half is unreachable rather than merely unused.
 //
-// The day one is read — traefik's routing labels, below, are the obvious source — a
+// The day one is read (traefik's routing labels, below, are the obvious source), a
 // slice would get an Ingress and a recommendation to write the policy that denies the
 // controller serving it, and a reader following the advice would take the site dark
 // with nothing to read anywhere. That change would be written in convertService,
@@ -3188,11 +3188,11 @@ networks:
 //
 // A slice carries one `only accept traffic from`, and the presence of that directive
 // is a deny. So an instruction naming one network's members is safe only when the
-// service is on no other network. Grouped per network, a service on two got two
+// service is on no other network. Grouped per network, a service on two would get two
 // instructions that each read as complete and self-contained, and following either
-// one on its own compiled a policy narrower than compose: validate passes, the deploy
+// one on its own compiles a policy narrower than compose: validate passes, the deploy
 // reports success, and a tier goes dark with nothing anywhere to read. No wording
-// makes that safe — the instruction has to be whole.
+// makes that safe; the instruction has to be whole.
 //
 // So each instruction is applied here on its own, as a reader would apply it, and the
 // policy it compiles to is held against the reach compose gives that service. What
@@ -3215,7 +3215,7 @@ services:
     networks: [backend]
 `
 
-	// Everything sharing at least one network with the service, itself included —
+	// Everything sharing at least one network with the service, itself included:
 	// compose lets a service reach its own replicas over a network it is on. web is
 	// absent because it is public: the compiler gives it an Ingress, and a policy
 	// under it would deny the controller serving it, so it is offered no directive.
@@ -3237,7 +3237,7 @@ services:
 			continue
 		}
 
-		// One directive, under one section, into the recipe mozza actually wrote —
+		// One directive, under one section, into the recipe mozza actually wrote,
 		// which is the whole of what the reader was told to do.
 		parsed, parseErr := recipe.NewParser(
 			strings.Replace(text, section+":\n", section+":\n  "+directive+"\n", 1)).Parse()
@@ -3295,7 +3295,7 @@ func admits(policy *networkingv1.NetworkPolicy) []string {
 //
 // The boundary is reported anyway, naming the stub as a member. The user's next move
 // is to supply the image by hand, and a warning withheld until the recipe builds
-// would be one they never see — the boundary would be gone from under the edit with
+// would be one they never see: the boundary would be gone from under the edit with
 // nothing said about it.
 func TestABoundaryIsReportedForAFileThatCannotBuildYet(t *testing.T) {
 	const composeFile = `
@@ -3325,7 +3325,7 @@ networks:
 	require.ErrorContains(t, err, `slice "web": could not determine kind`)
 
 	// Supplying the image is the whole of the remedy, and the recipe it produces
-	// still carries no policy — the warning is where the boundary was, and stays.
+	// still carries no policy. The warning is where the boundary was, and stays.
 	text, err := ComposeToRecipe(composeFile)
 	require.NoError(t, err)
 
@@ -3355,7 +3355,7 @@ networks:
 // prefixes, so the copy is pinned rather than spot-checked, and every field path
 // is the one `docker compose config` prints for the same file. An unmarshaler is
 // handed a value and no path to it, so these names are read back off the document
-// afterwards — which is what tells a service's own `volumes:` from the top-level
+// afterwards, which is what tells a service's own `volumes:` from the top-level
 // one, and names the service that really holds the fault.
 func TestUnreadableComposeShapesSayWhatTheyExpected(t *testing.T) {
 	tests := []struct {
@@ -3377,7 +3377,7 @@ services:
 		},
 		{
 			// A service's volumes and the top-level volumes: are different fields
-			// with the same name. The path tells them apart —
+			// with the same name. The path tells them apart:
 			// compare "a declared volume is not a mapping" in the sibling test,
 			// which reads volumes.pgdata.
 			name: "volumes as a mapping",
@@ -3408,7 +3408,7 @@ services:
 				` or a list of entries with target and published`,
 		},
 		{
-			// Compose refuses this file — "is missing a target port" — and mozza
+			// Compose refuses this file ("is missing a target port"), and mozza
 			// tolerating it would emit "open to the public on port" with no number,
 			// in a recipe that then passes mozza validate. A wrong recipe that
 			// validates travels further than an import that stops.
@@ -3560,7 +3560,7 @@ networks:
 		{
 			// The same shape one field over, and deliberately not the same sentence.
 			// external's mapping form is the legacy `external: {name: …}`, read before
-			// this point, so a mapping never reaches the error — and naming it as a
+			// this point, so a mapping never reaches the error, and naming it as a
 			// shape the field rejects would describe a file mozza in fact accepts.
 			name: "an external flag that is a list",
 			input: `
@@ -3597,7 +3597,7 @@ networks:
 // TestAnUnnamedComposeFieldSaysSoRatherThanGuess pins the name a message falls
 // back to when the value an unmarshaler balked at cannot be found in the document
 // again. yaml hands an unmarshaler a value and no path to it, so there is no
-// service name to be had from inside one — and a vague "service volumes" is worth
+// service name to be had from inside one, and a vague "service volumes" is worth
 // more to a reader than a confident "services.web.volumes" naming a service that
 // is not the one at fault.
 func TestAnUnnamedComposeFieldSaysSoRatherThanGuess(t *testing.T) {
@@ -3630,7 +3630,7 @@ func assertNamesNoGoType(t *testing.T, msg, path string) {
 //
 // Every want below is the whole of what a compose author sees after the wrapping
 // prefixes, so the copy is pinned and not merely spot-checked. Each field name
-// is the one `docker compose config` prints for the same file — verified against
+// is the one `docker compose config` prints for the same file, verified against
 // Compose v5.1.2, which answers the first row with "services must be a mapping"
 // and the third with "services.web.image must be a string".
 func TestAMisshapenComposeValueNamesItsFieldNotItsGoType(t *testing.T) {
@@ -3656,7 +3656,7 @@ services:
 		},
 		{
 			// A plain string field is the one shape mozza has no better word for
-			// than "a single value" — but the path still names it exactly, which is
+			// than "a single value", but the path still names it exactly, which is
 			// the whole point of reading the field name off the document.
 			name: "an image is a list",
 			input: `
@@ -3757,7 +3757,7 @@ secrets: hello
 		},
 		{
 			// A key sits on its value's line, and here the key's own text begins
-			// with the value's — the one arrangement where which of the two the
+			// with the value's: the one arrangement where which of the two the
 			// search settles on changes the answer. yaml reports the value, so the
 			// value is what the message quotes back.
 			name: "a key whose name begins with its own value",
@@ -3923,10 +3923,10 @@ services:
 }
 
 // TestComposeToRecipeRefusesInjectedValues holds one row per site where a
-// compose value reaches recipe text. Every payload here was first driven through
-// the built binary on the unguarded tree and produced a real Kubernetes manifest
-// the compose file never asked for — except the two health-check rows, noted
-// below — so each row is a fixed exploit rather than a hypothetical.
+// compose value reaches recipe text. Without the guard, every payload here
+// (except the two health-check rows, noted below) drives the built binary to a
+// real Kubernetes manifest the compose file never asked for, so each row is a
+// real exploit rather than a hypothetical.
 //
 // The wantField assertions matter as much as the errors: an import that refuses
 // a file without naming the field is one the author cannot act on.
@@ -4037,7 +4037,7 @@ services:
 			// The same value in the dropped-check warning, where only a newline
 			// escapes. Which of the two branches runs turns on the file's ports
 			// rather than on the path, so the field answers to the stricter word
-			// class either way — this shape with a port in the URL takes the
+			// class either way: this shape with a port in the URL takes the
 			// branch above and compiles the tab payload to replicas: 7.
 			name: "health check path escapes the dropped-check comment",
 			input: `
@@ -4210,7 +4210,7 @@ volumes:
 }
 
 // TestComposeToRecipeAcceptsOrdinaryCompose guards against the other failure
-// mode — a predicate strict enough to reject the everyday file. Every value
+// mode: a predicate strict enough to reject the everyday file. Every value
 // here is one a real compose file holds.
 func TestComposeToRecipeAcceptsOrdinaryCompose(t *testing.T) {
 	input := `
